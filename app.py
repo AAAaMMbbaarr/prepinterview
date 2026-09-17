@@ -378,25 +378,35 @@ def call_gemini_audio(audio_bytes: bytes, prompt: str) -> str:
 
 
 def run_sponsor_ad_countdown(target_type: str, target_id=None):
-    """Display a 10-second sponsor ad with a real-time progress bar to unlock content."""
+    """Display a 10-second sponsor ad with a real-time progress bar and clickable partner link to unlock content."""
+    career_aff_url = os.getenv("AFFILIATE_CAREER_URL", "https://career.io")
+    resume_aff_url = os.getenv("AFFILIATE_RESUME_URL", "https://resume.io")
+    algo_aff_url = os.getenv("AFFILIATE_ALGO_URL", "https://algocamp.io")
+
     sponsor_ads = [
         {
-            "brand": "⚡ TopTier Tech Interview Prep",
-            "headline": "Land Your Dream Offer with 1-on-1 FAANG Mock Interviews",
-            "cta": "Accelerate your career with real hiring managers.",
-            "badge": "SPONSORED BY TIER1 COACHING",
+            "brand": "⚡ Career.io Career Accelerator",
+            "headline": "Professional Resume Optimization & Career Coaching",
+            "cta": "Beat ATS scanners and increase interview callbacks by 3.5x.",
+            "badge": "FEATURED CAREER PARTNER",
+            "url": career_aff_url,
+            "btn": "Claim Resume Review Offer",
         },
         {
-            "brand": "📄 AI Resume Architecture",
-            "headline": "Beat ATS Scanners & Boost Interview Invites by 3.5x",
-            "cta": "Tailored keyword optimization for tech leaders and software engineers.",
-            "badge": "SPONSORED PARTNER",
+            "brand": "📄 Resume.io AI Builder",
+            "headline": "Land Your Dream Tech Offer with Expert Resumes",
+            "cta": "Used by 15M+ candidates to land offers at Google, Meta, & startups.",
+            "badge": "SPONSORED BY RESUME.IO",
+            "url": resume_aff_url,
+            "btn": "Build Optimized Resume",
         },
         {
-            "brand": "💼 OfferNegotiator.ai",
+            "brand": "💼 OfferNegotiator AI",
             "headline": "Candidates Secure an Average +$18,400 Higher Base Salary",
-            "cta": "Use AI data models to negotiate equity, signing bonuses, and perks.",
-            "badge": "CAREER PARTNER",
+            "cta": "Use AI data models to negotiate compensation, equity, and bonuses.",
+            "badge": "CAREER SPONSOR",
+            "url": algo_aff_url,
+            "btn": "Explore Salary Calculator",
         },
     ]
     ad = sponsor_ads[abs(hash(str(target_id or target_type))) % len(sponsor_ads)]
@@ -413,8 +423,14 @@ def run_sponsor_ad_countdown(target_type: str, target_id=None):
                 📢 {ad['badge']} · UNLOCKING IN {sec}s...
             </div>
             <h3 style="margin:0.5rem 0;color:#fff;">{ad['brand']}</h3>
-            <p style="font-size:0.95rem;color:#ddd;margin:0.25rem 0 0.5rem 0;">{ad['headline']}</p>
-            <div style="font-size:0.8rem;color:#aaa;">{ad['cta']}</div>
+            <p style="font-size:0.95rem;color:#ddd;margin:0.25rem 0 0.4rem 0;">{ad['headline']}</p>
+            <div style="font-size:0.8rem;color:#aaa;margin-bottom:0.75rem;">{ad['cta']}</div>
+            <a href="{ad['url']}" target="_blank" rel="noopener noreferrer" 
+               style="display:inline-block;background:#ffd700;color:#000;font-weight:800;
+                      font-size:0.82rem;padding:6px 16px;border-radius:6px;text-decoration:none;">
+                👉 {ad['btn']} ↗
+            </a>
+            <div style="font-size:0.7rem;color:#888;margin-top:0.5rem;">Your free interview strategy unlocks automatically at 0s</div>
         </div>
         """, unsafe_allow_html=True)
         time.sleep(1)
