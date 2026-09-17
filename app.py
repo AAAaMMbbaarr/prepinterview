@@ -494,11 +494,11 @@ def render_pro_bar():
             st.markdown("""
             <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin:0.5rem 0 1rem 0;font-size:0.82rem;">
                 <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
-                    <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                    <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
                     <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
-                    <span style="color:#8b949e;">US AI Interview Software</span>
+                    <span style="color:#8b949e;">Standard AI Interview Apps</span>
                     <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
@@ -876,7 +876,7 @@ if st.session_state.step == 0:
     <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1.2rem 0;font-size:0.82rem;color:#8b949e;">
         <div>⚡ <strong>1 Full Mock Round Free</strong></div>
         <div>🛡️ <strong>Resume Defense & Trap Detection</strong></div>
-        <div>👑 <strong>₹49 Pro Pass vs ₹2,000 on Topmate</strong></div>
+        <div>👑 <strong>₹49 Pro Pass vs ₹2,000+ Human Mocks</strong></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1110,11 +1110,11 @@ elif st.session_state.step == 2:
                     </div>
                     <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.9rem;font-size:0.82rem;">
                         <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                            <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                            <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
                             <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                            <span style="color:#8b949e;">US AI Interview Software</span>
+                            <span style="color:#8b949e;">Standard AI Interview Apps</span>
                             <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
@@ -1450,11 +1450,11 @@ RULES:
             </div>
             <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.5rem;font-size:0.82rem;">
                 <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                    <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                    <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
                     <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                    <span style="color:#8b949e;">US AI Interview Software</span>
+                    <span style="color:#8b949e;">Standard AI Interview Apps</span>
                     <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
