@@ -1262,13 +1262,20 @@ elif st.session_state.step == 2:
                     f"- **Answer points:** {', '.join(q.get('answer_points', []))}\n"
                 )
         full_report = "\n".join(report_parts)
-        st.download_button(
-            "📥 Download Report",
-            data=full_report,
-            file_name="interview_report.md",
-            mime="text/markdown",
-            use_container_width=True,
-        )
+        if st.session_state.is_pro:
+            st.download_button(
+                "📥 Download Full Prep Dossier",
+                data=full_report,
+                file_name="interview_dossier.md",
+                mime="text/markdown",
+                use_container_width=True,
+            )
+        else:
+            st.link_button(
+                "👑 Download Full Prep Dossier (₹49)",
+                "https://rzp.io/rzp/vSIuH5yL",
+                use_container_width=True,
+            )
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1318,9 +1325,12 @@ RULES:
    💡 **Tip:** one suggestion (1 line)
 3. Then ask the NEXT question — a follow-up or next predicted question.
 4. Be specific to this candidate. No generic questions.
-5. Be professional, direct, realistic.
-6. After every 3 questions, give a running performance summary.
-7. Keep responses concise — this is a real interview.
+6. After the candidate answers Question 4, conclude the mock interview with a final evaluation:
+   **🎯 INTERVIEW COMPLETE: OVERALL SCORE: X/10**
+   🏆 **Top Strengths:** (2 bullet points on technical/communication highlights)
+   ⚠️ **Critical Gaps to Fix:** (2 bullet points on weak architecture defenses or missing specifics)
+   🚀 **Next Steps:** (1 encouraging actionable sentence)
+7. Keep responses concise and impactful — this is a real high-stakes interview.
 """
 
     # ── Call Screen Header ──
@@ -1376,21 +1386,27 @@ RULES:
         inject_tts(st.session_state.mock_messages[last_ai_idx]["content"])
         st.session_state["last_spoken"] = last_ai_idx
 
-    # ── Check Voice Interview Trial Limit ──
+    # ── Check Voice Interview Completion (1 Full 4-Question Round Free) ──
     candidate_turns = sum(1 for m in st.session_state.mock_messages if m["role"] == "candidate")
-    can_answer_voice = st.session_state.is_pro or st.session_state.unlocked_voice or (candidate_turns < 2)
+    can_answer_voice = st.session_state.is_pro or st.session_state.unlocked_voice or (candidate_turns < 4)
 
     if not can_answer_voice:
         st.markdown("""
-        <div class="lock-card">
-            <div style="font-size:1.1rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
-                🎯 2-Question Free Trial Complete!
+        <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.5rem;border-radius:12px;margin:1.2rem 0;">
+            <div style="font-size:1.3rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
+                🎉 Full 4-Round Mock Interview Complete!
             </div>
-            <p style="font-size:0.9rem;color:#ddd;margin-bottom:0.6rem;">
-                Great work! You've completed your initial interview evaluation rounds. The AI interviewer has identified key technical and leadership areas to drill deeper.
+            <p style="font-size:0.95rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
+                Outstanding effort! You've just completed a full realistic interview simulation with real-time AI voice evaluation and speech rubric scoring.
             </p>
-            <div style="font-size:0.85rem;color:#aaa;">
-                To continue with unlimited full-length interview rounds and in-depth rubric scoring:
+            <div style="background:#0e1117;padding:1rem;border-radius:8px;margin-bottom:1rem;border:1px solid #30363d;">
+                <div style="font-weight:700;color:#fff;font-size:0.9rem;margin-bottom:0.4rem;">👑 What PrepInterview Pro (₹49) Unlocks:</div>
+                <div style="font-size:0.85rem;color:#bbb;line-height:1.7;">
+                    ✅ <strong>Unlimited Mock Interview Rounds:</strong> Practice as many full rounds as you need with fresh questions.<br>
+                    ✅ <strong>All Attack Mode Defenses:</strong> Reveal every written defense playbook for your vulnerable resume claims.<br>
+                    ✅ <strong>Downloadable Prep Dossier:</strong> Get your complete personalized interview cheat-sheet (Markdown/PDF).<br>
+                    ✅ <strong>Zero Subscription Risk:</strong> Single ₹49 one-time pass. No auto-renew, no hidden charges.
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1402,7 +1418,7 @@ RULES:
             with col_vt2:
                 st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
-            st.link_button("👑 Unlock Unlimited Voice Interview Rounds (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+            st.link_button("👑 Unlock Unlimited Interviews & Complete Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
     else:
         # ── Input Section ──
         st.markdown("")
@@ -1517,8 +1533,11 @@ RULES:
             st.rerun()
     with col2:
         if st.button("🔄 Restart Interview", use_container_width=True):
-            st.html("<script>window.speechSynthesis.cancel();</script>")
-            st.session_state.mock_messages = []
-            st.session_state["last_spoken"] = -1
-            st.rerun()
+            if not st.session_state.is_pro and candidate_turns >= 4:
+                st.warning("💡 You've completed your 1 free full-length mock interview! Upgrade to Pro Pass (₹49) for unlimited practice rounds and retries.")
+            else:
+                st.html("<script>window.speechSynthesis.cancel();</script>")
+                st.session_state.mock_messages = []
+                st.session_state["last_spoken"] = -1
+                st.rerun()
 
