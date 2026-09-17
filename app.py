@@ -805,8 +805,23 @@ MODEL = st.session_state.selected_model
 if st.session_state.step == 0:
     render_steps(0)
 
-    st.markdown('<p class="hero-title">Predict what you\'ll be asked</p>', unsafe_allow_html=True)
-    st.markdown('<p class="hero-sub">Upload your resume and job description.<br>We\'ll predict the exact questions, concerns, and how to prepare.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-title">Predict What You\'ll Be Asked & Practice Live</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="hero-sub">'
+        'AI Spoken Mock Interviews & Resume Defense for <strong>Tech, Product, Business & Non-Tech Roles</strong>.<br>'
+        'Upload your resume & target job description to practice real-time spoken rounds with live rubric scoring.'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("""
+    <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem 0;font-size:0.75rem;">
+        <span style="background:#161b22;color:#58a6ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💻 Tech & Engineering</span>
+        <span style="background:#161b22;color:#7ee787;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🚀 Product & Analytics</span>
+        <span style="background:#161b22;color:#ffa657;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💼 Business & MBA</span>
+        <span style="background:#161b22;color:#d2a8ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">📈 Marketing & Sales</span>
+        <span style="background:#161b22;color:#ff7b72;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🤝 HR & Operations</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     # ── Resume Upload ──
     st.markdown('<p class="input-label">📄 Your Resume</p>', unsafe_allow_html=True)
@@ -835,7 +850,7 @@ if st.session_state.step == 0:
         jd_input = st.text_area(
             "Job Description",
             height=200,
-            placeholder="Paste the full job description here...",
+            placeholder="Paste any job description (Software Engineer, Product Manager, Business Analyst, Marketing, Sales, MBA, Operations, etc.)...",
             label_visibility="collapsed",
         )
     else:
