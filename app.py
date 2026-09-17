@@ -465,27 +465,27 @@ def render_pro_bar():
             '</div>',
             unsafe_allow_html=True,
         )
-        with st.expander("👑 Upgrade to Pro ($4.99 / ₹199) or Redeem Access Code", expanded=False):
+        with st.expander("👑 Upgrade to Pro (₹49 / $4.99) or Redeem Access Code", expanded=False):
             st.markdown(
-                "**Upgrade to Pro** to instantly unlock all 10 question answer strategies, "
+                "**Upgrade to Pro** for just **₹49** to instantly unlock all 10 question answer strategies, "
                 "full resume attack mode, unlimited voice mock interview rounds, and clean report downloads."
             )
             col_p1, col_p2, col_p3 = st.columns([1, 1, 1])
             stripe_url = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/test_interviewpro")
-            razorpay_url = os.getenv("RAZORPAY_PAYMENT_URL", "https://rzp.io/l/interviewpro")
+            razorpay_url = os.getenv("RAZORPAY_PAYMENT_URL", "https://rzp.io/rzp/vSIuH5yL")
 
             with col_p1:
                 st.link_button(
-                    "💳 Global (Stripe $4.99)",
-                    stripe_url,
-                    help="Pay with Credit/Debit Card, Apple Pay, Google Pay",
+                    "🇮🇳 Instant UPI (₹49)",
+                    razorpay_url,
+                    help="Pay ₹49 with UPI, GPay, PhonePe, Paytm, or Cards",
                     use_container_width=True,
                 )
             with col_p2:
                 st.link_button(
-                    "🇮🇳 India (UPI/Cards ₹199)",
-                    razorpay_url,
-                    help="Pay with UPI, GPay, Paytm, or Netbanking",
+                    "💳 Global Card ($4.99)",
+                    stripe_url,
+                    help="Pay with Credit/Debit Card, Apple Pay, Google Pay",
                     use_container_width=True,
                 )
             with col_p3:
@@ -1079,8 +1079,7 @@ elif st.session_state.step == 2:
                         if st.button("⚡ Unlock (10s Ad)", key=f"btn_ad_q_{i}", use_container_width=True):
                             run_sponsor_ad_countdown("question", i)
                     with col_u2:
-                        if st.button("👑 Get Pro Pass", key=f"btn_pro_q_{i}", use_container_width=True):
-                            st.info("💡 Enter passcode 'PRO2026' in the Pro bar above or upgrade via Stripe.")
+                        st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse questions. Try re-running the analysis.")
 
@@ -1168,8 +1167,7 @@ elif st.session_state.step == 2:
                             if st.button("⚡ Unlock All Defenses (10s Ad)", key="btn_ad_attacks", use_container_width=True):
                                 run_sponsor_ad_countdown("attacks")
                         with col_ak2:
-                            if st.button("👑 Get Pro Pass", key="btn_pro_attacks", use_container_width=True):
-                                st.info("💡 Enter passcode 'PRO2026' in the Pro bar above or upgrade via Stripe.")
+                            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse attack analysis. Try re-running.")
 
@@ -1390,8 +1388,7 @@ RULES:
             if st.button("⚡ Continue Free (10s Sponsor Ad)", key="btn_ad_voice", use_container_width=True):
                 run_sponsor_ad_countdown("voice")
         with col_vt2:
-            if st.button("👑 Unlock Unlimited with Pro", key="btn_pro_voice", use_container_width=True):
-                st.info("💡 Enter passcode 'PRO2026' in the Pro bar above or upgrade via Stripe.")
+            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
     else:
         # ── Input Section ──
         st.markdown("")
