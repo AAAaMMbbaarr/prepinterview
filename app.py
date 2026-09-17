@@ -485,16 +485,32 @@ def render_pro_bar():
             'background:#161616;border:1px solid #333;border-radius:10px;'
             'padding:0.65rem 1rem;margin-bottom:1.2rem;">'
             '<div><span style="font-size:0.8rem;color:#aaa;text-transform:uppercase;font-weight:700;">Plan: Free Tier</span> '
-            '<span style="color:#888;font-size:0.85rem;margin-left:6px;">(Questions 1 & 2 Free)</span></div>'
-            '<span style="font-size:0.8rem;color:#ffd700;font-weight:600;">👑 Upgrade below</span>'
+            '<span style="color:#888;font-size:0.85rem;margin-left:6px;">(Top 5 Questions & 1 Full Mock Free)</span></div>'
+            '<span style="font-size:0.8rem;color:#ffd700;font-weight:600;">👑 ₹49 Pro Pass</span>'
             '</div>',
             unsafe_allow_html=True,
         )
-        with st.expander("👑 Upgrade to Pro (₹49 Instant Access)", expanded=False):
-            st.markdown(
-                "**Upgrade to Pro** for just **₹49** to instantly unlock all 10 question answer strategies, "
-                "full resume attack mode, unlimited voice mock interview rounds, and clean report downloads."
-            )
+        with st.expander("👑 Why ₹49? See Value & Price Comparison", expanded=False):
+            st.markdown("""
+            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin:0.5rem 0 1rem 0;font-size:0.82rem;">
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
+                    <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                    <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
+                    <span style="color:#8b949e;">US AI Interview Software</span>
+                    <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
+                    <span style="color:#ffd700;">PrepInterview Pro Pass</span>
+                    <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
+                </div>
+            </div>
+            <div style="font-size:0.82rem;color:#bbb;line-height:1.5;margin-bottom:0.75rem;">
+                ☕ <strong>Less than a cup of coffee or a plate of momos.</strong><br>
+                💼 <strong>1,000x ROI:</strong> Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month. Prepare with confidence in private.
+            </div>
+            """, unsafe_allow_html=True)
             razorpay_url = os.getenv("RAZORPAY_PAYMENT_URL", "https://rzp.io/rzp/vSIuH5yL")
             st.link_button(
                 "⚡ Unlock Pro Pass (₹49 · Instant UPI & Cards)",
@@ -856,6 +872,14 @@ if st.session_state.step == 0:
                 st.session_state.step = 1
                 st.rerun()
 
+    st.markdown("""
+    <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1.2rem 0;font-size:0.82rem;color:#8b949e;">
+        <div>⚡ <strong>1 Full Mock Round Free</strong></div>
+        <div>🛡️ <strong>Resume Defense & Trap Detection</strong></div>
+        <div>👑 <strong>₹49 Pro Pass vs ₹2,000 on Topmate</strong></div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # ── Advanced Settings ──
     st.markdown("---")
     with st.expander("⚙️ Advanced Settings"):
@@ -1077,12 +1101,29 @@ elif st.session_state.step == 2:
             # Single, high-converting Pro banner for the remaining questions
             if not st.session_state.is_pro and len(questions) > 5:
                 st.markdown("""
-                <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.25rem;border-radius:10px;margin-top:1.5rem;">
-                    <div style="font-size:1.1rem;font-weight:700;color:#ffd700;margin-bottom:0.3rem;">
-                        👑 Unlock All 10+ Question Strategies & Deep Answer Playbooks
+                <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.4rem;border-radius:12px;margin-top:1.5rem;">
+                    <div style="font-size:1.15rem;font-weight:800;color:#ffd700;margin-bottom:0.35rem;">
+                        👑 Unlock All 10+ Question Strategies & Complete Pro Pass
                     </div>
-                    <div style="font-size:0.85rem;color:#c9d1d9;margin-bottom:0.75rem;">
+                    <div style="font-size:0.88rem;color:#e6edf3;line-height:1.5;margin-bottom:0.85rem;">
                         Get full architectural frameworks for all 10 questions, complete Attack Mode defense playbooks, downloadable Prep Dossier, and unlimited mock interviews.
+                    </div>
+                    <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.9rem;font-size:0.82rem;">
+                        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
+                            <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                            <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
+                            <span style="color:#8b949e;">US AI Interview Software</span>
+                            <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
+                            <span style="color:#ffd700;">PrepInterview Pro Pass</span>
+                            <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
+                        </div>
+                    </div>
+                    <div style="font-size:0.8rem;color:#8b949e;margin-bottom:0.5rem;">
+                        ☕ <i>Less than a cup of coffee. Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month.</i>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1406,6 +1447,23 @@ RULES:
                     ✅ <strong>Downloadable Prep Dossier:</strong> Get your complete personalized interview cheat-sheet (Markdown/PDF).<br>
                     ✅ <strong>Zero Subscription Risk:</strong> Single ₹49 one-time pass. No auto-renew, no hidden charges.
                 </div>
+            </div>
+            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.5rem;font-size:0.82rem;">
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
+                    <span style="color:#8b949e;">Topmate / Human Mentors</span>
+                    <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
+                    <span style="color:#8b949e;">US AI Interview Software</span>
+                    <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
+                    <span style="color:#ffd700;">PrepInterview Pro Pass</span>
+                    <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
+                </div>
+            </div>
+            <div style="font-size:0.8rem;color:#8b949e;margin-top:0.5rem;">
+                ☕ <i>Less than a cup of coffee. Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month.</i>
             </div>
         </div>
         """, unsafe_allow_html=True)
