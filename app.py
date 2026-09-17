@@ -383,6 +383,9 @@ def call_gemini_audio(audio_bytes: bytes, prompt: str) -> str:
     raise last_error
 
 
+ENABLE_SPONSOR_ADS = os.getenv("ENABLE_SPONSOR_ADS", "false").lower() == "true"
+
+
 def run_sponsor_ad_countdown(target_type: str, target_id=None):
     """Display a 10-second sponsor ad with a real-time progress bar and clickable partner link to unlock content."""
     career_aff_url = os.getenv("AFFILIATE_CAREER_URL", "https://career.io")
@@ -1076,12 +1079,15 @@ elif st.session_state.step == 2:
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    col_u1, col_u2 = st.columns(2)
-                    with col_u1:
-                        if st.button("⚡ Unlock (10s Ad)", key=f"btn_ad_q_{i}", use_container_width=True):
-                            run_sponsor_ad_countdown("question", i)
-                    with col_u2:
-                        st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                    if ENABLE_SPONSOR_ADS:
+                        col_u1, col_u2 = st.columns(2)
+                        with col_u1:
+                            if st.button("⚡ Unlock (10s Ad)", key=f"btn_ad_q_{i}", use_container_width=True):
+                                run_sponsor_ad_countdown("question", i)
+                        with col_u2:
+                            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                    else:
+                        st.link_button("👑 Unlock with Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse questions. Try re-running the analysis.")
 
@@ -1164,12 +1170,15 @@ elif st.session_state.step == 2:
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        col_ak1, col_ak2 = st.columns(2)
-                        with col_ak1:
-                            if st.button("⚡ Unlock All Defenses (10s Ad)", key="btn_ad_attacks", use_container_width=True):
-                                run_sponsor_ad_countdown("attacks")
-                        with col_ak2:
-                            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                        if ENABLE_SPONSOR_ADS:
+                            col_ak1, col_ak2 = st.columns(2)
+                            with col_ak1:
+                                if st.button("⚡ Unlock All Defenses (10s Ad)", key="btn_ad_attacks", use_container_width=True):
+                                    run_sponsor_ad_countdown("attacks")
+                            with col_ak2:
+                                st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                        else:
+                            st.link_button("👑 Unlock All Defense Strategies (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse attack analysis. Try re-running.")
 
@@ -1385,12 +1394,15 @@ RULES:
             </div>
         </div>
         """, unsafe_allow_html=True)
-        col_vt1, col_vt2 = st.columns(2)
-        with col_vt1:
-            if st.button("⚡ Continue Free (10s Sponsor Ad)", key="btn_ad_voice", use_container_width=True):
-                run_sponsor_ad_countdown("voice")
-        with col_vt2:
-            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+        if ENABLE_SPONSOR_ADS:
+            col_vt1, col_vt2 = st.columns(2)
+            with col_vt1:
+                if st.button("⚡ Continue Free (10s Sponsor Ad)", key="btn_ad_voice", use_container_width=True):
+                    run_sponsor_ad_countdown("voice")
+            with col_vt2:
+                st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+        else:
+            st.link_button("👑 Unlock Unlimited Voice Interview Rounds (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
     else:
         # ── Input Section ──
         st.markdown("")
