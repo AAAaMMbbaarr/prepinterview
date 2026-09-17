@@ -1059,35 +1059,34 @@ elif st.session_state.step == 2:
                     unsafe_allow_html=True,
                 )
 
-                is_q_unlocked = st.session_state.is_pro or (i < 2) or (i in st.session_state.unlocked_questions)
+                # Top 5 questions are 100% UNLOCKED with full answer strategies
+                is_q_unlocked = st.session_state.is_pro or (i < 5) or (i in st.session_state.unlocked_questions)
                 if is_q_unlocked:
                     with st.expander("💡 How to answer", expanded=False):
                         for point in q.get("answer_points", []):
                             st.markdown(f"- {point}")
                 else:
-                    st.markdown("""
-                    <div class="lock-card">
-                        <div style="font-size:0.85rem;font-weight:700;color:#ff6b6b;margin-bottom:0.3rem;">
-                            🔒 Answer Strategy Locked
-                        </div>
-                        <div class="blur-preview">
-                            • Structure response highlighting direct ROI and quantifiable efficiency gains<br>
-                            • Preemptively clarify technical architectural decisions and edge-case handling
-                        </div>
-                        <div style="font-size:0.8rem;color:#aaa;margin-top:0.4rem;">
-                            Unlock this answer strategy:
-                        </div>
+                    with st.expander("🔒 How to answer (👑 Pro)", expanded=False):
+                        st.markdown(
+                            "<div style='font-size:0.85rem;color:#8b949e;padding:6px 0;'>"
+                            "• <i>Detailed architectural trade-offs, answer frameworks, and trap warnings for this question are unlocked with Pro Pass.</i>"
+                            "</div>",
+                            unsafe_allow_html=True,
+                        )
+
+            # Single, high-converting Pro banner for the remaining questions
+            if not st.session_state.is_pro and len(questions) > 5:
+                st.markdown("""
+                <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.25rem;border-radius:10px;margin-top:1.5rem;">
+                    <div style="font-size:1.1rem;font-weight:700;color:#ffd700;margin-bottom:0.3rem;">
+                        👑 Unlock All 10+ Question Strategies & Deep Answer Playbooks
                     </div>
-                    """, unsafe_allow_html=True)
-                    if ENABLE_SPONSOR_ADS:
-                        col_u1, col_u2 = st.columns(2)
-                        with col_u1:
-                            if st.button("⚡ Unlock (10s Ad)", key=f"btn_ad_q_{i}", use_container_width=True):
-                                run_sponsor_ad_countdown("question", i)
-                        with col_u2:
-                            st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-                    else:
-                        st.link_button("👑 Unlock with Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                    <div style="font-size:0.85rem;color:#c9d1d9;margin-bottom:0.75rem;">
+                        Get full architectural frameworks for all 10 questions, complete Attack Mode defense playbooks, downloadable Prep Dossier, and unlimited mock interviews.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.link_button("👑 Unlock PrepInterview Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse questions. Try re-running the analysis.")
 
