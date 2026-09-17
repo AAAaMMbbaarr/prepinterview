@@ -56,10 +56,16 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Hide Streamlit defaults */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Hide Streamlit branding, footer, deploy button, and viewer badge */
+    #MainMenu {visibility: hidden; display: none;}
+    footer {visibility: hidden; display: none !important;}
+    header {visibility: hidden; display: none !important;}
+    div[data-testid="stStatusWidget"] {visibility: hidden; display: none;}
+    .stDeployButton {display: none !important;}
+    [data-testid="stToolbar"] {visibility: hidden; display: none !important;}
+    div[class*="viewerBadge"] {display: none !important;}
+    div[class*="ProfileBadge"] {display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
 
     .block-container {
         padding-top: 2rem;
