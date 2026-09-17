@@ -50,6 +50,12 @@ st.set_page_config(
     layout="centered",
 )
 
+# Partner Verification Meta Tag (Impact / Career.io)
+st.html("""
+<meta name="impact-site-verification" value="84300289-b9d8-4976-a4a3-6eaea6b03315">
+<div style="display:none;" id="impact-site-verification">84300289-b9d8-4976-a4a3-6eaea6b03315</div>
+""")
+
 # ──────────────────────────────────────────────────────────────
 # CUSTOM CSS
 # ──────────────────────────────────────────────────────────────
