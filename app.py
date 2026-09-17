@@ -465,39 +465,19 @@ def render_pro_bar():
             '</div>',
             unsafe_allow_html=True,
         )
-        with st.expander("👑 Upgrade to Pro (₹49 / $4.99) or Redeem Access Code", expanded=False):
+        with st.expander("👑 Upgrade to Pro (₹49 Instant Access)", expanded=False):
             st.markdown(
                 "**Upgrade to Pro** for just **₹49** to instantly unlock all 10 question answer strategies, "
                 "full resume attack mode, unlimited voice mock interview rounds, and clean report downloads."
             )
-            col_p1, col_p2, col_p3 = st.columns([1, 1, 1])
-            stripe_url = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/test_interviewpro")
             razorpay_url = os.getenv("RAZORPAY_PAYMENT_URL", "https://rzp.io/rzp/vSIuH5yL")
-
-            with col_p1:
-                st.link_button(
-                    "🇮🇳 Instant UPI (₹49)",
-                    razorpay_url,
-                    help="Pay ₹49 with UPI, GPay, PhonePe, Paytm, or Cards",
-                    use_container_width=True,
-                )
-            with col_p2:
-                st.link_button(
-                    "💳 Global Card ($4.99)",
-                    stripe_url,
-                    help="Pay with Credit/Debit Card, Apple Pay, Google Pay",
-                    use_container_width=True,
-                )
-            with col_p3:
-                code_input = st.text_input("Access Passcode", placeholder="Enter PRO2026", label_visibility="collapsed", key="pro_code_input")
-                if st.button("Unlock Pro 🚀", use_container_width=True, key="btn_unlock_code"):
-                    if code_input.strip().upper() in ["PRO2026", "VIP", "INTERVIEWPRO", "PASS"]:
-                        st.session_state.is_pro = True
-                        st.success("🎉 Welcome to Pro! All features unlocked.")
-                        time.sleep(0.5)
-                        st.rerun()
-                    else:
-                        st.error("Invalid code. Use 'PRO2026' for instant access.")
+            st.link_button(
+                "⚡ Unlock Pro Pass (₹49 · Instant UPI & Cards)",
+                razorpay_url,
+                type="primary",
+                help="Instant unlock with UPI, GPay, PhonePe, Paytm, or Cards",
+                use_container_width=True,
+            )
 
 
 
