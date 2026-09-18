@@ -100,11 +100,16 @@
   function extractCandidateLocation(text) {
     if (!text) return { city: 'Not specified', isRemote: false, label: 'Not specified' };
 
-    const head = text.slice(0, 1000);
+    // Focus on candidate header block before education or work history sections
+    const splitIndex = text.search(/\b(education|experience|work history|projects|summary)\b/i);
+    const headerBlock = (splitIndex > 50 ? text.slice(0, splitIndex) : text.slice(0, 450));
+    // Strip university/institute prefixes so "IIT Bombay" doesn't falsely mark location as Mumbai
+    const cleanHeader = headerBlock.replace(/\b(iit|iim|nit|university|institute|college)\s+[a-z]+/gi, '');
+
     const cityMap = [
       { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru', country: 'India' },
-      { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai', country: 'India' },
       { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida)\b/i, name: 'Delhi NCR', country: 'India' },
+      { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai', country: 'India' },
       { regex: /\b(hyderabad)\b/i, name: 'Hyderabad', country: 'India' },
       { regex: /\b(pune)\b/i, name: 'Pune', country: 'India' },
       { regex: /\b(chennai|madras)\b/i, name: 'Chennai', country: 'India' },
@@ -121,17 +126,20 @@
       { regex: /\b(berlin)\b/i, name: 'Berlin', country: 'Germany' }
     ];
 
+    let earliestIndex = 999999;
     let foundCity = null;
     let foundCountry = null;
+
     for (const c of cityMap) {
-      if (c.regex.test(head)) {
+      const match = cleanHeader.match(c.regex);
+      if (match && match.index !== undefined && match.index < earliestIndex) {
+        earliestIndex = match.index;
         foundCity = c.name;
         foundCountry = c.country;
-        break;
       }
     }
 
-    const isRemote = /\b(remote|work from anywhere|open to remote)\b/i.test(head);
+    const isRemote = /\b(remote|work from anywhere|open to remote)\b/i.test(cleanHeader);
     let label = foundCity ? `${foundCity}, ${foundCountry}` : (isRemote ? 'Remote / Anywhere' : 'Not specified');
 
     return {
@@ -219,18 +227,24 @@
     // 1. Experience Required
     let minExp = null;
     let maxExp = null;
-    const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+)(?:\s*(?:-|to)\s*(\d+))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
+    const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
     const expMatch = rawJd.match(expRegex);
 
     if (expMatch && expMatch[1]) {
-      minExp = parseInt(expMatch[1], 10);
+      minExp = parseFloat(expMatch[1]);
       if (expMatch[2]) {
-        maxExp = parseInt(expMatch[2], 10);
+        maxExp = parseFloat(expMatch[2]);
       }
     } else {
-      const plusMatch = rawJd.match(/(\d+)\+\s*(?:years?|yrs?)/i);
+      const plusMatch = rawJd.match(/(\d+(?:\.\d+)?)\+\s*(?:years?|yrs?)/i);
       if (plusMatch && plusMatch[1]) {
-        minExp = parseInt(plusMatch[1], 10);
+        minExp = parseFloat(plusMatch[1]);
+      } else {
+        const rangeMatch = rawJd.match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i);
+        if (rangeMatch && rangeMatch[1]) {
+          minExp = parseFloat(rangeMatch[1]);
+          maxExp = parseFloat(rangeMatch[2]);
+        }
       }
     }
 
@@ -270,7 +284,7 @@
     }
 
     // 3. Education / Tier requirement in JD
-    const tierPreferred = /\b(tier\s*1|tier-1|premier institute|top engineering college|top-tier|ivy league|top tier)\b/i.test(rawJd);
+    const tierPreferred = /\b(tier\s*1|tier-1|premier institute|top engineering college|top tier|ivy league|iits?|iims?|bits pilani|nits?)\b/i.test(rawJd);
     let degreeReq = 'Bachelor\'s';
     if (/\b(mba)\b/i.test(rawJd)) {
       degreeReq = 'MBA';
@@ -290,7 +304,7 @@
     };
   }
 
-  // --- MULTI-FACTOR EVALUATION ---
+  // --- MULTI-FACTOR EVALUATION WITH DISQUALIFIER KNOCKOUTS ---
   function evaluateMultiFactor(resumeText, jdText, locationMeta) {
     if (!resumeText || resumeText.trim().length < 20) {
       return {
@@ -301,11 +315,12 @@
         color: '#8b949e',
         matchedSkills: [],
         missingSkills: [],
+        disqualifiers: [],
         message: 'Click extension icon to save your resume and unlock instant Skill Match.'
       };
     }
 
-    // 1. Skills
+    // 1. Core Skill Score (0 to 100)
     const jdSkills = extractSkills(jdText);
     const resumeSkills = extractSkills(resumeText);
     const matched = [];
@@ -319,94 +334,114 @@
       }
     }
 
-    // 1. Skill overlap (core base: 30-75 points)
-    let baseScore = 50;
+    let skillScore = 50;
     if (jdSkills.length > 0) {
-      const skillRatio = matched.length / jdSkills.length;
-      baseScore = Math.round(skillRatio * 55 + 25);
+      skillScore = Math.round((matched.length / jdSkills.length) * 100);
     } else {
       const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
       const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
       let common = 0;
       jdTokens.forEach(t => { if (resTokens.has(t)) common++; });
       const ratio = common / Math.max(1, jdTokens.size);
-      baseScore = Math.min(65, Math.max(38, Math.round(ratio * 45 + 25)));
+      skillScore = Math.min(88, Math.max(35, Math.round(ratio * 90 + 20)));
     }
 
-    // 2. Experience alignment (+4 to +8 points)
     const candExp = extractExperience(resumeText);
     const jdReq = extractJdRequirements(jdText, locationMeta);
-    let expBonus = 5;
-    if (jdReq.minExp !== null) {
-      if (candExp.years >= jdReq.minExp) {
-        expBonus = 8;
-      } else if (candExp.years >= jdReq.minExp - 1) {
-        expBonus = 5;
-      } else {
-        expBonus = 2;
-      }
-    } else if (candExp.years >= 2) {
-      expBonus = 6;
-    }
-
-    // 3. Location & Mode alignment (+4 to +8 points)
-    const candLoc = extractCandidateLocation(resumeText);
-    let locBonus = 5;
-    if (jdReq.workMode === 'Remote') {
-      locBonus = 8;
-    } else if (jdReq.jobCity && candLoc.city && candLoc.city !== 'Not specified') {
-      if (candLoc.city.toLowerCase() === jdReq.jobCity.toLowerCase()) {
-        locBonus = 8;
-      } else {
-        locBonus = 3;
-      }
-    } else {
-      locBonus = 5; // neutral benefit of doubt
-    }
-
-    // 4. Education & Pedigree (+4 to +7 points)
     const candEdu = extractCandidateEducation(resumeText);
-    let eduBonus = 4;
-    if (candEdu.isTier1) {
-      eduBonus = 7;
-    } else if (candEdu.degree && candEdu.degree !== 'Graduate') {
-      eduBonus = 5;
+    const candLoc = extractCandidateLocation(resumeText);
+
+    let penalties = 0;
+    let bonuses = 0;
+    const disqualifiers = [];
+
+    // --- FACTOR A: WORK EXPERIENCE (Only active if specified in JD) ---
+    if (jdReq.minExp !== null && jdReq.minExp > 0) {
+      if (candExp.years < jdReq.minExp) {
+        const gap = Math.round((jdReq.minExp - candExp.years) * 10) / 10;
+        if (gap >= 2) {
+          penalties += 35;
+          disqualifiers.push(`Experience: ~${candExp.years || 0} yrs vs. ${jdReq.minExp}+ yrs required (-${gap} yrs gap)`);
+        } else if (gap >= 1) {
+          penalties += 22;
+          disqualifiers.push(`Experience: ~${candExp.years || 0} yrs vs. ${jdReq.minExp}+ yrs required`);
+        } else {
+          penalties += 12;
+          disqualifiers.push(`Experience: ~${candExp.years} yrs vs. ${jdReq.minExp}+ yrs required`);
+        }
+      } else {
+        bonuses += 4; // Meets or exceeds stated experience requirement
+      }
     }
 
-    // Integrated total match percentage
-    let totalScore = baseScore + expBonus + locBonus + eduBonus;
-    totalScore = Math.max(35, Math.min(96, totalScore));
+    // --- FACTOR B: COLLEGE TIER & PEDIGREE (Only active if specified in JD) ---
+    if (jdReq.tierPreferred) {
+      if (!candEdu.isTier1) {
+        penalties += 30;
+        disqualifiers.push(`Pedigree: JD specifically requires Tier-1 / Premier institute (IIT/IIM/BITS/NIT)`);
+      } else {
+        bonuses += 6; // Verified Tier-1 pedigree match
+      }
+    }
 
+    // Degree level check (e.g. MBA required)
+    if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
+      penalties += 15;
+      disqualifiers.push(`Degree: Role specifically requests MBA (${candEdu.degree || 'Degree'} detected)`);
+    } else if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
+      penalties += 25;
+      disqualifiers.push(`Degree: Role specifically requests PhD (${candEdu.degree || 'Degree'} detected)`);
+    }
+
+    // --- FACTOR C: LOCATION & WORK MODE (Only active if On-site in a specific city) ---
+    if (jdReq.workMode === 'On-site' && jdReq.jobCity) {
+      if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
+        if (candLoc.city.toLowerCase() !== jdReq.jobCity.toLowerCase()) {
+          penalties += 18;
+          disqualifiers.push(`Location: On-site in ${jdReq.jobCity} (Candidate located in ${candLoc.city})`);
+        } else {
+          bonuses += 4; // Local candidate for on-site role
+        }
+      }
+    }
+
+    // If NOTHING was specified in JD (no minExp, no tierPreferred, flexible location):
+    // penalties = 0, bonuses = 0, so score is 100% evaluated on skills!
+    let finalScore = Math.round(skillScore - penalties + bonuses);
+    finalScore = Math.max(20, Math.min(98, finalScore));
+
+    // Determine honest recruiting tier
     let tier = 'Competitive Match';
     let badge = '🟡';
     let color = '#d29922';
 
-    if (totalScore >= 80) {
+    if (disqualifiers.length >= 2 || finalScore < 45) {
+      tier = 'Reach Role (Critical Gaps)';
+      badge = '🔴';
+      color = '#f85149';
+    } else if (disqualifiers.length === 1 || (finalScore >= 45 && finalScore < 72)) {
+      tier = 'Moderate Match (Gaps to Defend)';
+      badge = '🟡';
+      color = '#d29922';
+    } else if (finalScore >= 82) {
       tier = 'Strong Match';
       badge = '🟢';
       color = '#3fb950';
-    } else if (totalScore >= 64) {
+    } else {
       tier = 'Good Match';
       badge = '🟢';
       color = '#2ea043';
-    } else if (totalScore >= 48) {
-      tier = 'Moderate Match';
-      badge = '🟡';
-      color = '#d29922';
-    } else {
-      tier = 'Growth Role';
-      badge = '🔴';
-      color = '#f85149';
     }
 
     return {
       status: 'ready',
-      score: totalScore,
+      score: finalScore,
       tier: tier,
       badge: badge,
       color: color,
       matchedSkills: matched.slice(0, 6),
       missingSkills: missing.slice(0, 5),
+      disqualifiers: disqualifiers,
       totalJdSkills: jdSkills.length
     };
   }

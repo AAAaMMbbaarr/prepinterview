@@ -357,6 +357,15 @@
         ? match.missingSkills.map(s => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${s}</span>`).join('')
         : '<span style="font-size:11px;color:#3fb950;">No critical gaps detected</span>';
 
+      const disqPills = (match.disqualifiers && match.disqualifiers.length > 0)
+        ? `
+          <div class="prepinterview-label" style="color:#ff7b72; margin-top:8px;">⚠️ Mandatory Criteria Deficit (${match.disqualifiers.length})</div>
+          <div class="prepinterview-pills-row">
+            ${match.disqualifiers.map(d => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${d}</span>`).join('')}
+          </div>
+        `
+        : '';
+
       card.innerHTML = `
         <div class="prepinterview-header" id="prepinterview-toggle-header">
           <div class="prepinterview-badge-row">
@@ -374,6 +383,8 @@
             <span style="color:#58a6ff; font-weight:600;">✨ Skills · Experience · Location · Education</span>
           </div>
           
+          ${disqPills}
+
           <div class="prepinterview-label" style="margin-top:6px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
           <div class="prepinterview-pills-row">
             ${matchPills}
