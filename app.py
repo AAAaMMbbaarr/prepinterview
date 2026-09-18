@@ -298,6 +298,58 @@ st.markdown("""
         display: inline-block;
         letter-spacing: 0.5px;
     }
+    /* Candidate Debrief Styles */
+    .debrief-card {
+        background: #0e1218;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.2rem 0;
+    }
+    .debrief-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        border-bottom: 1px solid #21262d;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+    .readiness-badge {
+        font-size: 2rem;
+        font-weight: 900;
+        padding: 6px 18px;
+        border-radius: 10px;
+        display: inline-block;
+        letter-spacing: -0.5px;
+    }
+    .readiness-badge.high { background: #23863622; border: 1px solid #238636; color: #3fb950; }
+    .readiness-badge.med { background: #d2992222; border: 1px solid #d29922; color: #e3b341; }
+    .readiness-badge.low { background: #f8514922; border: 1px solid #f85149; color: #ff7b72; }
+    .highlight-card {
+        border-radius: 10px;
+        padding: 1.1rem;
+        margin: 0.8rem 0;
+    }
+    .highlight-card.strong {
+        background: rgba(35, 134, 54, 0.08);
+        border: 1px solid rgba(35, 134, 54, 0.4);
+    }
+    .highlight-card.weak {
+        background: rgba(248, 81, 73, 0.08);
+        border: 1px solid rgba(248, 81, 73, 0.4);
+    }
+    .defense-script-box {
+        background: #161b22;
+        border-left: 3px solid #58a6ff;
+        padding: 0.8rem 1rem;
+        border-radius: 0 8px 8px 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 0.9rem;
+        color: #c9d1d9;
+        margin-top: 0.6rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -722,6 +774,123 @@ Chain 1: A resume achievement. Chain 2: A JD gap. Chain 3: Behavioral.
 """
 
 
+def build_debrief_prompt(resume_text: str, jd_text: str, messages: list, is_single_round: bool = False) -> str:
+    transcript_text = ""
+    for idx, msg in enumerate(messages):
+        role_label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
+        transcript_text += f"\n[{role_label} Turn {idx+1}]:\n{msg['content']}\n"
+
+    scope_instructions = (
+        "This is an evaluation of Round 1 (High-Stakes Resume Claim Defense Trial)."
+        if is_single_round else
+        "This is a complete post-interview diagnostic debrief across all interview rounds."
+    )
+
+    return f"""You are an elite Senior Executive Hiring Bar Raiser and Principal Interview Evaluator.
+Conduct an adversarial, deeply realistic, and grounded post-interview candidate debrief.
+
+{scope_instructions}
+
+CANDIDATE'S RESUME (SOURCE OF TRUTH):
+{resume_text}
+
+TARGET JOB DESCRIPTION:
+{jd_text}
+
+COMPLETE WORD-FOR-WORD INTERVIEW TRANSCRIPT:
+{transcript_text}
+
+CRITICAL GROUNDING REQUIREMENTS:
+1. Under "weakest_answer", "strongest_answer", and "exposed_claims", you MUST cite EXACT phrases, metrics, or technologies spoken by the candidate in the transcript or written in their resume.
+2. DO NOT hallucinate or invent resume claims or candidate answers that were not present.
+3. Rigorously evaluate across 3 diagnostic dimensions (0-100 each):
+   - Quantitative Rigor & Baselines: Did the candidate provide baselines (e.g., from X to Y), specify sample sizes/scale, and isolate their individual contribution vs the broader team?
+   - STAR Structure & Brevity: Did they keep context/situation under 20% of speaking time and spend >70% on concrete technical/strategic actions and measurable business results?
+   - Resume Pressure Defense: Did they defend challenged claims with confidence and technical depth, or did they evade, waffle, or concede under skepticism?
+4. Pinpoint the SINGLE most vulnerable answer where their defense cracked, and provide a concrete "recommended_rephrase" following the STAR framework.
+
+Return ONLY valid JSON with this exact structure:
+{{
+  "overall_readiness_score": 76,
+  "verdict": "Borderline — Vulnerable to Skeptical Interviewers",
+  "executive_summary": "1-2 sentence executive assessment of candidate's interview readiness for this target JD",
+  "scores": {{
+    "quantitative_rigor": 62,
+    "star_structure": 78,
+    "pressure_defense": 68
+  }},
+  "strongest_answer": {{
+    "question": "Exact question or claim challenged",
+    "quote_or_summary": "Verbatim quote or exact summary of candidate's best response",
+    "why_it_worked": "Why a senior hiring committee would score this high"
+  }},
+  "weakest_answer": {{
+    "question": "Exact question where defense broke down",
+    "claim_tested": "The specific resume bullet or metric that was challenged",
+    "quote_or_gap": "Exact phrase where candidate was hand-wavy, lacked baseline, or stumbled",
+    "why_it_failed": "Why a skeptical hiring manager would doubt this claim or probe deeper",
+    "recommended_rephrase": "Concrete, 2-3 sentence STAR model answer that properly defends the metric with baseline and ownership"
+  }},
+  "exposed_resume_claims": [
+    {{
+      "bullet_claim": "Verbatim claim from resume that needs tighter defense",
+      "risk_note": "What is risky about this claim in future interviews"
+    }}
+  ],
+  "actionable_corrections": [
+    "Specific correction 1",
+    "Specific correction 2"
+  ]
+}}
+"""
+
+
+def generate_candidate_debrief(resume_text: str, jd_text: str, messages: list, is_single_round: bool = False) -> dict:
+    """Generate structured candidate debrief with fallback resilience."""
+    prompt = build_debrief_prompt(resume_text, jd_text, messages, is_single_round)
+    try:
+        raw_json = call_gemini(prompt, use_json=True)
+        data = parse_json_safe(raw_json)
+        if data and "overall_readiness_score" in data:
+            return data
+    except Exception:
+        pass
+    
+    # Fallback default structure
+    return {
+        "overall_readiness_score": 70,
+        "verdict": "Completed Evaluation",
+        "executive_summary": "Candidate defended core resume claims under direct questioning with room for quantitative sharpening.",
+        "scores": {
+            "quantitative_rigor": 65,
+            "star_structure": 75,
+            "pressure_defense": 70
+        },
+        "strongest_answer": {
+            "question": "Opening Resume Claim",
+            "quote_or_summary": "Outlined relevant background and past project experience.",
+            "why_it_worked": "Showed direct alignment with key requirements of the target role."
+        },
+        "weakest_answer": {
+            "question": "Claim Verification Probe",
+            "claim_tested": "Key project metric from resume",
+            "quote_or_gap": "Attribution and initial baselines were not fully isolated.",
+            "why_it_failed": "Skeptical interviewers probe baseline numbers and individual contribution depth.",
+            "recommended_rephrase": "Anchor the response with a clear starting baseline, explain the exact technical or product decision you owned, and conclude with verified percentage and dollar impact."
+        },
+        "exposed_resume_claims": [
+            {
+                "bullet_claim": "Primary technical or business metric",
+                "risk_note": "Ensure absolute baseline and sample sizes are memorized before human rounds."
+            }
+        ],
+        "actionable_corrections": [
+            "Quantify starting baselines before stating percentage lifts.",
+            "Isolate your personal ownership ('I architected') vs team effort ('we helped')."
+        ]
+    }
+
+
 # ──────────────────────────────────────────────────────────────
 # STEP INDICATOR
 # ──────────────────────────────────────────────────────────────
@@ -732,6 +901,148 @@ def render_steps(current: int):
         active = "active" if i <= current else ""
         dots += f'<span class="step-dot {active}"></span>'
     st.markdown(f'<div class="step-bar">{dots}</div>', unsafe_allow_html=True)
+
+
+def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
+    score = debrief.get("overall_readiness_score", 70)
+    verdict = debrief.get("verdict", "Evaluation Complete")
+    summary = debrief.get("executive_summary", "")
+    scores = debrief.get("scores", {})
+    q_score = scores.get("quantitative_rigor", 60)
+    s_score = scores.get("star_structure", 70)
+    p_score = scores.get("pressure_defense", 65)
+
+    badge_class = "high" if score >= 80 else ("med" if score >= 60 else "low")
+    title_text = "🎯 Round 1 High-Stakes Defense Diagnostic" if is_single_round else "🎯 Complete Candidate Debrief & Readiness Diagnostic"
+
+    st.markdown(f"""
+    <div class="debrief-card">
+        <div class="debrief-header">
+            <div>
+                <div style="font-size:1.25rem;font-weight:800;color:#fff;">{title_text}</div>
+                <div style="font-size:0.9rem;color:#8b949e;margin-top:2px;">Hiring Verdict: <strong style="color:#fff;">{verdict}</strong></div>
+            </div>
+            <div>
+                <span class="readiness-badge {badge_class}">{score}/100</span>
+            </div>
+        </div>
+        <p style="font-size:0.95rem;color:#c9d1d9;line-height:1.6;margin-bottom:1.2rem;">
+            {summary}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 3 Diagnostic Sub-Scores
+    col_s1, col_s2, col_s3 = st.columns(3)
+    with col_s1:
+        st.metric("📊 Quantitative Rigor", f"{q_score}%")
+        st.progress(max(0.0, min(1.0, q_score / 100)))
+    with col_s2:
+        st.metric("🎯 STAR Brevity", f"{s_score}%")
+        st.progress(max(0.0, min(1.0, s_score / 100)))
+    with col_s3:
+        st.metric("🛡️ Pressure Defense", f"{p_score}%")
+        st.progress(max(0.0, min(1.0, p_score / 100)))
+
+    # Strongest Answer Card
+    strongest = debrief.get("strongest_answer", {})
+    if strongest and strongest.get("quote_or_summary"):
+        st.markdown(f"""
+        <div class="highlight-card strong">
+            <div style="font-size:0.8rem;font-weight:700;color:#3fb950;text-transform:uppercase;letter-spacing:0.5px;">
+                🏆 Standout Defense ({strongest.get('question', 'Key Claim')})
+            </div>
+            <div style="font-size:0.9rem;color:#e6edf3;margin:0.4rem 0;">
+                <em>"{strongest.get('quote_or_summary', '')}"</em>
+            </div>
+            <div style="font-size:0.85rem;color:#8b949e;">
+                ✅ <strong>Why this scored high:</strong> {strongest.get('why_it_worked', '')}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Weakest Answer Card with Recommended Fix
+    weakest = debrief.get("weakest_answer", {})
+    if weakest and weakest.get("quote_or_gap"):
+        st.markdown(f"""
+        <div class="highlight-card weak">
+            <div style="font-size:0.8rem;font-weight:700;color:#ff7b72;text-transform:uppercase;letter-spacing:0.5px;">
+                ⚠️ Most Vulnerable Defense ({weakest.get('claim_tested', 'Targeted Claim')})
+            </div>
+            <div style="font-size:0.9rem;color:#e6edf3;margin:0.4rem 0;">
+                <em>"{weakest.get('quote_or_gap', '')}"</em>
+            </div>
+            <div style="font-size:0.85rem;color:#ff7b72;margin-bottom:0.4rem;">
+                ❌ <strong>Where defense cracked:</strong> {weakest.get('why_it_failed', '')}
+            </div>
+            <div class="defense-script-box">
+                <div style="font-size:0.75rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                    💡 Recommended High-Impact STAR Defense Formula:
+                </div>
+                {weakest.get('recommended_rephrase', '')}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Exposed claims
+    exposed = debrief.get("exposed_resume_claims", [])
+    if exposed:
+        with st.expander("🔍 Exposed Resume Claims Flagged for Real Interviews", expanded=False):
+            for item in exposed:
+                st.markdown(f"- **Claim:** `{item.get('bullet_claim', '')}`\n  ⚠️ *Risk:* {item.get('risk_note', '')}")
+
+    # Actionable corrections
+    corrections = debrief.get("actionable_corrections", [])
+    if corrections:
+        with st.expander("🛠️ Key Tactical Corrections Before Live Interview", expanded=False):
+            for c in corrections:
+                st.markdown(f"• {c}")
+
+    # The Re-drill Action & Next Steps
+    st.markdown("---")
+    col_act1, col_act2 = st.columns([1, 1])
+    with col_act1:
+        if st.button("🔁 Practice Defending Your Weakest Claim Again", type="primary", use_container_width=True):
+            st.session_state.active_redrill = debrief.get("weakest_answer")
+            st.session_state.mock_messages = []
+            st.session_state.mock_debrief = None
+            st.session_state.interview_concluded = False
+            st.session_state.clarification_used = False
+            st.session_state["last_spoken"] = -1
+            st.rerun()
+    with col_act2:
+        if is_single_round and not st.session_state.is_pro:
+            st.link_button("👑 Unlock Full 4-Round Interview & Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+        else:
+            if st.button("🔄 Start Fresh 4-Round Interview", use_container_width=True):
+                st.session_state.active_redrill = None
+                st.session_state.mock_messages = []
+                st.session_state.mock_debrief = None
+                st.session_state.interview_concluded = False
+                st.session_state.clarification_used = False
+                st.session_state["last_spoken"] = -1
+                st.rerun()
+
+    # Free Tier Upgrade Card below Round 1 Diagnostic
+    if is_single_round and not st.session_state.is_pro:
+        st.markdown("""
+        <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.4rem;border-radius:12px;margin:1.5rem 0;">
+            <div style="font-size:1.15rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
+                👑 Ready for the Full 4-Round Pressure Simulation?
+            </div>
+            <p style="font-size:0.9rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
+                You just defended your #1 claim. The full 4-round simulation tests your remaining claims, technical architecture, and cross-functional leadership scenarios with complete adaptive debriefs.
+            </p>
+            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.75rem 1rem;font-size:0.83rem;color:#ccc;margin-bottom:0.8rem;text-align:left;">
+                ✅ <strong>Full 4-Round Adaptive Mock:</strong> Continuous pressure questioning on all flagged claims.<br>
+                ✅ <strong>Complete Candidate Debrief:</strong> Comprehensive rubric scorecards across all rounds.<br>
+                ✅ <strong>Downloadable Prep Dossier:</strong> Complete personalized interview cheat-sheet.<br>
+                ✅ <strong>One-Time Pass:</strong> Just ₹49. No recurring fees, zero subscription trap.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.link_button("👑 Upgrade to Pro Pass for ₹49 (One-Time)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+
 
 
 # ──────────────────────────────────────────────────────────────
@@ -748,6 +1059,10 @@ for key, default in [
     ("unlocked_questions", [0, 1]),
     ("unlocked_attacks", False),
     ("unlocked_voice", False),
+    ("mock_debrief", None),
+    ("clarification_used", False),
+    ("interview_concluded", False),
+    ("active_redrill", None),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -1360,7 +1675,7 @@ elif st.session_state.step == 2:
 
 
 # ══════════════════════════════════════════════════════════════
-# STEP 3: VOICE MOCK INTERVIEW
+# STEP 3: REAL INTERVIEW MODE & SPOKEN DEFENSE
 # ══════════════════════════════════════════════════════════════
 
 elif st.session_state.step == 3:
@@ -1411,144 +1726,169 @@ elif st.session_state.step == 3:
         archetype_prompts["🎯 Strategic Hiring Manager & Team Lead"],
     )
 
-    interviewer_ctx = f"""You are a professional interviewer conducting a realistic job interview.
+    interviewer_ctx = f"""You are a professional hiring manager conducting a realistic, high-stakes job interview.
 
 {persona_prompt}
 
-CANDIDATE'S RESUME:
+CANDIDATE'S RESUME (GROUND TRUTH):
 {resume_text}
 
-JOB DESCRIPTION:
+TARGET JOB DESCRIPTION:
 {jd_text}
 
-PREDICTED HIGH-PROBABILITY QUESTIONS:
+PREDICTED HIGH-PROBABILITY QUESTIONS TO EXPLORE:
 {q_list_str}
 
-IDENTIFIED CONCERNS:
+IDENTIFIED CONCERNS & VULNERABILITIES:
 {c_list_str}
 
-RULES:
-1. Start by greeting the candidate briefly and asking the FIRST predicted question.
-2. After each answer, provide brief feedback matching your persona:
-   **Score: X/10**
-   ✅ **Good:** what they did well (1 line)
-   ⚠️ **Improve:** what was missing (1 line)
-   💡 **Tip:** one suggestion (1 line)
-3. Then ask the NEXT question — a follow-up or next predicted question.
-4. Be specific to this candidate. No generic questions.
-5. After the candidate answers Question 4, conclude the mock interview with a final evaluation:
-   **🎯 INTERVIEW COMPLETE: OVERALL SCORE: X/10**
-   🏆 **Top Strengths:** (2 bullet points on technical/communication highlights)
-   ⚠️ **Critical Gaps to Fix:** (2 bullet points on weak architecture defenses or missing specifics)
-   🚀 **Next Steps:** (1 encouraging actionable sentence)
-6. Keep responses concise and impactful — this is a real high-stakes interview.
+CRITICAL INTERVIEW RULES:
+1. ACT 100% IN CHARACTER AT ALL TIMES. You are speaking directly to the candidate over a live call.
+2. NEVER break character, and NEVER output mid-interview grades, scores ("Score: 7/10"), or meta-feedback lists ("Good: ... Improve: ... Tip: ...") during the conversation. Real interviewers NEVER grade a candidate out loud between questions.
+3. CONVERSATIONAL TRANSITION: When the candidate answers:
+   - Respond naturally in 1-2 conversational sentences.
+   - If their answer was hand-wavy, lacked metrics/baselines, failed to isolate their individual contribution, or evaded the core difficulty, ask a SHARP, probing follow-up that forces them to defend the claim.
+   - If their defense was sound, pivot smoothly to the next predicted high-stakes question challenging another key claim.
+4. TONE & PACING: Keep your spoken responses punchy (2 to 4 sentences total). Let the candidate do 80% of the talking.
+5. CONCISE & SPOKEN-FRIENDLY: The candidate will listen to your words via audio speech. Speak naturally like a senior leader on a Google Meet / Zoom call.
 """
 
-    # ── Call Screen Header ──
-    st.markdown(f"""
-    <div class="call-screen">
-        <div class="call-avatar">🎤</div>
-        <div style="font-size:1.15rem;font-weight:700;margin-bottom:0.25rem;">{archetype}</div>
-        <div class="call-status">● Live Interview in progress · Adaptive Rubric Evaluation</div>
-    </div>
-    """, unsafe_allow_html=True)
-    render_pro_bar()
-
-    # ── Initialize first message ──
-    if not st.session_state.mock_messages:
-        with st.spinner("Interviewer is preparing the first question..."):
-            first_msg = call_gemini(
-                interviewer_ctx
-                + "\n\nStart the interview. Greet the candidate briefly and immediately challenge their single most critical or vulnerable resume claim directly related to this target job description. Do NOT ask an easy softball or generic icebreaker like 'tell me about yourself' — dive straight into their real claims under your persona."
-            )
-            st.session_state.mock_messages = [
-                {"role": "interviewer", "content": first_msg}
-            ]
-            st.session_state["last_spoken"] = -1
-            st.rerun()
-
-    # ── Display conversation transcript ──
-    for i, msg in enumerate(st.session_state.mock_messages):
-        if msg["role"] == "interviewer":
-            st.markdown(
-                f'<div class="voice-bubble interviewer">'
-                f'<div class="voice-label">🎤 Interviewer</div>'
-                f'{msg["content"]}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<div class="voice-bubble candidate">'
-                f'<div class="voice-label">👤 You</div>'
-                f'{msg["content"]}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-    # ── Auto-speak the latest AI message ──
-    last_spoken = st.session_state.get("last_spoken", -1)
-    last_ai_idx = -1
-    for i, msg in enumerate(st.session_state.mock_messages):
-        if msg["role"] == "interviewer":
-            last_ai_idx = i
-
-    if last_ai_idx > last_spoken:
-        inject_tts(st.session_state.mock_messages[last_ai_idx]["content"])
-        st.session_state["last_spoken"] = last_ai_idx
-
-    # ── Check Voice Interview Completion (Question 1 Free Evaluation Round) ──
+    # ── Check if Interview Debrief is Concluded ──
     candidate_turns = sum(1 for m in st.session_state.mock_messages if m["role"] == "candidate")
-    can_answer_voice = st.session_state.is_pro or st.session_state.unlocked_voice or (candidate_turns < 1)
+    is_single_round = (not st.session_state.is_pro and not st.session_state.unlocked_voice) or bool(st.session_state.get("active_redrill"))
 
-    if not can_answer_voice:
-        st.markdown("""
-        <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.5rem;border-radius:12px;margin:1.2rem 0;">
-            <div style="font-size:1.25rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
-                🎯 Round 1 Voice Evaluation Complete!
-            </div>
-            <p style="font-size:0.95rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
-                You've experienced how our AI interviewer challenges your claims and evaluates your spoken delivery.
-                Unlock the complete 4-round mock interview with adaptive follow-ups, full written defense playbooks, and your complete candidate debrief for a single ₹49 pass.
-            </p>
-            <div style="background:#0e1117;padding:1rem;border-radius:8px;margin-bottom:1rem;border:1px solid #30363d;">
-                <div style="font-weight:700;color:#fff;font-size:0.9rem;margin-bottom:0.4rem;">👑 What PrepInterview Pro (₹49) Unlocks:</div>
-                <div style="font-size:0.85rem;color:#bbb;line-height:1.7;">
-                    ✅ <strong>Unlimited Mock Interview Rounds:</strong> Practice as many full rounds as you need with fresh questions.<br>
-                    ✅ <strong>All Attack Mode Defenses:</strong> Reveal every written defense playbook for your vulnerable resume claims.<br>
-                    ✅ <strong>Downloadable Prep Dossier:</strong> Get your complete personalized interview cheat-sheet (Markdown/PDF).<br>
-                    ✅ <strong>Zero Subscription Risk:</strong> Single ₹49 one-time pass. No auto-renew, no hidden charges.
-                </div>
-            </div>
-            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.5rem;font-size:0.82rem;">
-                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                    <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
-                    <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
-                    <span style="color:#8b949e;">Standard AI Interview Apps</span>
-                    <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
-                    <span style="color:#ffd700;">PrepInterview Pro Pass</span>
-                    <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
-                </div>
-            </div>
-            <div style="font-size:0.8rem;color:#8b949e;margin-top:0.5rem;">
-                ☕ <i>Less than a cup of coffee. Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month.</i>
-            </div>
+    if st.session_state.get("interview_concluded") and st.session_state.get("mock_debrief"):
+        render_candidate_debrief(st.session_state.mock_debrief, is_single_round=is_single_round)
+
+        with st.expander("📜 View Full Spoken Interview Transcript", expanded=False):
+            for i, msg in enumerate(st.session_state.mock_messages):
+                if msg["role"] == "interviewer":
+                    st.markdown(f"**🎤 Interviewer:** {msg['content']}")
+                else:
+                    st.markdown(f"**👤 You:** {msg['content']}")
+
+        st.markdown("---")
+        col_nav1, col_nav2 = st.columns(2)
+        with col_nav1:
+            if st.button("← Back to Results & Dossier", use_container_width=True):
+                st.session_state.step = 2
+                st.rerun()
+        with col_nav2:
+            if st.button("🔄 New Analysis (Upload Different Resume)", use_container_width=True):
+                st.session_state.step = 0
+                st.session_state.results = {}
+                st.session_state.mock_messages = []
+                st.session_state.mock_debrief = None
+                st.session_state.interview_concluded = False
+                st.session_state.active_redrill = None
+                st.rerun()
+
+    else:
+        # ── Call Screen Header ──
+        if st.session_state.get("active_redrill"):
+            drill_claim = st.session_state["active_redrill"].get("claim_tested", "Weak Claim")
+            status_text = f"● Focused Remediation Drill · Claim: {drill_claim[:45]}..."
+        else:
+            max_r = 1 if not st.session_state.is_pro else 4
+            curr_r = min(candidate_turns + 1, max_r)
+            status_text = f"● Round {curr_r} of {max_r} · Realistic Hiring Simulation"
+
+        st.markdown(f"""
+        <div class="call-screen">
+            <div class="call-avatar">🎤</div>
+            <div style="font-size:1.15rem;font-weight:700;margin-bottom:0.25rem;">{archetype}</div>
+            <div class="call-status">{status_text}</div>
         </div>
         """, unsafe_allow_html=True)
-        if ENABLE_SPONSOR_ADS:
-            col_vt1, col_vt2 = st.columns(2)
-            with col_vt1:
-                if st.button("⚡ Continue Free (10s Sponsor Ad)", key="btn_ad_voice", use_container_width=True):
-                    run_sponsor_ad_countdown("voice")
-            with col_vt2:
-                st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-        else:
-            st.link_button("👑 Unlock Unlimited Interviews & Complete Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-    else:
+        render_pro_bar()
+
+        # ── Initialize first message ──
+        if not st.session_state.mock_messages:
+            with st.spinner("Interviewer is preparing the first challenge..."):
+                if st.session_state.get("active_redrill"):
+                    target = st.session_state["active_redrill"]
+                    redrill_prompt = (
+                        interviewer_ctx
+                        + f"\n\nFOCUS DRILL: You are conducting a targeted 1-on-1 remediation drill on this specific weak resume claim: '{target.get('claim_tested', '')}'.\n"
+                        f"Ask a sharp, skeptical challenge targeting this exact claim: {target.get('question', '')}. Do not accept fluff."
+                    )
+                    first_msg = call_gemini(redrill_prompt)
+                else:
+                    first_msg = call_gemini(
+                        interviewer_ctx
+                        + "\n\nStart the interview. Greet the candidate briefly and immediately challenge their single most critical or vulnerable resume claim directly related to this target job description. Do NOT ask an easy softball or generic icebreaker like 'tell me about yourself' — dive straight into their real claims under your persona."
+                    )
+                st.session_state.mock_messages = [
+                    {"role": "interviewer", "content": first_msg}
+                ]
+                st.session_state["last_spoken"] = -1
+                st.rerun()
+
+        # ── Display conversation transcript ──
+        for i, msg in enumerate(st.session_state.mock_messages):
+            if msg["role"] == "interviewer":
+                st.markdown(
+                    f'<div class="voice-bubble interviewer">'
+                    f'<div class="voice-label">🎤 Interviewer</div>'
+                    f'{msg["content"]}'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f'<div class="voice-bubble candidate">'
+                    f'<div class="voice-label">👤 You</div>'
+                    f'{msg["content"]}'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+        # ── Auto-speak the latest AI message ──
+        last_spoken = st.session_state.get("last_spoken", -1)
+        last_ai_idx = -1
+        for i, msg in enumerate(st.session_state.mock_messages):
+            if msg["role"] == "interviewer":
+                last_ai_idx = i
+
+        if last_ai_idx > last_spoken:
+            inject_tts(st.session_state.mock_messages[last_ai_idx]["content"])
+            st.session_state["last_spoken"] = last_ai_idx
+
+        # ── In-Interview Candidate Controls (Replay & Clarification) ──
+        st.markdown("")
+        col_ctrl1, col_ctrl2 = st.columns([1, 1])
+        with col_ctrl1:
+            if st.button("🔊 Replay Question", use_container_width=True):
+                for msg in reversed(st.session_state.mock_messages):
+                    if msg["role"] == "interviewer":
+                        inject_tts(msg["content"])
+                        break
+        with col_ctrl2:
+            clar_disabled = st.session_state.get("clarification_used", False)
+            btn_label = "❓ Ask for Clarification (1x Max)" if not clar_disabled else "❓ Clarification Used (1x Max)"
+            if st.button(btn_label, disabled=clar_disabled, use_container_width=True):
+                st.session_state.clarification_used = True
+                with st.spinner("Interviewer is clarifying scope..."):
+                    conv = interviewer_ctx + "\n\nConversation so far:\n"
+                    for msg in st.session_state.mock_messages:
+                        label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
+                        conv += f"\n{label}: {msg['content']}\n"
+                    conv += "\nCandidate: [Asks for clarification on constraints/scope]\nInterviewer: [Clarify briefly in 1-2 sentences in-character, without giving away the answer, then re-invite the candidate to answer]"
+                    clarification_reply = call_gemini(conv)
+                    st.session_state.mock_messages.append({"role": "interviewer", "content": f"💡 *Clarification:* {clarification_reply}"})
+                    st.rerun()
+
+        # Pro user option to finish early and get debrief
+        if st.session_state.is_pro and candidate_turns >= 1:
+            if st.button("🏁 Conclude Interview & View Full Debrief Now", use_container_width=True):
+                with st.spinner("Generating your candidate debrief..."):
+                    debrief_data = generate_candidate_debrief(
+                        resume_text, jd_text, st.session_state.mock_messages, is_single_round=False
+                    )
+                    st.session_state.mock_debrief = debrief_data
+                    st.session_state.interview_concluded = True
+                    st.rerun()
+
         # ── Interactive Live Workspace (Whiteboard & Scratchpad) ──
         with st.expander("✏️ Live Workspace: Framework Board & Strategy Notes", expanded=False):
             scratch_tab1, scratch_tab2 = st.tabs(["✏️ Visual Framework & Diagram Board", "📝 Strategy & STAR Notes"])
@@ -1674,33 +2014,52 @@ RULES:
                     "\nThe candidate just answered via voice (audio attached). "
                     "IMPORTANT INSTRUCTIONS:\n"
                     "1. FIRST, listen carefully to the ENTIRE audio and transcribe EXACTLY what the candidate said, "
-                    "word-for-word. Show the full transcription as: '**You said:** [complete word-for-word transcription]'\n"
-                    "2. Do NOT summarize or paraphrase — transcribe every word they spoke.\n"
-                    "3. THEN provide your interviewer feedback (Score, Good, Improve, Tip).\n"
-                    "4. THEN ask the next question."
+                    "word-for-word. Show the full transcription on the very first line as: '**You said:** [complete word-for-word transcription]'\n"
+                    "2. Then on subsequent lines, respond in-character as the interviewer (acknowledge briefly, probe deeper if vague or ask next high-stakes question).\n"
+                    "3. NEVER output grades, scores, or meta-lists."
                 )
 
-                with st.spinner("🎤 Listening and evaluating..."):
+                with st.spinner("🎤 Listening and preparing interviewer response..."):
                     try:
                         response = call_gemini_audio(audio_bytes, conv)
 
                         # Try to extract what the AI transcribed
                         transcript = "🎙️ *[Voice answer]*"
+                        interviewer_response = response
                         if "**You said:**" in response:
                             parts = response.split("**You said:**", 1)
                             if len(parts) > 1:
-                                # Get text until next ** or newline
                                 raw = parts[1].strip()
                                 end = raw.find("\n\n")
-                                transcript = "🎙️ " + (raw[:end].strip() if end > 0 else raw[:200].strip())
+                                if end > 0:
+                                    transcript = "🎙️ " + raw[:end].strip()
+                                    interviewer_response = raw[end:].strip()
+                                else:
+                                    transcript = "🎙️ " + raw[:250].strip()
 
+                        st.session_state.clarification_used = False
                         st.session_state.mock_messages.append(
                             {"role": "candidate", "content": transcript}
                         )
-                        st.session_state.mock_messages.append(
-                            {"role": "interviewer", "content": response}
-                        )
-                        st.rerun()
+
+                        # Check if this answer finishes the required turns
+                        new_turns = candidate_turns + 1
+                        turns_limit = 1 if is_single_round else 4
+
+                        if new_turns >= turns_limit:
+                            with st.spinner("Compiling your post-interview candidate debrief..."):
+                                debrief_data = generate_candidate_debrief(
+                                    resume_text, jd_text, st.session_state.mock_messages, is_single_round=is_single_round
+                                )
+                                st.session_state.mock_debrief = debrief_data
+                                st.session_state.interview_concluded = True
+                                st.rerun()
+                        else:
+                            st.session_state.mock_messages.append(
+                                {"role": "interviewer", "content": interviewer_response}
+                            )
+                            st.rerun()
+
                     except Exception as e:
                         st.error(f"Could not process audio: {str(e)[:150]}")
                         st.info("Try switching to Type mode, or record again.")
@@ -1715,51 +2074,53 @@ RULES:
             )
             if st.button("Submit Answer →", type="primary", use_container_width=True):
                 if text_answer.strip():
+                    st.session_state.clarification_used = False
                     st.session_state.mock_messages.append(
                         {"role": "candidate", "content": text_answer.strip()}
                     )
 
-                    conv = interviewer_ctx + "\n\nConversation so far:\n"
-                    for msg in st.session_state.mock_messages:
-                        label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
-                        conv += f"\n{label}: {msg['content']}\n"
-                    conv += "\nInterviewer: [Give feedback on the last answer, then ask the next question]"
+                    new_turns = candidate_turns + 1
+                    turns_limit = 1 if is_single_round else 4
 
-                    with st.spinner("Evaluating your answer..."):
-                        response = call_gemini(conv)
-                        st.session_state.mock_messages.append(
-                            {"role": "interviewer", "content": response}
-                        )
-                    st.rerun()
+                    if new_turns >= turns_limit:
+                        with st.spinner("Compiling your post-interview candidate debrief..."):
+                            debrief_data = generate_candidate_debrief(
+                                resume_text, jd_text, st.session_state.mock_messages, is_single_round=is_single_round
+                            )
+                            st.session_state.mock_debrief = debrief_data
+                            st.session_state.interview_concluded = True
+                            st.rerun()
+                    else:
+                        conv = interviewer_ctx + "\n\nConversation so far:\n"
+                        for msg in st.session_state.mock_messages:
+                            label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
+                            conv += f"\n{label}: {msg['content']}\n"
+                        conv += "\nInterviewer: [Respond in-character without any score, grade, or meta-list. Acknowledge briefly and probe deeper or ask the next question]"
 
-    # ── Replay / Stop speaking ──
-    st.markdown("---")
-    col_tts1, col_tts2 = st.columns(2)
-    with col_tts1:
-        if st.button("🔊 Replay last question", use_container_width=True):
-            for msg in reversed(st.session_state.mock_messages):
-                if msg["role"] == "interviewer":
-                    inject_tts(msg["content"])
-                    break
-    with col_tts2:
-        if st.button("🔇 Stop speaking", use_container_width=True):
-            st.html("<script>window.speechSynthesis.cancel();</script>")
+                        with st.spinner("Interviewer is evaluating and responding..."):
+                            response = call_gemini(conv)
+                            st.session_state.mock_messages.append(
+                                {"role": "interviewer", "content": response}
+                            )
+                        st.rerun()
 
-    # ── Navigation ──
-    st.markdown("")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back to Results", use_container_width=True):
-            st.html("<script>window.speechSynthesis.cancel();</script>")
-            st.session_state.step = 2
-            st.rerun()
-    with col2:
-        if st.button("🔄 Restart Interview", use_container_width=True):
-            if not st.session_state.is_pro and candidate_turns >= 1:
-                st.warning("💡 You've completed your free voice evaluation trial! Upgrade to Pro Pass (₹49) for unlimited 4-round mock interviews and retries.")
-            else:
+        # ── Bottom navigation ──
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back to Results", use_container_width=True):
+                st.html("<script>window.speechSynthesis.cancel();</script>")
+                st.session_state.step = 2
+                st.rerun()
+        with col2:
+            if st.button("🔄 Restart Interview", use_container_width=True):
                 st.html("<script>window.speechSynthesis.cancel();</script>")
                 st.session_state.mock_messages = []
+                st.session_state.mock_debrief = None
+                st.session_state.interview_concluded = False
+                st.session_state.active_redrill = None
+                st.session_state.clarification_used = False
                 st.session_state["last_spoken"] = -1
                 st.rerun()
+
 
