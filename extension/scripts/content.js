@@ -1,6 +1,6 @@
-// PrepInterview Copilot - Full Un-truncated JD Extraction v1.0.4
+// PrepInterview Copilot - True Pane Anchoring v1.0.5
 (function() {
-  console.log('[PrepInterview Copilot v1.0.4] Initialized');
+  console.log('[PrepInterview Copilot v1.0.5] Initialized');
 
   // --- 1. SKILL TAXONOMY & MATCHER ---
   const TAXONOMY = [
@@ -11,14 +11,15 @@
     "postgresql", "postgres", "mysql", "mongodb", "redis", "elasticsearch", "kafka", "rabbitmq", "dynamodb", "graphql", "rest api", "restful",
     "microservices", "system design", "distributed systems", "data structures", "algorithms", "scalability", "linux", "git",
     "machine learning", "deep learning", "nlp", "llm", "genai", "pytorch", "tensorflow", "computer vision", "pandas", "numpy", "scikit-learn",
-    // Product & Analytics
+    // Product, Strategy & Startup
+    "founder office", "chief of staff", "strategy", "execution", "startups", "high-growth", "operations", "scaling",
     "product management", "product manager", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
     "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
     "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
     "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate", "independent projects", "ai tools", "analytical thinking",
-    // Business, MBA & Strategy
+    // Business, MBA & Finance
     "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
-    "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
+    "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a", "cross-border", "capital strategy",
     // Marketing & Sales
     "seo", "sem", "ppc", "performance marketing", "cac", "ltv", "hubspot", "salesforce", "lead generation", "cold outreach",
     "enterprise sales", "content strategy", "email marketing", "social media", "brand strategy", "copywriting", "growth hacking",
@@ -106,7 +107,23 @@
     };
   }
 
-  // --- 2. ACCURATE LINKEDIN DATA EXTRACTION ---
+  // --- 2. ACCURATE LINKEDIN DATA EXTRACTION (RESTRICTED TO JOB DETAILS PANE) ---
+
+  function getJobDetailsPane() {
+    // Finds the right-hand job details column on LinkedIn
+    const pane = document.querySelector(
+      '.scaffold-layout__detail, ' +
+      '.jobs-search__job-details--container, ' +
+      '.jobs-search__job-details, ' +
+      'main .job-view-layout, ' +
+      '.jobs-details__main-content, ' +
+      '.job-details-jobs-unified-top-card'
+    );
+    if (pane) {
+      return pane.closest('.scaffold-layout__detail') || pane;
+    }
+    return document.querySelector('.scaffold-layout__detail') || document.querySelector('main');
+  }
 
   function getCurrentJobId() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -116,8 +133,8 @@
     return match ? match[1] : window.location.href;
   }
 
-  function getJobTitle() {
-    const titleEl = document.querySelector(
+  function getJobTitle(pane) {
+    const titleEl = (pane || document).querySelector(
       '.job-details-jobs-unified-top-card__job-title, ' +
       '.jobs-unified-top-card__job-title, ' +
       '.job-details-jobs-unified-top-card h1, ' +
@@ -128,18 +145,11 @@
     if (titleEl && titleEl.innerText.trim().length > 2) {
       return titleEl.innerText.trim();
     }
-    const h1s = Array.from(document.querySelectorAll('h1'));
-    for (const h of h1s) {
-      const txt = (h.innerText || '').trim();
-      if (txt.length > 3 && !txt.toLowerCase().includes('linkedin') && !txt.toLowerCase().includes('preferences')) {
-        return txt;
-      }
-    }
     return 'Target Role';
   }
 
-  function getCompanyName() {
-    const compEl = document.querySelector(
+  function getCompanyName(pane) {
+    const compEl = (pane || document).querySelector(
       '.job-details-jobs-unified-top-card__company-name, ' +
       '.jobs-unified-top-card__company-name, ' +
       '.job-details-jobs-unified-top-card__primary-description a, ' +
@@ -151,8 +161,8 @@
     return '';
   }
 
-  function expandLinkedInMoreButton() {
-    const moreButtons = Array.from(document.querySelectorAll(
+  function expandLinkedInMoreButton(pane) {
+    const moreButtons = Array.from((pane || document).querySelectorAll(
       'button.show-more-less-html__button, ' +
       'button.show-more-less-html__button--more, ' +
       'button[aria-label*="more description"], ' +
@@ -172,9 +182,8 @@
     }
   }
 
-  function getFullJobDescription() {
-    // Expand LinkedIn truncated description if present
-    expandLinkedInMoreButton();
+  function getFullJobDescription(pane) {
+    expandLinkedInMoreButton(pane);
 
     let text = '';
     const jdSelectors = [
@@ -188,45 +197,23 @@
     ];
 
     for (const sel of jdSelectors) {
-      const el = document.querySelector(sel);
+      const el = (pane || document).querySelector(sel);
       if (el && el.innerText && el.innerText.trim().length > 100) {
         text = el.innerText.trim();
         break;
       }
     }
 
-    if (!text) {
-      const allHeadings = Array.from(document.querySelectorAll('h2, h3, h4, h5, div, span'));
-      for (const h of allHeadings) {
-        const txt = (h.textContent || '').trim().toLowerCase();
-        if (txt === 'about the job' || txt === 'job description' || txt === 'about this job') {
-          let container = h.parentElement;
-          while (container && container !== document.body) {
-            if (container.innerText && container.innerText.length > 200) {
-              text = container.innerText.trim();
-              break;
-            }
-            container = container.parentElement;
-          }
-          if (text) break;
-        }
-      }
+    if (!text && pane) {
+      const clone = pane.cloneNode(true);
+      const ourCard = clone.querySelector('#prepinterview-copilot-card');
+      if (ourCard) ourCard.remove();
+      const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
+      if (topCard) topCard.remove();
+      clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
+      text = clone.innerText.trim();
     }
 
-    if (!text) {
-      const detailPane = document.querySelector('.scaffold-layout__detail, .jobs-search__job-details--container, .jobs-search__job-details');
-      if (detailPane) {
-        const clone = detailPane.cloneNode(true);
-        const ourCard = clone.querySelector('#prepinterview-copilot-card');
-        if (ourCard) ourCard.remove();
-        const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
-        if (topCard) topCard.remove();
-        clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
-        text = clone.innerText.trim();
-      }
-    }
-
-    // Clean up residual headers and "... more" strings
     text = text.replace(/^about the job\s*/i, '');
     text = text.replace(/\s*\.\.\.\s*more\s*$/gi, '');
     text = text.replace(/\s*see more\s*$/gi, '');
@@ -235,28 +222,46 @@
     return text.trim();
   }
 
-  function getAnchorElement() {
-    const buttons = Array.from(document.querySelectorAll('button, a'));
+  function getAnchorElement(pane) {
+    if (!pane) return null;
+
+    // 1. Target the action row (Apply / Save button bar) INSIDE the pane
+    const actionRow = pane.querySelector(
+      '.jobs-apply-button--top-card, ' +
+      '.job-details-jobs-unified-top-card__container--two-pane, ' +
+      '.jobs-unified-top-card__content--two-pane, ' +
+      '.job-details-jobs-unified-top-card__actions-container, ' +
+      '.job-details-jobs-unified-top-card'
+    );
+
+    if (actionRow) {
+      return actionRow;
+    }
+
+    // 2. Find Apply / Save button inside pane (NEVER in top navbar)
+    const buttons = Array.from(pane.querySelectorAll('button, a'));
     const actionBtn = buttons.find(b => {
       const t = (b.innerText || '').trim().toLowerCase();
       return t === 'apply' || t === 'easy apply' || t === 'save';
     });
 
     if (actionBtn) {
-      const row = actionBtn.closest('.jobs-apply-button--top-card') ||
-                  actionBtn.closest('.job-details-jobs-unified-top-card__container--two-pane') ||
-                  actionBtn.closest('.jobs-unified-top-card__content--two-pane') ||
-                  actionBtn.parentElement.parentElement;
-      if (row) return row;
+      const parent = actionBtn.closest('div');
+      if (parent && parent !== pane) return parent;
     }
 
-    return document.querySelector('#job-details, .jobs-description__content, .jobs-description');
+    return pane.querySelector('#job-details, .jobs-description__content, .jobs-description');
   }
 
   // --- 3. WIDGET INJECTION & LIFECYCLE ---
 
   async function runInjection() {
     if (!window.location.href.includes('linkedin.com/jobs')) {
+      return;
+    }
+
+    const pane = getJobDetailsPane();
+    if (!pane) {
       return;
     }
 
@@ -267,12 +272,12 @@
       return;
     }
 
-    const desc = getFullJobDescription();
-    const title = getJobTitle();
-    const company = getCompanyName();
-    const anchor = getAnchorElement();
+    const desc = getFullJobDescription(pane);
+    const title = getJobTitle(pane);
+    const company = getCompanyName(pane);
+    const anchor = getAnchorElement(pane);
 
-    if (!desc || desc.length < 50 || !anchor) {
+    if (!desc || desc.length < 40 || !anchor) {
       return;
     }
 
@@ -280,7 +285,7 @@
       existing.remove();
     }
 
-    console.log('[PrepInterview Copilot] Extracted Role:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
+    console.log('[PrepInterview Copilot] Anchored in Job Pane:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
 
     let resumeText = '';
     try {
@@ -358,7 +363,6 @@
         </div>
       `;
 
-      // Breakdown toggle: ONLY toggles class, NEVER re-injects
       const toggleHeader = card.querySelector('#prepinterview-toggle-header');
       const detailsPanel = card.querySelector('#prepinterview-details-panel');
       const toggleBtn = card.querySelector('#prepinterview-toggle-btn');
@@ -378,8 +382,8 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        expandLinkedInMoreButton();
-        const latestDesc = getFullJobDescription() || desc;
+        expandLinkedInMoreButton(pane);
+        const latestDesc = getFullJobDescription(pane) || desc;
         const targetUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(latestDesc) +
                           '&title=' + encodeURIComponent(title) +
                           '&company=' + encodeURIComponent(company) +
@@ -388,7 +392,7 @@
       });
     });
 
-    // Insert cleanly below action buttons
+    // Insert cleanly below action buttons inside the job details pane
     anchor.insertAdjacentElement('afterend', card);
 
     // Floating pill indicator
