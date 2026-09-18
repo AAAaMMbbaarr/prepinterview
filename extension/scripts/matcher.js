@@ -332,13 +332,34 @@
 
     const tierPreferred = Boolean(eduContextMatch);
 
+    // 3. Education & Degree requirement in JD
+    const normJd = rawJd.toLowerCase();
+
+    // Check if PhD is strictly mandatory
+    const isPhdMandatory = /\b(ph\.?d\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:a\s+)?ph\.?d|doctorate\s+required)\b/i.test(normJd);
+
+    // Check if MBA is merely preferred or an alternative (e.g. "B.Tech/MBA", "B.Tech or MBA", "MBA preferred", "MBA is preferred")
+    const isMbaAlternativeOrPreferred = /\b(?:b\.?tech|b\.?e\.?|bachelors?)\s*[\/|\bor\b]\s*mba\b/i.test(normJd)
+      || /\bmba\s*[\/|\bor\b]\s*(?:b\.?tech|b\.?e\.?|bachelors?)\b/i.test(normJd)
+      || /\bmba\s+(?:is\s+)?(?:preferred|desirable|plus|optional|advantage)\b/i.test(normJd)
+      || /\b(?:preferred|desirable)\s*:\s*mba\b/i.test(normJd);
+
+    // Check for strict mandatory MBA requirement (e.g. "MBA required", "Must have an MBA", "Mandatory: MBA")
+    const isStrictMba = !isMbaAlternativeOrPreferred && /\b(mba\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:an\s+)?mba|mandatory\s*:\s*mba|degree\s+required\s*:\s*mba|minimum\s+qualification\s*:\s*mba)\b/i.test(normJd);
+
     let degreeReq = 'Bachelor\'s';
-    if (/\b(mba)\b/i.test(rawJd)) {
-      degreeReq = 'MBA';
-    } else if (/\b(master|ms|m\.?tech)\b/i.test(rawJd)) {
-      degreeReq = 'Master\'s';
-    } else if (/\b(ph\.?d)\b/i.test(rawJd)) {
+    let degreeMandatory = false;
+    let mbaPreferred = false;
+
+    if (isPhdMandatory) {
       degreeReq = 'PhD';
+      degreeMandatory = true;
+    } else if (isStrictMba) {
+      degreeReq = 'MBA';
+      degreeMandatory = true;
+    } else if (isMbaAlternativeOrPreferred) {
+      degreeReq = 'Bachelor\'s';
+      mbaPreferred = true;
     }
 
     return {
@@ -347,7 +368,9 @@
       workMode: workMode,
       jobCity: jobCity,
       tierPreferred: tierPreferred,
-      degreeReq: degreeReq
+      degreeReq: degreeReq,
+      degreeMandatory: degreeMandatory,
+      mbaPreferred: mbaPreferred
     };
   }
 
@@ -441,13 +464,17 @@
       }
     }
 
-    // Degree level check (e.g. MBA required)
-    if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
-      penalties += 15;
-      disqualifiers.push(`Degree: Role specifically requests MBA (${candEdu.degree || 'Degree'} detected)`);
-    } else if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
-      penalties += 25;
-      disqualifiers.push(`Degree: Role specifically requests PhD (${candEdu.degree || 'Degree'} detected)`);
+    // Degree level check (Only penalize if strictly mandatory, never for preferences or alternatives!)
+    if (jdReq.degreeMandatory) {
+      if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
+        penalties += 25;
+        disqualifiers.push(`Degree: Role specifically requires PhD`);
+      } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
+        penalties += 20;
+        disqualifiers.push(`Degree: Role specifically requires MBA`);
+      }
+    } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
+      bonuses += 3; // Modest bonus if candidate has MBA when preferred
     }
 
     // --- FACTOR C: LOCATION & WORK MODE (Only active if On-site in a specific city) ---
