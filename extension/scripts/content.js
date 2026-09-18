@@ -357,65 +357,29 @@
         ? match.missingSkills.map(s => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${s}</span>`).join('')
         : '<span style="font-size:11px;color:#3fb950;">No critical gaps detected</span>';
 
-      const expMini = match.experience ? `<span class="prepinterview-mini-tag">${match.experience.icon} ${match.experience.headline}</span>` : '';
-      const locMini = match.location ? `<span class="prepinterview-mini-tag">${match.location.icon} ${match.location.headline}</span>` : '';
-      const eduMini = match.education ? `<span class="prepinterview-mini-tag">${match.education.icon} ${match.education.headline}</span>` : '';
-
       card.innerHTML = `
         <div class="prepinterview-header" id="prepinterview-toggle-header">
           <div class="prepinterview-badge-row">
             <span class="prepinterview-score-pill" style="background:${match.color}22; color:${match.color}; border-color:${match.color}66;">
-              ${match.badge} ${match.score}% Skill Match
+              ${match.badge} ${match.score}% Role Match
             </span>
             <span class="prepinterview-brand-title">${match.tier}</span>
-            ${expMini}
-            ${locMini}
-            ${eduMini}
           </div>
-          <button class="prepinterview-toggle-btn" id="prepinterview-toggle-btn">View Full Breakdown ▾</button>
+          <button class="prepinterview-toggle-btn" id="prepinterview-toggle-btn">View Match Insights ▾</button>
         </div>
 
         <div class="prepinterview-details prepinterview-collapsed" id="prepinterview-details-panel">
-          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px;">
-            <span style="color:#8b949e;">Matched against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''} ${locationMeta ? '· ' + locationMeta : ''}</span>
-          </div>
-
-          <!-- Multi-Factor Diagnostics Grid -->
-          <div class="prepinterview-factor-grid">
-            <div class="prepinterview-factor-card prepinterview-factor-${match.experience ? match.experience.status : 'info'}">
-              <div class="prepinterview-factor-header">
-                <span class="prepinterview-factor-title">⏳ Experience</span>
-                <span class="prepinterview-factor-icon">${match.experience ? match.experience.icon : 'ℹ️'}</span>
-              </div>
-              <div class="prepinterview-factor-main">${match.experience ? match.experience.headline : 'Not specified'}</div>
-              <div class="prepinterview-factor-sub">${match.experience ? match.experience.detail : ''}</div>
-            </div>
-
-            <div class="prepinterview-factor-card prepinterview-factor-${match.location ? match.location.status : 'info'}">
-              <div class="prepinterview-factor-header">
-                <span class="prepinterview-factor-title">📍 Location & Mode</span>
-                <span class="prepinterview-factor-icon">${match.location ? match.location.icon : 'ℹ️'}</span>
-              </div>
-              <div class="prepinterview-factor-main">${match.location ? match.location.headline : 'Not specified'}</div>
-              <div class="prepinterview-factor-sub">${match.location ? match.location.detail : ''}</div>
-            </div>
-
-            <div class="prepinterview-factor-card prepinterview-factor-${match.education ? match.education.status : 'info'}">
-              <div class="prepinterview-factor-header">
-                <span class="prepinterview-factor-title">🎓 Education & Tier</span>
-                <span class="prepinterview-factor-icon">${match.education ? match.education.icon : 'ℹ️'}</span>
-              </div>
-              <div class="prepinterview-factor-main">${match.education ? match.education.headline : 'Not specified'}</div>
-              <div class="prepinterview-factor-sub">${match.education ? match.education.detail : ''}</div>
-            </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px; flex-wrap:wrap; gap:6px;">
+            <span style="color:#8b949e;">Evaluated against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''}</span>
+            <span style="color:#58a6ff; font-weight:600;">✨ Skills · Experience · Location · Education</span>
           </div>
           
-          <div class="prepinterview-label" style="margin-top:10px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
+          <div class="prepinterview-label" style="margin-top:6px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
           <div class="prepinterview-pills-row">
             ${matchPills}
           </div>
 
-          <div class="prepinterview-label">🔴 Expected Gaps to Defend (${match.missingSkills.length})</div>
+          <div class="prepinterview-label">🎯 Key Focus Areas for Interview (${match.missingSkills.length})</div>
           <div class="prepinterview-pills-row">
             ${gapPills}
           </div>

@@ -4,10 +4,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const clearBtn = document.getElementById('clearBtn');
   const charCount = document.getElementById('charCount');
   const saveToast = document.getElementById('saveToast');
-  const profileCard = document.getElementById('profileCard');
-  const profExp = document.getElementById('profExp');
-  const profLoc = document.getElementById('profLoc');
-  const profEdu = document.getElementById('profEdu');
 
   function updateWordCount() {
     const text = resumeInput.value.trim();
@@ -15,42 +11,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     charCount.textContent = `${words} words`;
   }
 
-  function updateProfilePreview() {
-    const text = resumeInput.value.trim();
-    if (!text || text.length < 20 || !window.PrepInterviewMatcher) {
-      if (profileCard) profileCard.classList.add('hidden');
-      return;
-    }
-
-    const exp = window.PrepInterviewMatcher.extractExperience(text);
-    const loc = window.PrepInterviewMatcher.extractCandidateLocation(text);
-    const edu = window.PrepInterviewMatcher.extractCandidateEducation(text);
-
-    if (profExp) profExp.textContent = exp.label;
-    if (profLoc) profLoc.textContent = loc.label;
-    if (profEdu) profEdu.textContent = edu.label;
-
-    if (profileCard) profileCard.classList.remove('hidden');
-  }
-
-  function refreshAll() {
-    updateWordCount();
-    updateProfilePreview();
-  }
-
   // Load saved resume
   const stored = await chrome.storage.local.get(['resumeText']);
   if (stored.resumeText) {
     resumeInput.value = stored.resumeText;
-    refreshAll();
+    updateWordCount();
   }
 
-  resumeInput.addEventListener('input', refreshAll);
+  resumeInput.addEventListener('input', updateWordCount);
 
   saveBtn.addEventListener('click', async () => {
     const text = resumeInput.value.trim();
     await chrome.storage.local.set({ resumeText: text });
-    refreshAll();
+    updateWordCount();
     saveToast.classList.remove('hidden');
     setTimeout(() => {
       saveToast.classList.add('hidden');
@@ -60,6 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   clearBtn.addEventListener('click', async () => {
     resumeInput.value = '';
     await chrome.storage.local.remove('resumeText');
-    refreshAll();
+    updateWordCount();
   });
 });

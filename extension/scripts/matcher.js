@@ -319,171 +319,95 @@
       }
     }
 
-    let score = 50;
+    // 1. Skill overlap (core base: 30-75 points)
+    let baseScore = 50;
     if (jdSkills.length > 0) {
-      const skillOverlapRatio = matched.length / jdSkills.length;
-      score = Math.round(skillOverlapRatio * 70 + 25);
+      const skillRatio = matched.length / jdSkills.length;
+      baseScore = Math.round(skillRatio * 55 + 25);
     } else {
       const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
       const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
       let common = 0;
       jdTokens.forEach(t => { if (resTokens.has(t)) common++; });
       const ratio = common / Math.max(1, jdTokens.size);
-      score = Math.min(68, Math.max(42, Math.round(ratio * 55 + 25)));
+      baseScore = Math.min(65, Math.max(38, Math.round(ratio * 45 + 25)));
     }
 
-    score = Math.max(30, Math.min(95, score));
-
-    let tier = 'Skill Gap Detected';
-    let badge = '🔴';
-    let color = '#f85149';
-
-    if (score >= 75) {
-      tier = 'Strong Skill Match';
-      badge = '🟢';
-      color = '#3fb950';
-    } else if (score >= 52) {
-      tier = 'Moderate Skill Match';
-      badge = '🟡';
-      color = '#d29922';
-    }
-
-    // 2. Experience
+    // 2. Experience alignment (+4 to +8 points)
     const candExp = extractExperience(resumeText);
     const jdReq = extractJdRequirements(jdText, locationMeta);
-
-    let expEvaluation = {
-      status: 'info',
-      icon: 'ℹ️',
-      headline: candExp.label,
-      detail: 'No hard minimum specified in JD'
-    };
-
+    let expBonus = 5;
     if (jdReq.minExp !== null) {
       if (candExp.years >= jdReq.minExp) {
-        expEvaluation = {
-          status: 'pass',
-          icon: '✅',
-          headline: `${candExp.years} yrs vs ${jdReq.minExp}+ yrs req`,
-          detail: `Meets or exceeds the ${jdReq.minExp}+ years requirement`
-        };
+        expBonus = 8;
+      } else if (candExp.years >= jdReq.minExp - 1) {
+        expBonus = 5;
       } else {
-        const gap = jdReq.minExp - candExp.years;
-        expEvaluation = {
-          status: 'gap',
-          icon: '⚠️',
-          headline: `${candExp.years} yrs vs ${jdReq.minExp}+ yrs req`,
-          detail: `Has ~${gap} yr experience gap to defend`
-        };
+        expBonus = 2;
       }
-    } else if (candExp.years > 0) {
-      expEvaluation = {
-        status: 'pass',
-        icon: '✅',
-        headline: `${candExp.years} yrs experience`,
-        detail: 'Candidate background meets typical role seniority'
-      };
+    } else if (candExp.years >= 2) {
+      expBonus = 6;
     }
 
-    // 3. Location & Mode
+    // 3. Location & Mode alignment (+4 to +8 points)
     const candLoc = extractCandidateLocation(resumeText);
-    let locEvaluation = {
-      status: 'info',
-      icon: 'ℹ️',
-      headline: jdReq.workMode,
-      detail: jdReq.jobCity ? `Based in ${jdReq.jobCity}` : 'Location flexible'
-    };
-
+    let locBonus = 5;
     if (jdReq.workMode === 'Remote') {
-      locEvaluation = {
-        status: 'pass',
-        icon: '✅',
-        headline: 'Remote Eligible',
-        detail: `Role is 100% remote (${candLoc.city !== 'Not specified' ? candLoc.city : 'Any location'})`
-      };
+      locBonus = 8;
     } else if (jdReq.jobCity && candLoc.city && candLoc.city !== 'Not specified') {
       if (candLoc.city.toLowerCase() === jdReq.jobCity.toLowerCase()) {
-        locEvaluation = {
-          status: 'pass',
-          icon: '✅',
-          headline: `${candLoc.city} (${jdReq.workMode})`,
-          detail: `Candidate location matches job location (${jdReq.workMode})`
-        };
+        locBonus = 8;
       } else {
-        locEvaluation = {
-          status: 'gap',
-          icon: '⚠️',
-          headline: `Relocation (${jdReq.jobCity})`,
-          detail: `Job is in ${jdReq.jobCity}; candidate in ${candLoc.city}`
-        };
+        locBonus = 3;
       }
-    } else if (candLoc.city && candLoc.city !== 'Not specified') {
-      locEvaluation = {
-        status: 'info',
-        icon: 'ℹ️',
-        headline: `${candLoc.city} · ${jdReq.workMode}`,
-        detail: `Candidate in ${candLoc.city} (Verify company location policy)`
-      };
+    } else {
+      locBonus = 5; // neutral benefit of doubt
     }
 
-    // 4. Education & College Tier
+    // 4. Education & Pedigree (+4 to +7 points)
     const candEdu = extractCandidateEducation(resumeText);
-    let eduEvaluation = {
-      status: 'info',
-      icon: 'ℹ️',
-      headline: candEdu.label,
-      detail: 'Degree requirements flexible'
-    };
-
-    if (jdReq.tierPreferred) {
-      if (candEdu.isTier1) {
-        eduEvaluation = {
-          status: 'pass',
-          icon: '✅',
-          headline: `${candEdu.degree} · ${candEdu.tierName}`,
-          detail: `Meets JD preference for Tier-1 / Premier institute`
-        };
-      } else {
-        eduEvaluation = {
-          status: 'gap',
-          icon: '⚠️',
-          headline: `${candEdu.degree} (Tier-1 Preferred)`,
-          detail: `JD specifies Tier-1 pedigree; candidate has ${candEdu.degree}`
-        };
-      }
-    } else if (candEdu.isTier1) {
-      eduEvaluation = {
-        status: 'pass',
-        icon: '✅',
-        headline: `${candEdu.degree} · ${candEdu.tierName}`,
-        detail: `Tier-1 pedigree gives strong competitive edge`
-      };
+    let eduBonus = 4;
+    if (candEdu.isTier1) {
+      eduBonus = 7;
     } else if (candEdu.degree && candEdu.degree !== 'Graduate') {
-      eduEvaluation = {
-        status: 'pass',
-        icon: '✅',
-        headline: candEdu.degree,
-        detail: `Degree aligns with standard role requirements`
-      };
+      eduBonus = 5;
+    }
+
+    // Integrated total match percentage
+    let totalScore = baseScore + expBonus + locBonus + eduBonus;
+    totalScore = Math.max(35, Math.min(96, totalScore));
+
+    let tier = 'Competitive Match';
+    let badge = '🟡';
+    let color = '#d29922';
+
+    if (totalScore >= 80) {
+      tier = 'Strong Match';
+      badge = '🟢';
+      color = '#3fb950';
+    } else if (totalScore >= 64) {
+      tier = 'Good Match';
+      badge = '🟢';
+      color = '#2ea043';
+    } else if (totalScore >= 48) {
+      tier = 'Moderate Match';
+      badge = '🟡';
+      color = '#d29922';
+    } else {
+      tier = 'Growth Role';
+      badge = '🔴';
+      color = '#f85149';
     }
 
     return {
       status: 'ready',
-      score: score,
+      score: totalScore,
       tier: tier,
       badge: badge,
       color: color,
-      matchedSkills: matched.slice(0, 5),
-      missingSkills: missing.slice(0, 4),
-      totalJdSkills: jdSkills.length,
-      experience: expEvaluation,
-      location: locEvaluation,
-      education: eduEvaluation,
-      candidateProfile: {
-        experience: candExp,
-        location: candLoc,
-        education: candEdu
-      }
+      matchedSkills: matched.slice(0, 6),
+      missingSkills: missing.slice(0, 5),
+      totalJdSkills: jdSkills.length
     };
   }
 
