@@ -464,14 +464,14 @@ def run_sponsor_ad_countdown(target_type: str, target_id=None):
 
 
 def render_pro_bar():
-    """Render the Pro Pass / Free Tier status bar and unlock redemption."""
+    """Render the Pro Pass status bar when unlocked; no intrusive banner in free mode."""
     if st.session_state.is_pro:
         st.markdown(
             '<div style="display:flex;align-items:center;justify-content:space-between;'
             'background:linear-gradient(90deg, #1f1c2c, #302b63);border:1px solid #ffd700;'
             'border-radius:10px;padding:0.75rem 1.2rem;margin-bottom:1.5rem;">'
             '<div><span class="pro-badge-active">👑 PRO PASS ACTIVE</span> '
-            '<span style="color:#eee;font-size:0.9rem;margin-left:8px;">All 10 questions, attack mode & unlimited voice unlocked</span></div>'
+            '<span style="color:#eee;font-size:0.9rem;margin-left:8px;">All questions, attack mode & unlimited voice unlocked</span></div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -482,46 +482,7 @@ def render_pro_bar():
                 st.session_state.unlocked_attacks = False
                 st.session_state.unlocked_voice = False
                 st.rerun()
-    else:
-        st.markdown(
-            '<div style="display:flex;align-items:center;justify-content:space-between;'
-            'background:#161616;border:1px solid #333;border-radius:10px;'
-            'padding:0.65rem 1rem;margin-bottom:1.2rem;">'
-            '<div><span style="font-size:0.8rem;color:#aaa;text-transform:uppercase;font-weight:700;">Plan: Free Tier</span> '
-            '<span style="color:#888;font-size:0.85rem;margin-left:6px;">(Top 5 Questions & 1 Full Mock Free)</span></div>'
-            '<span style="font-size:0.8rem;color:#ffd700;font-weight:600;">👑 ₹49 Pro Pass</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        with st.expander("👑 Why ₹49? See Value & Price Comparison", expanded=False):
-            st.markdown("""
-            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin:0.5rem 0 1rem 0;font-size:0.82rem;">
-                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
-                    <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
-                    <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:6px;">
-                    <span style="color:#8b949e;">Standard AI Interview Apps</span>
-                    <span style="color:#f85149;font-weight:600;">$99/mo (~₹8,200)</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
-                    <span style="color:#ffd700;">PrepInterview Pro Pass</span>
-                    <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
-                </div>
-            </div>
-            <div style="font-size:0.82rem;color:#bbb;line-height:1.5;margin-bottom:0.75rem;">
-                ☕ <strong>Less than a cup of coffee or a plate of momos.</strong><br>
-                💼 <strong>1,000x ROI:</strong> Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month. Prepare with confidence in private.
-            </div>
-            """, unsafe_allow_html=True)
-            razorpay_url = os.getenv("RAZORPAY_PAYMENT_URL", "https://rzp.io/rzp/vSIuH5yL")
-            st.link_button(
-                "⚡ Unlock Pro Pass (₹49 · Instant UPI & Cards)",
-                razorpay_url,
-                type="primary",
-                help="Instant unlock with UPI, GPay, PhonePe, Paytm, or Cards",
-                use_container_width=True,
-            )
+
 
 
 
@@ -808,48 +769,36 @@ MODEL = st.session_state.selected_model
 if st.session_state.step == 0:
     render_steps(0)
 
-    st.markdown('<p class="hero-title">Never Get Caught Off-Guard on Your Resume</p>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-title">Defend Your Resume Under Pressure</p>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="hero-sub">'
-        'Scan your resume against any target role, pinpoint the claims a senior interviewer will challenge, '
-        'and practice realistic spoken rounds with instant rubric evaluation.'
+        '<p class="hero-sub" style="margin-bottom:1.5rem;">'
+        'Upload your resume and target role. We pinpoint the exact claims an interviewer will challenge and prepare you with a realistic mock interview.'
         '</p>',
         unsafe_allow_html=True,
     )
-    st.markdown("""
-    <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem 0;font-size:0.75rem;">
-        <span style="background:#161b22;color:#7ee787;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🚀 Product & Analytics</span>
-        <span style="background:#161b22;color:#ffa657;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💼 Business & Strategy</span>
-        <span style="background:#161b22;color:#58a6ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💻 Tech & Engineering</span>
-        <span style="background:#161b22;color:#d2a8ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">📈 Growth & Marketing</span>
-        <span style="background:#161b22;color:#ff7b72;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">⚙️ Operations</span>
-    </div>
-    """, unsafe_allow_html=True)
 
-    # ── Interactive Proof Engine: Sample Resume Attacks & Live Tester ──
-    with st.expander("👀 See How An Adversarial Interviewer Attacks a Resume Claim (Live Example)", expanded=True):
-        demo_tab_live, demo_tab_pm, demo_tab_swe = st.tabs(["⚡ Test 1 Bullet Live", "🚀 Product & Growth Example", "💻 Software Engineering Example"])
-        with demo_tab_live:
-            st.markdown(
-                '<p style="font-size:0.82rem;color:#8b949e;margin-bottom:8px;">'
-                'Paste any single bullet from your resume to see how a skeptical interviewer will challenge it.'
-                '</p>',
-                unsafe_allow_html=True,
+    # ── Quick Bullet Tester (Optional Expandable) ──
+    with st.expander("💡 Want to test 1 resume bullet point first? (Free Live Attack Preview)", expanded=False):
+        st.markdown(
+            '<p style="font-size:0.82rem;color:#8b949e;margin-bottom:8px;">'
+            'Paste any single bullet from your resume to see how a skeptical interviewer will challenge it.'
+            '</p>',
+            unsafe_allow_html=True,
+        )
+        col_b1, col_b2 = st.columns([4, 1])
+        with col_b1:
+            test_bullet_input = st.text_input(
+                "Test Resume Bullet",
+                placeholder='e.g., "Led migration to microservices reducing latency by 35%" or "Managed ₹15L marketing budget improving ROI by 2.4x"',
+                label_visibility="collapsed",
+                key="bullet_tester_input",
             )
-            col_b1, col_b2 = st.columns([4, 1])
-            with col_b1:
-                test_bullet_input = st.text_input(
-                    "Test Resume Bullet",
-                    placeholder='e.g., "Led migration to microservices reducing latency by 35%" or "Managed ₹15L marketing budget improving ROI by 2.4x"',
-                    label_visibility="collapsed",
-                    key="bullet_tester_input",
-                )
-            with col_b2:
-                btn_attack_bullet = st.button("⚡ Attack Bullet", use_container_width=True, key="btn_attack_bullet")
+        with col_b2:
+            btn_attack_bullet = st.button("⚡ Attack Bullet", use_container_width=True, key="btn_attack_bullet")
 
-            if btn_attack_bullet and test_bullet_input.strip():
-                with st.spinner("Analyzing claim vulnerabilities..."):
-                    prompt = f"""You are a skeptical, elite hiring manager and interviewer analyzing a single resume bullet point.
+        if btn_attack_bullet and test_bullet_input.strip():
+            with st.spinner("Analyzing claim vulnerabilities..."):
+                prompt = f"""You are a skeptical, elite hiring manager and interviewer analyzing a single resume bullet point.
 Resume Bullet: "{test_bullet_input.strip()}"
 
 Analyze this claim and return a JSON object with:
@@ -859,79 +808,37 @@ Analyze this claim and return a JSON object with:
 
 Return ONLY valid JSON:
 {{"attack_question": "...", "trap": "...", "defense_formula": "..."}}"""
-                    res = call_gemini(prompt)
-                    try:
-                        clean_res = res.strip()
-                        if clean_res.startswith("```"):
-                            clean_res = clean_res.split("```")[1]
-                            if clean_res.startswith("json"):
-                                clean_res = clean_res[4:]
-                        data = json.loads(clean_res)
-                        st.session_state["bullet_test_result"] = data
-                    except Exception:
-                        st.session_state["bullet_test_result"] = {
-                            "attack_question": "What was your specific baseline before this initiative, and how did you measure your individual contribution versus your team?",
-                            "trap": "Metric lacks verified baseline and individual ownership boundaries.",
-                            "defense_formula": "State pre-existing baseline -> detail your exact technical/operational decisions -> demonstrate measured business outcome."
-                        }
+                res = call_gemini(prompt)
+                try:
+                    clean_res = res.strip()
+                    if clean_res.startswith("```"):
+                        clean_res = clean_res.split("```")[1]
+                        if clean_res.startswith("json"):
+                            clean_res = clean_res[4:]
+                    data = json.loads(clean_res)
+                    st.session_state["bullet_test_result"] = data
+                except Exception:
+                    st.session_state["bullet_test_result"] = {
+                        "attack_question": "What was your specific baseline before this initiative, and how did you measure your individual contribution versus your team?",
+                        "trap": "Metric lacks verified baseline and individual ownership boundaries.",
+                        "defense_formula": "State pre-existing baseline -> detail your exact technical/operational decisions -> demonstrate measured business outcome."
+                    }
 
-            if st.session_state.get("bullet_test_result"):
-                res_data = st.session_state["bullet_test_result"]
-                st.markdown(f"""
-                <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;margin-top:10px;">
-                    <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 Skeptical Counter-Question</div>
-                    <div style="color:#ffd700;margin-bottom:10px;padding-left:10px;border-left:3px solid #ff7b72;">
-                        "{res_data.get('attack_question', '')}"
-                    </div>
-                    <div style="color:#f85149;font-size:0.78rem;font-weight:700;margin-bottom:2px;">⚠️ The Vulnerability Trap:</div>
-                    <div style="color:#8b949e;font-size:0.82rem;margin-bottom:10px;">
-                        {res_data.get('trap', '')}
-                    </div>
-                    <div style="background:#0d1117;border:1px solid #23863644;border-left:3px solid #238636;border-radius:6px;padding:8px 12px;font-size:0.82rem;">
-                        <strong style="color:#3fb950;">🛡️ Defense Formula:</strong>
-                        <span style="color:#c9d1d9;"> {res_data.get('defense_formula', '')}</span>
-                    </div>
+        if st.session_state.get("bullet_test_result"):
+            res_data = st.session_state["bullet_test_result"]
+            st.markdown(f"""
+            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;margin-top:10px;">
+                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 Skeptical Counter-Question</div>
+                <div style="color:#ffd700;margin-bottom:10px;padding-left:10px;border-left:3px solid #ff7b72;">
+                    "{res_data.get('attack_question', '')}"
                 </div>
-                """, unsafe_allow_html=True)
-                st.markdown(
-                    '<p style="font-size:0.78rem;color:#7ee787;margin-top:6px;text-align:right;">'
-                    '✓ Tested 1 bullet. Drop your full resume below to scan all 5+ vulnerable claims & practice live.'
-                    '</p>',
-                    unsafe_allow_html=True,
-                )
-
-        with demo_tab_pm:
-            st.markdown("""
-            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;">
-                <div style="color:#8b949e;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🎯 Real Candidate Resume Bullet</div>
-                <div style="color:#f0f6fc;font-style:italic;margin-bottom:12px;padding-left:10px;border-left:3px solid #1f6feb;">
-                    "Grew activation rate by 23% and lowered CAC by ₹450 across Q3 paid acquisition campaigns."
+                <div style="color:#f85149;font-size:0.78rem;font-weight:700;margin-bottom:2px;">⚠️ The Vulnerability Trap:</div>
+                <div style="color:#8b949e;font-size:0.82rem;margin-bottom:10px;">
+                    {res_data.get('trap', '')}
                 </div>
-                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 What A Senior Interviewer Actually Attacks</div>
-                <div style="color:#ffd700;margin-bottom:12px;padding-left:10px;border-left:3px solid #ff7b72;">
-                    "What was your baseline cohort size? How did you isolate this 23% lift from seasonal festive promos running simultaneously? And what was your specific individual ownership versus the growth agency?"
-                </div>
-                <div style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:10px;font-size:0.8rem;">
-                    <span style="color:#f85149;font-weight:700;">⚠️ The Diagnosis:</span>
-                    <span style="color:#8b949e;"> High Risk. The metric lacks attribution guardrails. If you cannot state the exact counterfactual, sample size, and personal contribution, the interviewer flags this as unverified resume fluff.</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with demo_tab_swe:
-            st.markdown("""
-            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;">
-                <div style="color:#8b949e;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🎯 Real Candidate Resume Bullet</div>
-                <div style="color:#f0f6fc;font-style:italic;margin-bottom:12px;padding-left:10px;border-left:3px solid #1f6feb;">
-                    "Architected high-throughput streaming pipeline processing 10M events/day with 99.9% uptime."
-                </div>
-                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 What A Senior Interviewer Actually Attacks</div>
-                <div style="color:#ffd700;margin-bottom:12px;padding-left:10px;border-left:3px solid #ff7b72;">
-                    "What was your message delivery guarantee—at-least-once or exactly-once? How did you handle partition rebalancing during sudden traffic spikes without duplicate writes to downstream databases?"
-                </div>
-                <div style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:10px;font-size:0.8rem;">
-                    <span style="color:#f85149;font-weight:700;">⚠️ The Diagnosis:</span>
-                    <span style="color:#8b949e;"> High Risk. Architecture claim lacks failure-mode guarantees. Staff engineers will instantly test edge cases, race conditions, and dead-letter queue design.</span>
+                <div style="background:#0d1117;border:1px solid #23863644;border-left:3px solid #238636;border-radius:6px;padding:8px 12px;font-size:0.82rem;">
+                    <strong style="color:#3fb950;">🛡️ Defense Formula:</strong>
+                    <span style="color:#c9d1d9;"> {res_data.get('defense_formula', '')}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -964,8 +871,8 @@ Return ONLY valid JSON:
             unsafe_allow_html=True,
         )
 
-    # ── Resume Upload ──
-    st.markdown('<p class="input-label">📄 Your Resume</p>', unsafe_allow_html=True)
+    # ── Step 1: Resume Upload ──
+    st.markdown('<p class="input-label">1. Upload Your Resume (PDF)</p>', unsafe_allow_html=True)
     resume_file = st.file_uploader(
         "Resume",
         type=["pdf"],
@@ -974,96 +881,53 @@ Return ONLY valid JSON:
     )
     if resume_file:
         st.success(f"✓ {resume_file.name}")
-
-    # ── In-Memory Processing & Privacy Commitment ──
     st.markdown(
-        """
-        <div style="background:#161b22;border:1px solid #23863644;border-left:4px solid #238636;border-radius:8px;padding:10px 14px;margin:8px 0 16px 0;font-size:0.78rem;line-height:1.5;">
-            <div style="font-weight:700;color:#3fb950;margin-bottom:3px;display:flex;align-items:center;gap:6px;">
-                🔒 In-Memory Processing & Privacy Commitment
-            </div>
-            <span style="color:#8b949e;">
-                We do not store your resume or audio in our own systems. Career documents, private architectures, and voice inputs are processed ephemerally during your active session and are never saved to our servers, sold to recruiters, or used to train models.
-            </span>
-        </div>
-        """,
+        '<p style="font-size:0.75rem;color:#3fb950;margin-top:-6px;margin-bottom:14px;">'
+        '🔒 Processed in active memory · Never stored · Never trained on'
+        '</p>',
         unsafe_allow_html=True,
     )
 
-    # ── JD Upload OR Paste ──
-    st.markdown('<p class="input-label">📋 Job Description</p>', unsafe_allow_html=True)
-
-    jd_method = st.radio(
-        "How would you like to provide the job description?",
-        ["Paste text", "Upload file (PDF / TXT)"],
-        horizontal=True,
+    # ── Step 2: Job Description ──
+    st.markdown('<p class="input-label">2. Target Job Description</p>', unsafe_allow_html=True)
+    jd_input = st.text_area(
+        "Job Description",
+        value=prefilled_jd if prefilled_jd else "",
+        height=160,
+        placeholder="Paste the target job description or key role requirements here...",
         label_visibility="collapsed",
     )
 
-    jd_input = ""
-
-    if jd_method == "Paste text":
-        jd_input = st.text_area(
-            "Job Description",
-            value=prefilled_jd if prefilled_jd else "",
-            height=200,
-            placeholder="Paste any job description (Software Engineer, Product Manager, Business Analyst, Marketing, Sales, MBA, Operations, etc.)...",
+    # ── Optional Settings (Interviewer Persona) ──
+    with st.expander("⚙️ Optional: Change Interviewer Persona (Default: Strategic Hiring Manager)", expanded=False):
+        archetypes = [
+            "🎯 Strategic Hiring Manager & Team Lead",
+            "🚀 High-Velocity Startup Founder / CEO",
+            "🧐 Skeptical Senior Domain Specialist",
+            "🤝 Executive Bar Raiser & People Lead",
+        ]
+        current_arch = st.session_state.get("interviewer_archetype", archetypes[0])
+        arch_idx = archetypes.index(current_arch) if current_arch in archetypes else 0
+        selected_archetype = st.selectbox(
+            "Interviewer Persona",
+            archetypes,
+            index=arch_idx,
             label_visibility="collapsed",
         )
-    else:
-        jd_file = st.file_uploader(
-            "Upload JD",
-            type=["pdf", "txt"],
-            label_visibility="collapsed",
-            help="Upload the job description as PDF or plain text",
-            key="jd_uploader",
-        )
-        if jd_file:
-            if jd_file.name.endswith(".pdf"):
-                jd_input = extract_pdf_text(jd_file)
-            else:
-                jd_input = jd_file.read().decode("utf-8", errors="ignore")
-            if jd_input.strip():
-                st.success(f"✓ {jd_file.name}")
-                with st.expander("Preview JD text", expanded=False):
-                    st.text(jd_input[:1500] + ("..." if len(jd_input) > 1500 else ""))
+        st.session_state["interviewer_archetype"] = selected_archetype
+        archetype_notes = {
+            "🎯 Strategic Hiring Manager & Team Lead": "Focuses on structured STAR thinking, execution frameworks, prioritization (RICE/MoSCoW), and cross-functional collaboration.",
+            "🚀 High-Velocity Startup Founder / CEO": "Demands concrete revenue impact, speed to market, cost discipline, and extreme ownership under ambiguity.",
+            "🧐 Skeptical Senior Domain Specialist": "Deep-dives into technical architecture, data integrity, statistical validity, and unverified resume metrics.",
+            "🤝 Executive Bar Raiser & People Lead": "Evaluates managing difficult stakeholders, accountability in failures, ethics, and communication composure.",
+        }
+        st.caption(f"ℹ️ {archetype_notes.get(selected_archetype, '')}")
 
-    # ── Interviewer Archetype Persona Selector ──
-    st.markdown('<p class="input-label">🎭 Interviewer Persona Archetype</p>', unsafe_allow_html=True)
-    archetypes = [
-        "🎯 Strategic Hiring Manager & Team Lead",
-        "🚀 High-Velocity Startup Founder / CEO",
-        "🧐 Skeptical Senior Domain Specialist",
-        "🤝 Executive Bar Raiser & People Lead",
-    ]
-    current_arch = st.session_state.get("interviewer_archetype", archetypes[0])
-    arch_idx = archetypes.index(current_arch) if current_arch in archetypes else 0
-    selected_archetype = st.selectbox(
-        "Interviewer Persona",
-        archetypes,
-        index=arch_idx,
-        label_visibility="collapsed",
-        help="Select who will grill and evaluate you during the interview",
-    )
-    st.session_state["interviewer_archetype"] = selected_archetype
-
-    archetype_notes = {
-        "🎯 Strategic Hiring Manager & Team Lead": "Focuses on structured STAR thinking, execution frameworks, prioritization (RICE/MoSCoW), and cross-functional collaboration.",
-        "🚀 High-Velocity Startup Founder / CEO": "Demands concrete revenue impact, speed to market, cost discipline, and extreme ownership under ambiguity.",
-        "🧐 Skeptical Senior Domain Specialist": "Deep-dives into technical architecture, data integrity, statistical validity, and unverified resume metrics.",
-        "🤝 Executive Bar Raiser & People Lead": "Evaluates managing difficult stakeholders, accountability in failures, ethics, and communication composure.",
-    }
-    st.markdown(
-        f'<p style="font-size:0.75rem;color:#8b949e;margin-top:-6px;margin-bottom:14px;">ℹ️ <i>{archetype_notes.get(selected_archetype, "")}</i></p>',
-        unsafe_allow_html=True,
-    )
-
+    # ── Primary CTA ──
     st.markdown("")
-
-    # ── CTA ──
-    if st.button("Scan My Resume for Vulnerabilities →", type="primary", use_container_width=True):
+    if st.button("Scan My Resume & Start Free →", type="primary", use_container_width=True):
         if not resume_file or not jd_input.strip():
-            st.error("Please upload your resume and provide the job description.")
+            st.error("Please upload your resume and provide the target job description.")
         else:
             resume_text = extract_pdf_text(resume_file)
             if not resume_text.strip():
@@ -1074,73 +938,9 @@ Return ONLY valid JSON:
                 st.session_state.step = 1
                 st.rerun()
 
-    st.markdown("""
-    <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1.2rem 0;font-size:0.8rem;color:#8b949e;">
-        <div>🛡️ <strong>Free Resume Vulnerability Audit</strong></div>
-        <div>🎯 <strong>Role-Adaptive Spoken Evaluation</strong></div>
-        <div>🔒 <strong>100% In-Memory Privacy</strong></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── Advanced Settings ──
+    # ── Clean Footer & Collapsed FAQ ──
     st.markdown("---")
-    with st.expander("⚙️ Advanced Settings"):
-        st.markdown(
-            "**Choose your AI model.** Different models offer different tradeoffs between "
-            "speed, quality, and availability. If one model is overloaded (503 error), "
-            "the app will automatically try fallback models."
-        )
-
-        available_models = get_available_models()
-
-        # Build display names with badges
-        display_names = [format_model_name(m) for m in available_models]
-        model_map = dict(zip(display_names, available_models))
-
-        # Find current model's display name
-        current_display = format_model_name(st.session_state.selected_model)
-        current_index = 0
-        if current_display in display_names:
-            current_index = display_names.index(current_display)
-
-        selected_display = st.selectbox(
-            "AI Model",
-            display_names,
-            index=current_index,
-            help="⭐ Top Rated = best quality. ✅ Stable = reliable. ⚡ Fast = quick responses. 🧪 Preview = experimental.",
-        )
-
-        if selected_display:
-            actual_model = model_map[selected_display]
-            st.session_state.selected_model = actual_model
-            MODEL = actual_model
-
-        # Legend
-        st.markdown("""
-        <div style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">
-        ⭐ <b>Top Rated</b> — Best quality, may have high demand<br>
-        ✅ <b>Stable</b> — Reliable and consistently available<br>
-        ⚡ <b>Fast</b> — Quick responses, lighter analysis<br>
-        🧠 <b>Advanced</b> — Most powerful, may be slower<br>
-        🧪 <b>Preview</b> — Experimental, may be unstable
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Institutional Trust, Satisfaction Promise & FAQs ──
-    st.markdown("---")
-    st.markdown("""
-    <div style="background:#161b22;border:1px solid #ffd70044;border-left:4px solid #ffd700;border-radius:8px;padding:14px 18px;margin:1.2rem 0;font-size:0.85rem;line-height:1.6;">
-        <div style="font-weight:700;color:#ffd700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-            🛡️ Satisfaction & Refund Promise
-        </div>
-        <span style="color:#c9d1d9;">
-            We want your interview preparation to be completely risk-free. If our resume vulnerability scan or spoken mock interview does not provide at least one critical insight that improves your interview readiness, reach out to us at 
-            <a href="mailto:prepinterview.app@gmail.com" style="color:#58a6ff;">prepinterview.app@gmail.com</a> within 24 hours of purchasing the ₹49 Pro Pass and we will issue a full refund to your original payment method.
-        </span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    with st.expander("❓ Frequently Asked Questions (Who Built This, Privacy & How It Works)"):
+    with st.expander("❓ Frequently Asked Questions (Who Built This, Privacy & Free Tier)"):
         st.markdown("""
         **1. Who built PrepInterview AI?**  
         PrepInterview was built independently by Ambar, a product and tech builder who kept seeing candidates (and himself) get blindsided by tough resume-defense questions in interviews. Most interview prep tools just ask generic questions like *"Tell me about yourself."* PrepInterview was built to do the uncomfortable, necessary work: testing whether you can actually defend every number and claim on your resume.
@@ -1160,7 +960,7 @@ Return ONLY valid JSON:
         """)
 
     st.markdown("""
-    <div style="text-align:center;margin:2rem 0 1rem 0;font-size:0.75rem;color:#6e7681;line-height:1.8;">
+    <div style="text-align:center;margin:1.5rem 0 1rem 0;font-size:0.75rem;color:#6e7681;line-height:1.8;">
         <div>PrepInterview AI · Autonomous Interview Preparation for Tech & Non-Tech Roles</div>
         <div>
             <a href="https://prepinterview.online/privacy.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Privacy Policy</a> · 
