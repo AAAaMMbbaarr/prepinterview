@@ -1,8 +1,8 @@
-// PrepInterview Copilot - All-in-One Resilient Content Script
+// PrepInterview Copilot - Clean Content Script & Matcher
 (function() {
   console.log('[PrepInterview Copilot] Loaded on:', window.location.href);
 
-  // --- 1. EMBEDDED SKILL TAXONOMY & MATCHER ---
+  // --- 1. SKILL TAXONOMY & MATCHER ---
   const TAXONOMY = [
     // Tech & Engineering
     "python", "javascript", "typescript", "java", "c++", "c#", "golang", "go", "ruby", "php", "rust", "swift", "kotlin",
@@ -105,9 +105,86 @@
     };
   }
 
-  // --- 2. FAIL-PROOF RESILIENT DOM DISCOVERY ---
+  // --- 2. CLEAN ELEMENT EXTRACTORS ---
+
+  function getCleanJobTitle(pane) {
+    const titleSelectors = [
+      '.job-details-jobs-unified-top-card__job-title',
+      '.jobs-unified-top-card__job-title',
+      'h1.t-24',
+      'h1',
+      'h2'
+    ];
+
+    const forbidden = ['easy apply', 'apply', 'save', 'preferences', 'prepinterview', 'fit score', 'linkedin', 'share', 'notification'];
+
+    for (const sel of titleSelectors) {
+      const elements = Array.from((pane || document).querySelectorAll(sel));
+      for (const el of elements) {
+        if (el.closest('#prepinterview-copilot-card')) continue;
+        const txt = (el.innerText || '').trim();
+        const lower = txt.toLowerCase();
+        const isForbidden = forbidden.some(f => lower.includes(f));
+        if (txt.length > 3 && txt.length < 80 && !isForbidden) {
+          return txt;
+        }
+      }
+    }
+    return 'Target Role';
+  }
+
+  function getCleanCompanyName(pane) {
+    const compLink = (pane || document).querySelector('.job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__company-name a, a[href*="/company/"]');
+    if (compLink && compLink.innerText.trim().length > 1) {
+      return compLink.innerText.trim();
+    }
+    const compEl = (pane || document).querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name');
+    if (compEl && compEl.innerText.trim().length > 1) {
+      return compEl.innerText.trim();
+    }
+    return '';
+  }
+
+  function getCleanJobDescription(pane) {
+    // 1. Check for dedicated LinkedIn description container
+    const jdSelectors = [
+      '#job-details',
+      '.jobs-description__content',
+      '.jobs-description-content__text',
+      '.jobs-box__html-content',
+      '.jobs-description',
+      '[class*="jobs-description"]'
+    ];
+
+    for (const sel of jdSelectors) {
+      const el = (pane || document).querySelector(sel);
+      if (el && el.innerText && el.innerText.trim().length > 80) {
+        let text = el.innerText.trim();
+        text = text.replace(/^about the job\s*/i, '');
+        return text;
+      }
+    }
+
+    // 2. Fallback: clone pane and strip top cards, buttons, and our card
+    if (pane) {
+      const clone = pane.cloneNode(true);
+      const ourCard = clone.querySelector('#prepinterview-copilot-card');
+      if (ourCard) ourCard.remove();
+      const ourPill = clone.querySelector('#prepinterview-floating-pill');
+      if (ourPill) ourPill.remove();
+
+      clone.querySelectorAll('button, .artdeco-button, svg, [role="button"], [class*="top-card"], [class*="actions"], header, nav').forEach(el => el.remove());
+
+      let text = clone.innerText.trim();
+      // Remove button residual lines
+      text = text.replace(/^(easy apply|apply|save|share|\s)+/gi, '');
+      return text.trim();
+    }
+
+    return '';
+  }
+
   function findJobContext() {
-    // Look for Apply or Save buttons (visible in any LinkedIn job view)
     const allButtons = Array.from(document.querySelectorAll('button, a'));
     const actionBtn = allButtons.find(el => {
       const t = (el.innerText || '').trim().toLowerCase();
@@ -118,7 +195,6 @@
       return null;
     }
 
-    // Climb up to find the active job container pane (width > 280 and height > 280)
     let pane = actionBtn.parentElement;
     while (pane && pane !== document.body) {
       if (pane.offsetWidth > 280 && pane.offsetHeight > 280) {
@@ -131,50 +207,29 @@
       pane = document.querySelector('main, .scaffold-layout__detail, .jobs-search__job-details') || document.body;
     }
 
-    // Extract title from headings inside pane
-    let title = 'Target Role';
-    const headings = Array.from(pane.querySelectorAll('h1, h2, h3, a[href*="/jobs/view/"]'));
-    for (const h of headings) {
-      const txt = (h.innerText || '').trim();
-      if (txt.length > 2 && !txt.toLowerCase().includes('preferences') && !txt.toLowerCase().includes('linkedin')) {
-        title = txt;
-        break;
-      }
-    }
+    const title = getCleanJobTitle(pane);
+    const company = getCleanCompanyName(pane);
+    const desc = getCleanJobDescription(pane);
 
-    // Extract company
-    let company = '';
-    const companyMatch = pane.innerText.match(/([A-Z][A-Za-z0-9&.\s]{2,25})\s*·\s*([A-Za-z\s,]+)/);
-    if (companyMatch) {
-      company = companyMatch[1].trim();
-    }
-
-    // Extract full description text from the pane
-    const desc = pane.innerText || '';
-
-    // Find the button row container to anchor our card
     let anchor = actionBtn.parentElement;
     if (anchor.parentElement && anchor.parentElement.offsetWidth < 600) {
       anchor = anchor.parentElement;
     }
 
-    return {
-      pane,
-      anchor,
-      title,
-      company,
-      desc
-    };
+    return { pane, anchor, title, company, desc };
   }
 
   // --- 3. WIDGET INJECTION ---
   async function runInjection() {
+    if (!window.location.href.includes('linkedin.com/jobs')) {
+      return;
+    }
+
     const ctx = findJobContext();
     if (!ctx || ctx.desc.length < 40) {
       return;
     }
 
-    // Check if card is already injected for this job title
     const existing = document.getElementById('prepinterview-copilot-card');
     if (existing && existing.dataset.jobTitle === ctx.title) {
       return;
@@ -184,9 +239,8 @@
       existing.remove();
     }
 
-    console.log('[PrepInterview Copilot] Detected job:', ctx.title, 'at', ctx.company);
+    console.log('[PrepInterview Copilot] Extracted Clean Job:', ctx.title, 'at', ctx.company, '(JD length:', ctx.desc.length, 'chars)');
 
-    // Retrieve resume safely
     let resumeText = '';
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -215,7 +269,7 @@
             <span style="font-size:11px; color:#8b949e;">Click extension icon to save resume</span>
           </div>
           <div style="font-size:12px; color:#c9d1d9; line-height:1.4;">
-            Save your resume once in the Chrome toolbar to see your <strong>Fit Score (80%+ High, 50% Moderate)</strong> and skill gaps here!
+            Save your resume once in the Chrome toolbar to see your <strong>Fit Score (80%+ High, 50% Moderate)</strong> and skill gaps for <strong>${ctx.title}</strong>!
           </div>
           <a href="${prepUrl}" target="_blank" class="prepinterview-cta-btn" style="margin-top:6px;">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
@@ -276,14 +330,12 @@
       }
     }
 
-    // Insert right after the button container row
     if (ctx.anchor && ctx.anchor.parentElement) {
       ctx.anchor.insertAdjacentElement('afterend', card);
     } else {
       ctx.pane.prepend(card);
     }
 
-    // Also update/inject the floating indicator pill in bottom-right
     let floatPill = document.getElementById('prepinterview-floating-pill');
     if (!floatPill) {
       floatPill = document.createElement('div');
@@ -297,11 +349,10 @@
     floatPill.innerHTML = `🎯 PrepInterview: <strong>${match.score > 0 ? match.score + '%' : 'Copilot Active'}</strong>`;
   }
 
-  // Throttle mutation observer
   let debounceTimer = null;
   const observer = new MutationObserver(() => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(runInjection, 500);
+    debounceTimer = setTimeout(runInjection, 400);
   });
 
   observer.observe(document.body, {
@@ -310,6 +361,6 @@
   });
 
   setTimeout(runInjection, 1000);
-  setTimeout(runInjection, 2500);
+  setTimeout(runInjection, 2000);
   window.addEventListener('popstate', () => setTimeout(runInjection, 500));
 })();
