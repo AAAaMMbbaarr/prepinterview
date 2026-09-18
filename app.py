@@ -1211,72 +1211,6 @@ if st.session_state.step == 0:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Quick Bullet Tester (Optional Expandable) ──
-    with st.expander("💡 Want to test 1 resume bullet point first? (Free Live Attack Preview)", expanded=False):
-        st.markdown(
-            '<p style="font-size:0.82rem;color:#8b949e;margin-bottom:8px;">'
-            'Paste any single bullet from your resume to see how a skeptical interviewer will challenge it.'
-            '</p>',
-            unsafe_allow_html=True,
-        )
-        col_b1, col_b2 = st.columns([4, 1])
-        with col_b1:
-            test_bullet_input = st.text_input(
-                "Test Resume Bullet",
-                placeholder='e.g., "Led migration to microservices reducing latency by 35%" or "Managed ₹15L marketing budget improving ROI by 2.4x"',
-                label_visibility="collapsed",
-                key="bullet_tester_input",
-            )
-        with col_b2:
-            btn_attack_bullet = st.button("⚡ Attack Bullet", use_container_width=True, key="btn_attack_bullet")
-
-        if btn_attack_bullet and test_bullet_input.strip():
-            with st.spinner("Analyzing claim vulnerabilities..."):
-                prompt = f"""You are a skeptical, elite hiring manager and interviewer analyzing a single resume bullet point.
-Resume Bullet: "{test_bullet_input.strip()}"
-
-Analyze this claim and return a JSON object with:
-1. "attack_question": A razor-sharp, realistic counter-question challenging the baseline, attribution, methodology, scale, or failure mode.
-2. "trap": Why an interviewer will doubt or probe this claim (e.g. missing baseline, unverified attribution, ambiguous personal ownership).
-3. "defense_formula": Concrete framework formula to answer strongly (e.g., State baseline cohort -> explain isolation of variables -> quote measurable delta).
-
-Return ONLY valid JSON:
-{{"attack_question": "...", "trap": "...", "defense_formula": "..."}}"""
-                res = call_gemini(prompt)
-                try:
-                    clean_res = res.strip()
-                    if clean_res.startswith("```"):
-                        clean_res = clean_res.split("```")[1]
-                        if clean_res.startswith("json"):
-                            clean_res = clean_res[4:]
-                    data = json.loads(clean_res)
-                    st.session_state["bullet_test_result"] = data
-                except Exception:
-                    st.session_state["bullet_test_result"] = {
-                        "attack_question": "What was your specific baseline before this initiative, and how did you measure your individual contribution versus your team?",
-                        "trap": "Metric lacks verified baseline and individual ownership boundaries.",
-                        "defense_formula": "State pre-existing baseline -> detail your exact technical/operational decisions -> demonstrate measured business outcome."
-                    }
-
-        if st.session_state.get("bullet_test_result"):
-            res_data = st.session_state["bullet_test_result"]
-            st.markdown(f"""
-            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;margin-top:10px;">
-                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 Skeptical Counter-Question</div>
-                <div style="color:#ffd700;margin-bottom:10px;padding-left:10px;border-left:3px solid #ff7b72;">
-                    "{res_data.get('attack_question', '')}"
-                </div>
-                <div style="color:#f85149;font-size:0.78rem;font-weight:700;margin-bottom:2px;">⚠️ The Vulnerability Trap:</div>
-                <div style="color:#8b949e;font-size:0.82rem;margin-bottom:10px;">
-                    {res_data.get('trap', '')}
-                </div>
-                <div style="background:#0d1117;border:1px solid #23863644;border-left:3px solid #238636;border-radius:6px;padding:8px 12px;font-size:0.82rem;">
-                    <strong style="color:#3fb950;">🛡️ Defense Formula:</strong>
-                    <span style="color:#c9d1d9;"> {res_data.get('defense_formula', '')}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
     # Check for deep-link from LinkedIn Copilot extension
     param_jd = st.query_params.get("jd", "")
     param_title = st.query_params.get("title", "")
@@ -1415,7 +1349,7 @@ Return ONLY valid JSON:
         No! Our rubrics are role-aware. For Product Managers, Growth leads, and Business/MBA candidates, we probe unit economics, attribution, A/B testing rigor, and stakeholder alignment. For technical roles, we probe system architecture, edge cases, and scaling limits.
         
         **5. What is Free vs. what does the ₹49 Pro Pass include?**  
-        • **100% Free:** Interactive 1-bullet live tester, full resume vulnerability audit (top 5 predicted questions & claim risks), and Round 1 of the spoken voice interview.  
+        • **100% Free:** Full resume vulnerability audit (top 5 predicted questions & claim risks), 1-click instant demo, and Round 1 of the spoken voice interview.  
         • **₹49 Pro Pass (One-Time):** Full 4-round mock interview with adaptive grilling, all written defense playbooks for every flagged claim, and downloadable Prep Dossier. Zero subscriptions.
         """)
 
