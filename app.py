@@ -823,6 +823,34 @@ if st.session_state.step == 0:
     </div>
     """, unsafe_allow_html=True)
 
+    # Check for deep-link from LinkedIn Copilot extension
+    param_jd = st.query_params.get("jd", "")
+    param_title = st.query_params.get("title", "")
+    param_company = st.query_params.get("company", "")
+
+    if param_jd and not st.session_state.get("prefill_jd"):
+        st.session_state["prefill_jd"] = param_jd
+        st.session_state["prefill_title"] = param_title
+        st.session_state["prefill_company"] = param_company
+
+    prefilled_jd = st.session_state.get("prefill_jd", "")
+    prefilled_title = st.session_state.get("prefill_title", "")
+    prefilled_company = st.session_state.get("prefill_company", "")
+
+    if prefilled_jd:
+        company_label = f" at {prefilled_company}" if prefilled_company else ""
+        st.markdown(
+            f"""
+            <div style="background:#161b22;border:1px solid #1f6feb;border-radius:8px;padding:10px 14px;margin-bottom:1rem;">
+                <span style="font-weight:700;color:#58a6ff;">🎯 Imported from LinkedIn:</span>
+                <span style="color:#f0f6fc;font-weight:600;"> {prefilled_title}</span>
+                <span style="color:#8b949e;">{company_label}</span>
+                <div style="font-size:0.75rem;color:#7ee787;margin-top:3px;">✓ Job description pre-filled below. Drop in your resume to start!</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     # ── Resume Upload ──
     st.markdown('<p class="input-label">📄 Your Resume</p>', unsafe_allow_html=True)
     resume_file = st.file_uploader(
@@ -849,6 +877,7 @@ if st.session_state.step == 0:
     if jd_method == "Paste text":
         jd_input = st.text_area(
             "Job Description",
+            value=prefilled_jd if prefilled_jd else "",
             height=200,
             placeholder="Paste any job description (Software Engineer, Product Manager, Business Analyst, Marketing, Sales, MBA, Operations, etc.)...",
             label_visibility="collapsed",

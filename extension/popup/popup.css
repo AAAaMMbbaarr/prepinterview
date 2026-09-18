@@ -1,0 +1,208 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  width: 380px;
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 16px;
+  font-size: 13px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #21262d;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-badge {
+  font-size: 20px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.status-pill {
+  font-size: 10px;
+  font-weight: 600;
+  background: #1f6feb22;
+  color: #58a6ff;
+  border: 1px solid #1f6feb66;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.main-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.section-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #f0f6fc;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.count-pill {
+  font-size: 10px;
+  color: #8b949e;
+  background: #21262d;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.helper-text {
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+textarea {
+  width: 100%;
+  height: 110px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #f0f6fc;
+  padding: 8px;
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+textarea:focus {
+  border-color: #58a6ff;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  flex: 1;
+  background: #238636;
+  color: #ffffff;
+  border: 1px solid rgba(240, 246, 252, 0.1);
+}
+
+.btn-primary:hover {
+  background: #2ea043;
+}
+
+.btn-secondary {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+}
+
+.btn-secondary:hover {
+  background: #30363d;
+}
+
+.toast {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #23863622;
+  border: 1px solid #23863666;
+  color: #3fb950;
+  border-radius: 6px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.info-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.info-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #58a6ff;
+  margin-bottom: 6px;
+}
+
+.info-list {
+  list-style: none;
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding-top: 4px;
+}
+
+.web-link {
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.web-link:hover {
+  text-decoration: underline;
+}
+
+.version {
+  color: #484f58;
+}

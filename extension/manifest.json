@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "PrepInterview Copilot - LinkedIn Job Match & AI Mock Prep",
+  "version": "1.0.0",
+  "description": "See your real-time Resume Fit Score directly on LinkedIn Jobs and launch instant AI mock interview practice in 1 click.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.linkedin.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "PrepInterview Copilot",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.linkedin.com/jobs/*"
+      ],
+      "js": [
+        "scripts/matcher.js",
+        "scripts/content.js"
+      ],
+      "css": [
+        "scripts/styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

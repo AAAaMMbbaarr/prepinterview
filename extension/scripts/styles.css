@@ -1,0 +1,123 @@
+/* PrepInterview Copilot Injected Styles for LinkedIn */
+.prepinterview-widget-card {
+  background: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  margin: 12px 0 16px 0 !important;
+  color: #c9d1d9 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.prepinterview-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.prepinterview-badge-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.prepinterview-score-pill {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border: 1px solid transparent !important;
+}
+
+.prepinterview-brand-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #f0f6fc !important;
+}
+
+.prepinterview-toggle-btn {
+  font-size: 11px !important;
+  color: #58a6ff !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+}
+
+.prepinterview-details {
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid #21262d !important;
+}
+
+.prepinterview-pills-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 6px 0 10px 0 !important;
+}
+
+.prepinterview-pill {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 10px !important;
+}
+
+.prepinterview-pill-match {
+  background: #23863622 !important;
+  color: #3fb950 !important;
+  border: 1px solid #23863666 !important;
+}
+
+.prepinterview-pill-gap {
+  background: #f8514922 !important;
+  color: #ff7b72 !important;
+  border: 1px solid #f8514966 !important;
+}
+
+.prepinterview-label {
+  font-size: 11px !important;
+  color: #8b949e !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.prepinterview-cta-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  background: linear-gradient(135deg, #1f6feb 0%, #238636 100%) !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  margin-top: 10px !important;
+  box-shadow: 0 2px 8px rgba(31, 111, 235, 0.4) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.prepinterview-cta-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(31, 111, 235, 0.6) !important;
+}
+
+.prepinterview-collapsed {
+  display: none !important;
+}

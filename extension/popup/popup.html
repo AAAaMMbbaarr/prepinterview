@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrepInterview Copilot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-badge">🎯</div>
+      <div>
+        <h1 class="brand-title">PrepInterview Copilot</h1>
+        <p class="brand-sub">LinkedIn Match & Interview Coach</p>
+      </div>
+    </div>
+    <span class="status-pill">🟢 Active</span>
+  </div>
+
+  <div class="main-card">
+    <div class="section-label">
+      <span>📄 Your Master Resume</span>
+      <span id="charCount" class="count-pill">0 words</span>
+    </div>
+    <p class="helper-text">Paste your resume text below. It stays 100% private in your browser and is used to calculate Fit Scores on LinkedIn jobs.</p>
+    
+    <textarea id="resumeInput" placeholder="Paste your resume here (experience, skills, projects, metrics)..."></textarea>
+    
+    <div class="btn-row">
+      <button id="saveBtn" class="btn-primary">💾 Save Resume</button>
+      <button id="clearBtn" class="btn-secondary">Clear</button>
+    </div>
+    <div id="saveToast" class="toast hidden">✅ Resume saved! Fit Scores active on LinkedIn.</div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-title">⚡ How it works on LinkedIn</div>
+    <ul class="info-list">
+      <li><strong>🟢 80%+ Match:</strong> High probability of interview shortlist.</li>
+      <li><strong>🟡 55–79%:</strong> Moderate match (2-3 skills to emphasize).</li>
+      <li><strong>🔴 &lt;55%:</strong> Reach role (prepare specific project defenses).</li>
+      <li><strong>🎙️ 1-Click Prep:</strong> Click the badge on LinkedIn to open your live spoken AI mock interview on PrepInterview AI.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="https://prepinterview.online" target="_blank" class="web-link">Open PrepInterview AI ↗</a>
+    <span class="version">v1.0.0</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

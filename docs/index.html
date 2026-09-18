@@ -154,5 +154,19 @@
     allow="camera; microphone; clipboard-read; clipboard-write; display-capture"
     title="PrepInterview AI App">
   </iframe>
+
+  <script>
+    (function() {
+      const search = window.location.search;
+      if (search) {
+        const iframe = document.getElementById('appFrame');
+        if (iframe) {
+          const params = new URLSearchParams(search);
+          params.set('embed', 'true');
+          iframe.src = 'https://prepinterview-y2yub5ek6huck3qsm8rfla.streamlit.app/?' + params.toString();
+        }
+      }
+    })();
+  </script>
 </body>
 </html>
