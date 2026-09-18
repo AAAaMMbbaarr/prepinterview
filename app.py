@@ -865,6 +865,21 @@ if st.session_state.step == 0:
     if resume_file:
         st.success(f"✓ {resume_file.name}")
 
+    # ── Enterprise Zero-Retention Privacy Shield ──
+    st.markdown(
+        """
+        <div style="background:#161b22;border:1px solid #23863644;border-left:4px solid #238636;border-radius:8px;padding:10px 14px;margin:8px 0 16px 0;font-size:0.78rem;line-height:1.5;">
+            <div style="font-weight:700;color:#3fb950;margin-bottom:3px;display:flex;align-items:center;gap:6px;">
+                🔒 100% In-Memory Processing & Zero-Retention Guarantee
+            </div>
+            <span style="color:#8b949e;">
+                Your resume is processed ephemerally during your active session. Career documents, proprietary architectures, and confidential startup/business metrics are <strong>never stored in persistent databases, never logged, and never used to train AI models</strong>.
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # ── JD Upload OR Paste ──
     st.markdown('<p class="input-label">📋 Job Description</p>', unsafe_allow_html=True)
 
@@ -902,6 +917,36 @@ if st.session_state.step == 0:
                 st.success(f"✓ {jd_file.name}")
                 with st.expander("Preview JD text", expanded=False):
                     st.text(jd_input[:1500] + ("..." if len(jd_input) > 1500 else ""))
+
+    # ── Interviewer Archetype Persona Selector ──
+    st.markdown('<p class="input-label">🎭 Interviewer Persona Archetype</p>', unsafe_allow_html=True)
+    archetypes = [
+        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)",
+        "🚀 High-Velocity Startup Founder / CEO",
+        "🎯 Strategic Product & Business Leader",
+        "🤝 Executive Bar Raiser & Culture Lead",
+    ]
+    current_arch = st.session_state.get("interviewer_archetype", archetypes[0])
+    arch_idx = archetypes.index(current_arch) if current_arch in archetypes else 0
+    selected_archetype = st.selectbox(
+        "Interviewer Persona",
+        archetypes,
+        index=arch_idx,
+        label_visibility="collapsed",
+        help="Select who will grill and evaluate you during the interview",
+    )
+    st.session_state["interviewer_archetype"] = selected_archetype
+
+    archetype_notes = {
+        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)": "Grills on architectural edge cases, race conditions, failovers (Tech) / Data integrity, statistical significance, and unverified metrics (Non-Tech).",
+        "🚀 High-Velocity Startup Founder / CEO": "Demands concrete revenue impact, speed to market, cost discipline, and extreme ownership under ambiguity.",
+        "🎯 Strategic Product & Business Leader": "Probes RICE / MoSCoW prioritization, cross-functional stakeholder alignment, user retention loops, and unit economics (CAC, LTV).",
+        "🤝 Executive Bar Raiser & Culture Lead": "Evaluates managing difficult stakeholders, accountability in failures, ethics, and communication composure.",
+    }
+    st.markdown(
+        f'<p style="font-size:0.75rem;color:#8b949e;margin-top:-6px;margin-bottom:14px;">ℹ️ <i>{archetype_notes.get(selected_archetype, "")}</i></p>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown("")
 
@@ -1388,8 +1433,38 @@ elif st.session_state.step == 3:
     c_list_str = "\n".join(
         f"- {c.get('concern', '')}" for c in concerns_list_data
     )
+    # ── Interviewer Archetype Persona Setup ──
+    archetype = st.session_state.get("interviewer_archetype", "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)")
+    archetype_prompts = {
+        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)": (
+            "INTERVIEWER PERSONA: You are a Skeptical Staff Engineer & Principal Director. You despise vague buzzwords. "
+            "For technical roles, relentlessly probe architectural edge cases, race conditions, failovers, and scaling limits. "
+            "For non-technical/product roles, challenge unverified metrics, statistical significance of A/B tests, and unprovable ROI claims. "
+            "Grade strictly: do not reward confident sounding fluff without concrete evidence and trade-off acknowledgment."
+        ),
+        "🚀 High-Velocity Startup Founder / CEO": (
+            "INTERVIEWER PERSONA: You are a High-Velocity Startup Founder & CEO. You care deeply about execution speed, customer obsession, and direct business ROI. "
+            "You cut through academic textbook answers and demand to know: How fast did you ship? What was the revenue or user impact? "
+            "How did you operate under extreme ambiguity with zero budget?"
+        ),
+        "🎯 Strategic Product & Business Leader": (
+            "INTERVIEWER PERSONA: You are a Strategic Director of Product & Business. You evaluate structured thinking, customer discovery, "
+            "RICE / MoSCoW prioritization frameworks, user retention funnels, and unit economics (CAC, LTV, payback periods). "
+            "You look for candidates who balance user empathy with hard business metrics."
+        ),
+        "🤝 Executive Bar Raiser & Culture Lead": (
+            "INTERVIEWER PERSONA: You are an Executive Bar Raiser. You evaluate high-stakes behavioral scenarios, cross-functional conflict, "
+            "extreme ownership in past failures, and ethical decision making. You grade how well the candidate handles pressure and admits mistakes."
+        ),
+    }
+    persona_prompt = archetype_prompts.get(
+        archetype,
+        archetype_prompts["🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)"],
+    )
 
     interviewer_ctx = f"""You are a professional interviewer conducting a realistic job interview.
+
+{persona_prompt}
 
 CANDIDATE'S RESUME:
 {resume_text}
@@ -1405,27 +1480,27 @@ IDENTIFIED CONCERNS:
 
 RULES:
 1. Start by greeting the candidate briefly and asking the FIRST predicted question.
-2. After each answer, provide brief feedback:
+2. After each answer, provide brief feedback matching your persona:
    **Score: X/10**
    ✅ **Good:** what they did well (1 line)
    ⚠️ **Improve:** what was missing (1 line)
    💡 **Tip:** one suggestion (1 line)
 3. Then ask the NEXT question — a follow-up or next predicted question.
 4. Be specific to this candidate. No generic questions.
-6. After the candidate answers Question 4, conclude the mock interview with a final evaluation:
+5. After the candidate answers Question 4, conclude the mock interview with a final evaluation:
    **🎯 INTERVIEW COMPLETE: OVERALL SCORE: X/10**
    🏆 **Top Strengths:** (2 bullet points on technical/communication highlights)
    ⚠️ **Critical Gaps to Fix:** (2 bullet points on weak architecture defenses or missing specifics)
    🚀 **Next Steps:** (1 encouraging actionable sentence)
-7. Keep responses concise and impactful — this is a real high-stakes interview.
+6. Keep responses concise and impactful — this is a real high-stakes interview.
 """
 
     # ── Call Screen Header ──
-    st.markdown("""
+    st.markdown(f"""
     <div class="call-screen">
         <div class="call-avatar">🎤</div>
-        <div style="font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">AI Interviewer</div>
-        <div class="call-status">● Interview in progress</div>
+        <div style="font-size:1.15rem;font-weight:700;margin-bottom:0.25rem;">{archetype}</div>
+        <div class="call-status">● Live Interview in progress · Adaptive Rubric Evaluation</div>
     </div>
     """, unsafe_allow_html=True)
     render_pro_bar()
@@ -1523,7 +1598,99 @@ RULES:
                 st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.link_button("👑 Unlock Unlimited Interviews & Complete Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-    else:
+        # ── Interactive Live Workspace (Whiteboard & Scratchpad) ──
+        with st.expander("✏️ Live Workspace: Architecture Whiteboard & Strategy Scratchpad", expanded=False):
+            scratch_tab1, scratch_tab2 = st.tabs(["✏️ Framework & Architecture Whiteboard", "📝 Code & Strategy Notes"])
+            with scratch_tab1:
+                st.markdown(
+                    '<p style="font-size:0.75rem;color:#8b949e;margin-bottom:8px;">'
+                    '💡 <strong>Tech:</strong> sketch microservices, caches & queues · <strong>Non-Tech:</strong> sketch 2x2 prioritization matrices, customer funnels & flywheel loops to reference while speaking.'
+                    '</p>',
+                    unsafe_allow_html=True,
+                )
+                st.components.v1.html("""
+                <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:8px;font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+                    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+                        <button onclick="setTool('pen')" id="btn-pen" style="background:#1f6feb;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">✏️ Pen</button>
+                        <button onclick="setTool('rect')" id="btn-rect" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">⬜ Box / Service</button>
+                        <button onclick="setTool('arrow')" id="btn-arrow" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">➔ Arrow</button>
+                        <button onclick="clearCanvas()" style="background:#f8514922;color:#ff7b72;border:1px solid #f8514966;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">🗑️ Clear</button>
+                        <span style="color:#8b949e;font-size:11px;margin-left:auto;">Canvas persists during session</span>
+                    </div>
+                    <canvas id="liveCanvas" width="680" height="260" style="background:#161b22;border:1px solid #30363d;border-radius:6px;cursor:crosshair;width:100%;touch-action:none;display:block;"></canvas>
+                </div>
+                <script>
+                    const canvas = document.getElementById('liveCanvas');
+                    const ctx = canvas.getContext('2d');
+                    let drawing = false, tool = 'pen', startX = 0, startY = 0, snapshot;
+
+                    function setTool(t) {
+                        tool = t;
+                        ['pen', 'rect', 'arrow'].forEach(id => {
+                            const b = document.getElementById('btn-' + id);
+                            if (b) {
+                                b.style.background = (id === t) ? '#1f6feb' : '#21262d';
+                                b.style.color = (id === t) ? '#ffffff' : '#c9d1d9';
+                            }
+                        });
+                    }
+
+                    function clearCanvas() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+
+                    function getPos(e) {
+                        const r = canvas.getBoundingClientRect();
+                        return {
+                            x: (e.clientX - r.left) * (canvas.width / r.width),
+                            y: (e.clientY - r.top) * (canvas.height / r.height)
+                        };
+                    }
+
+                    canvas.addEventListener('mousedown', (e) => {
+                        drawing = true;
+                        const p = getPos(e);
+                        startX = p.x; startY = p.y;
+                        snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        ctx.strokeStyle = '#58a6ff';
+                        ctx.lineWidth = 2;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(startX, startY);
+                    });
+
+                    canvas.addEventListener('mousemove', (e) => {
+                        if (!drawing) return;
+                        const p = getPos(e);
+                        if (tool === 'pen') {
+                            ctx.lineTo(p.x, p.y);
+                            ctx.stroke();
+                        } else if (tool === 'rect') {
+                            ctx.putImageData(snapshot, 0, 0);
+                            ctx.strokeRect(startX, startY, p.x - startX, p.y - startY);
+                        } else if (tool === 'arrow') {
+                            ctx.putImageData(snapshot, 0, 0);
+                            ctx.beginPath();
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(p.x, p.y);
+                            ctx.stroke();
+                        }
+                    });
+
+                    window.addEventListener('mouseup', () => { drawing = false; });
+                </script>
+                """, height=340)
+            with scratch_tab2:
+                scratchpad_val = st.text_area(
+                    "Live Strategy & Code Notes",
+                    value=st.session_state.get("live_scratchpad_notes", ""),
+                    placeholder="Tech: Paste/write SQL queries, data structures, or algorithmic pseudocode...\n\nNon-Tech: Write your STAR bullet points (Situation, Task, Action, Result), conversion metrics, or key numbers to reference while answering...",
+                    height=200,
+                    key="live_scratchpad_notes_input",
+                    label_visibility="collapsed",
+                )
+                st.session_state["live_scratchpad_notes"] = scratchpad_val
+
         # ── Input Section ──
         st.markdown("")
         input_mode = st.radio(
