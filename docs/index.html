@@ -173,6 +173,7 @@
 
   <script>
     (function() {
+      // Forward URL search params into embedded app
       const search = window.location.search;
       if (search) {
         const iframe = document.getElementById('appFrame');
@@ -181,6 +182,15 @@
           params.set('embed', 'true');
           iframe.src = 'https://prepinterview-y2yub5ek6huck3qsm8rfla.streamlit.app/?' + params.toString();
         }
+      }
+
+      // Prevent accidental exit back to Google when clicking browser/hardware back
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ app: 'prepinterview' }, '', window.location.href);
+        window.addEventListener('popstate', function(e) {
+          // Push state again so clicking back remains on the platform
+          window.history.pushState({ app: 'prepinterview' }, '', window.location.href);
+        });
       }
     })();
   </script>

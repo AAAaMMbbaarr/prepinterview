@@ -1023,6 +1023,53 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
                 st.session_state["last_spoken"] = -1
                 st.rerun()
 
+    # ── 1-Click Debrief & Action Plan Export ──
+    st.markdown("")
+    report_lines = [
+        f"# Candidate Interview Debrief & Readiness Diagnostic",
+        f"**Platform:** PrepInterview AI (https://prepinterview.online)",
+        f"**Overall Readiness Score:** {score}/100",
+        f"**Hiring Committee Verdict:** {verdict}\n",
+        f"## Executive Assessment",
+        f"{summary}\n",
+        f"## Diagnostic Rubrics",
+        f"- **Quantitative Rigor & Baselines:** {q_score}%",
+        f"- **STAR Structure & Brevity:** {s_score}%",
+        f"- **Resume Pressure Defense:** {p_score}%\n",
+    ]
+    if strongest and strongest.get("quote_or_summary"):
+        report_lines.extend([
+            f"## 🏆 Standout Defense ({strongest.get('question', 'Key Claim')})",
+            f"> \"{strongest.get('quote_or_summary', '')}\"\n",
+            f"**Why this scored high:** {strongest.get('why_it_worked', '')}\n"
+        ])
+    if weakest and weakest.get("quote_or_gap"):
+        report_lines.extend([
+            f"## ⚠️ Most Vulnerable Defense ({weakest.get('claim_tested', 'Targeted Claim')})",
+            f"> \"{weakest.get('quote_or_gap', '')}\"\n",
+            f"**Where defense cracked:** {weakest.get('why_it_failed', '')}\n",
+            f"### Recommended High-Impact STAR Defense Formula:",
+            f"{weakest.get('recommended_rephrase', '')}\n"
+        ])
+    if exposed:
+        report_lines.append("## 🔍 Exposed Resume Claims Flagged")
+        for item in exposed:
+            report_lines.append(f"- **Claim:** {item.get('bullet_claim', '')} (Risk: {item.get('risk_note', '')})")
+        report_lines.append("")
+    if corrections:
+        report_lines.append("## 🛠️ Tactical Action Checklist Before Live Interview")
+        for c in corrections:
+            report_lines.append(f"- {c}")
+    debrief_export_md = "\n".join(report_lines)
+
+    st.download_button(
+        "📥 Download Full Debrief & Prep Action Plan (Markdown)",
+        data=debrief_export_md,
+        file_name="candidate_debrief_report.md",
+        mime="text/markdown",
+        use_container_width=True,
+    )
+
     # Free Tier Upgrade Card below Round 1 Diagnostic
     if is_single_round and not st.session_state.is_pro:
         st.markdown("""
@@ -1238,20 +1285,46 @@ Return ONLY valid JSON:
         }
         st.caption(f"ℹ️ {archetype_notes.get(selected_archetype, '')}")
 
-    # ── Primary CTA ──
+    # ── Instant Sample Demo & Primary CTA ──
     st.markdown("")
-    if st.button("Scan My Resume & Start Free →", type="primary", use_container_width=True):
-        if not resume_file or not jd_input.strip():
-            st.error("Please upload your resume and provide the target job description.")
-        else:
-            resume_text = extract_pdf_text(resume_file)
-            if not resume_text.strip():
-                st.error("Could not extract text from your PDF. Make sure it's not a scanned image.")
+    col_cta1, col_cta2 = st.columns([2, 1])
+    with col_cta1:
+        if st.button("Scan My Resume & Start Free →", type="primary", use_container_width=True):
+            if not resume_file or not jd_input.strip():
+                st.error("Please upload your resume and provide the target job description.")
             else:
-                st.session_state.resume_text = resume_text
-                st.session_state.jd_text = jd_input.strip()
-                st.session_state.step = 1
-                st.rerun()
+                resume_text = extract_pdf_text(resume_file)
+                if not resume_text.strip():
+                    st.error("Could not extract text from your PDF. Make sure it's not a scanned image.")
+                else:
+                    st.session_state.resume_text = resume_text
+                    st.session_state.jd_text = jd_input.strip()
+                    st.session_state.step = 1
+                    st.rerun()
+    with col_cta2:
+        if st.button("⚡ Try 1-Click Demo", use_container_width=True, help="Test instantly with pre-loaded realistic resume and job description"):
+            st.session_state.resume_text = (
+                "Alex Rivera — Senior Growth & Analytics Lead\n"
+                "- Led mobile web checkout redesign, boosting conversion rate by 42% across 1.2M monthly active sessions.\n"
+                "- Migrated experimentation stack to GrowthBook, accelerating team velocity from 2 to 14 A/B tests per month.\n"
+                "- Spearheaded user retention initiative reducing 30-day cohort churn from 11.8% to 7.4% via automated onboarding flows.\n"
+                "- Built real-time analytics warehouse in PostgreSQL and Metabase serving 65+ daily cross-functional stakeholders.\n"
+                "- Managed ₹18L monthly performance marketing budget with a blended ROAS of 3.1x across Meta and Google Ads."
+            )
+            st.session_state.jd_text = (
+                "Senior Product Manager / Growth Lead\n\n"
+                "About the Role:\n"
+                "We are seeking a high-velocity Senior Growth PM to lead our core acquisition and conversion funnels. "
+                "You will drive high-impact experimentation, partner with engineering and design to eliminate friction, "
+                "and defend growth hypotheses using rigorous statistical validation.\n\n"
+                "Requirements:\n"
+                "- Proven track record of measurable business impact with clear personal attribution.\n"
+                "- Deep expertise in A/B test design, sample sizes, and isolating seasonal confounders.\n"
+                "- Strong technical understanding of product analytics and data modeling.\n"
+                "- Exceptional communication and ability to defend decisions under executive skepticism."
+            )
+            st.session_state.step = 1
+            st.rerun()
 
     # ── Clean Footer & Collapsed FAQ ──
     st.markdown("---")
@@ -1375,6 +1448,24 @@ elif st.session_state.step == 1:
 # ══════════════════════════════════════════════════════════════
 
 elif st.session_state.step == 2:
+    # ── Top Navigation & Quick Action ──
+    col_nav_s2, col_cta_s2 = st.columns([1, 2])
+    with col_nav_s2:
+        if st.button("← Upload Different Resume", use_container_width=True, key="btn_top_new_analysis"):
+            st.session_state.step = 0
+            st.session_state.results = {}
+            st.session_state.mock_messages = []
+            st.rerun()
+    with col_cta_s2:
+        if st.button("🎤 Practice Spoken Defense (Live Mock) →", type="primary", use_container_width=True, key="btn_top_start_mock"):
+            st.session_state.step = 3
+            st.session_state.mock_messages = []
+            st.session_state.mock_debrief = None
+            st.session_state.interview_concluded = False
+            st.session_state.active_redrill = None
+            st.session_state.clarification_used = False
+            st.rerun()
+
     render_steps(2)
     results = st.session_state.results
 
@@ -1784,6 +1875,14 @@ CRITICAL INTERVIEW RULES:
                 st.rerun()
 
     else:
+        # ── Top Navigation ──
+        col_top_back, col_top_space = st.columns([1, 2])
+        with col_top_back:
+            if st.button("← Back to Report & Questions", use_container_width=True, key="btn_top_back_report"):
+                st.html("<script>window.speechSynthesis.cancel();</script>")
+                st.session_state.step = 2
+                st.rerun()
+
         # ── Call Screen Header ──
         if st.session_state.get("active_redrill"):
             drill_claim = st.session_state["active_redrill"].get("claim_tested", "Weak Claim")
