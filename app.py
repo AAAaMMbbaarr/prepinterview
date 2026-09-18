@@ -811,16 +811,16 @@ if st.session_state.step == 0:
     st.markdown('<p class="hero-title">Predict What You\'ll Be Asked & Practice Live</p>', unsafe_allow_html=True)
     st.markdown(
         '<p class="hero-sub">'
-        'AI Spoken Mock Interviews & Resume Defense for <strong>Tech, Product, Business & Non-Tech Roles</strong>.<br>'
-        'Upload your resume & target job description to practice real-time spoken rounds with live rubric scoring.'
+        'AI Spoken Mock Interviews & Resume Defense for <strong>Product, Business, Strategy, Engineering & Non-Tech Roles</strong>.<br>'
+        'Practice realistic spoken rounds with instant STAR-method rubric scoring tailored to your exact resume & target JD.'
         '</p>',
         unsafe_allow_html=True,
     )
     st.markdown("""
     <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem 0;font-size:0.75rem;">
-        <span style="background:#161b22;color:#58a6ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💻 Tech & Engineering</span>
         <span style="background:#161b22;color:#7ee787;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🚀 Product & Analytics</span>
         <span style="background:#161b22;color:#ffa657;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💼 Business & MBA</span>
+        <span style="background:#161b22;color:#58a6ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💻 Tech & Engineering</span>
         <span style="background:#161b22;color:#d2a8ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">📈 Marketing & Sales</span>
         <span style="background:#161b22;color:#ff7b72;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🤝 HR & Operations</span>
     </div>
@@ -921,10 +921,10 @@ if st.session_state.step == 0:
     # ── Interviewer Archetype Persona Selector ──
     st.markdown('<p class="input-label">🎭 Interviewer Persona Archetype</p>', unsafe_allow_html=True)
     archetypes = [
-        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)",
+        "🎯 Strategic Hiring Manager & Team Lead",
         "🚀 High-Velocity Startup Founder / CEO",
-        "🎯 Strategic Product & Business Leader",
-        "🤝 Executive Bar Raiser & Culture Lead",
+        "🧐 Skeptical Senior Domain Specialist",
+        "🤝 Executive Bar Raiser & People Lead",
     ]
     current_arch = st.session_state.get("interviewer_archetype", archetypes[0])
     arch_idx = archetypes.index(current_arch) if current_arch in archetypes else 0
@@ -938,10 +938,10 @@ if st.session_state.step == 0:
     st.session_state["interviewer_archetype"] = selected_archetype
 
     archetype_notes = {
-        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)": "Grills on architectural edge cases, race conditions, failovers (Tech) / Data integrity, statistical significance, and unverified metrics (Non-Tech).",
+        "🎯 Strategic Hiring Manager & Team Lead": "Focuses on structured STAR thinking, execution frameworks, prioritization (RICE/MoSCoW), and cross-functional collaboration.",
         "🚀 High-Velocity Startup Founder / CEO": "Demands concrete revenue impact, speed to market, cost discipline, and extreme ownership under ambiguity.",
-        "🎯 Strategic Product & Business Leader": "Probes RICE / MoSCoW prioritization, cross-functional stakeholder alignment, user retention loops, and unit economics (CAC, LTV).",
-        "🤝 Executive Bar Raiser & Culture Lead": "Evaluates managing difficult stakeholders, accountability in failures, ethics, and communication composure.",
+        "🧐 Skeptical Senior Domain Specialist": "Deep-dives into technical architecture, data integrity, statistical validity, and unverified resume metrics.",
+        "🤝 Executive Bar Raiser & People Lead": "Evaluates managing difficult stakeholders, accountability in failures, ethics, and communication composure.",
     }
     st.markdown(
         f'<p style="font-size:0.75rem;color:#8b949e;margin-top:-6px;margin-bottom:14px;">ℹ️ <i>{archetype_notes.get(selected_archetype, "")}</i></p>',
@@ -1185,7 +1185,7 @@ elif st.session_state.step == 2:
                     with st.expander("🔒 How to answer (👑 Pro)", expanded=False):
                         st.markdown(
                             "<div style='font-size:0.85rem;color:#8b949e;padding:6px 0;'>"
-                            "• <i>Detailed architectural trade-offs, answer frameworks, and trap warnings for this question are unlocked with Pro Pass.</i>"
+                            "• <i>Detailed STAR answering frameworks, strategic trade-offs, and trap warnings for this question are unlocked with Pro Pass.</i>"
                             "</div>",
                             unsafe_allow_html=True,
                         )
@@ -1198,7 +1198,7 @@ elif st.session_state.step == 2:
                         👑 Unlock All 10+ Question Strategies & Complete Pro Pass
                     </div>
                     <div style="font-size:0.88rem;color:#e6edf3;line-height:1.5;margin-bottom:0.85rem;">
-                        Get full architectural frameworks for all 10 questions, complete Attack Mode defense playbooks, downloadable Prep Dossier, and unlimited mock interviews.
+                        Get full strategic STAR frameworks for all 10 questions, complete Attack Mode defense playbooks, downloadable Prep Dossier, and unlimited mock interviews.
                     </div>
                     <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.9rem;font-size:0.82rem;">
                         <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
@@ -1293,9 +1293,9 @@ elif st.session_state.step == 2:
                                 🔒 {len(rem_attacks)} More Resume Vulnerabilities & Defense Strategies Locked
                             </div>
                             <div class="blur-preview">
-                                🎯 "Engineered end-to-end data pipelines scaling to 10M daily events..."<br>
-                                • Attack: How did you ensure idempotency? What failure recovery guarantees existed?<br>
-                                • Defense: Anchor on checkpointing, dead-letter queues, and SLA benchmarks.
+                                🎯 "Scaled quarterly product acquisition & revenue retention by 150%..."<br>
+                                • Attack: How did you isolate causation from seasonal marketing trends? What was the true payback period?<br>
+                                • Defense: Anchor on A/B testing holdout groups, cohort churn curves, and unit economic guardrails.
                             </div>
                             <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">
                                 Skeptical interviewers will target these exact claims. Unlock all defense playbooks:
@@ -1434,32 +1434,32 @@ elif st.session_state.step == 3:
         f"- {c.get('concern', '')}" for c in concerns_list_data
     )
     # ── Interviewer Archetype Persona Setup ──
-    archetype = st.session_state.get("interviewer_archetype", "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)")
+    archetype = st.session_state.get("interviewer_archetype", "🎯 Strategic Hiring Manager & Team Lead")
     archetype_prompts = {
-        "🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)": (
-            "INTERVIEWER PERSONA: You are a Skeptical Staff Engineer & Principal Director. You despise vague buzzwords. "
-            "For technical roles, relentlessly probe architectural edge cases, race conditions, failovers, and scaling limits. "
-            "For non-technical/product roles, challenge unverified metrics, statistical significance of A/B tests, and unprovable ROI claims. "
-            "Grade strictly: do not reward confident sounding fluff without concrete evidence and trade-off acknowledgment."
+        "🎯 Strategic Hiring Manager & Team Lead": (
+            "INTERVIEWER PERSONA: You are a Strategic Hiring Manager & Senior Team Lead. You evaluate structured thinking, "
+            "clear STAR-method communication (Situation, Task, Action, Result), prioritization frameworks (RICE/MoSCoW), "
+            "and cross-functional collaboration. You want to see how the candidate balances practical constraints with business impact."
         ),
         "🚀 High-Velocity Startup Founder / CEO": (
             "INTERVIEWER PERSONA: You are a High-Velocity Startup Founder & CEO. You care deeply about execution speed, customer obsession, and direct business ROI. "
             "You cut through academic textbook answers and demand to know: How fast did you ship? What was the revenue or user impact? "
             "How did you operate under extreme ambiguity with zero budget?"
         ),
-        "🎯 Strategic Product & Business Leader": (
-            "INTERVIEWER PERSONA: You are a Strategic Director of Product & Business. You evaluate structured thinking, customer discovery, "
-            "RICE / MoSCoW prioritization frameworks, user retention funnels, and unit economics (CAC, LTV, payback periods). "
-            "You look for candidates who balance user empathy with hard business metrics."
+        "🧐 Skeptical Senior Domain Specialist": (
+            "INTERVIEWER PERSONA: You are a Skeptical Senior Domain Specialist. You despise vague buzzwords. "
+            "For technical roles, relentlessly probe architectural edge cases, race conditions, failovers, and scaling limits. "
+            "For non-technical/product roles, challenge unverified metrics, statistical significance of A/B tests, and unprovable ROI claims. "
+            "Grade strictly: do not reward confident sounding fluff without concrete evidence and trade-off acknowledgment."
         ),
-        "🤝 Executive Bar Raiser & Culture Lead": (
-            "INTERVIEWER PERSONA: You are an Executive Bar Raiser. You evaluate high-stakes behavioral scenarios, cross-functional conflict, "
+        "🤝 Executive Bar Raiser & People Lead": (
+            "INTERVIEWER PERSONA: You are an Executive Bar Raiser and People Leader. You evaluate high-stakes behavioral scenarios, cross-functional conflict, "
             "extreme ownership in past failures, and ethical decision making. You grade how well the candidate handles pressure and admits mistakes."
         ),
     }
     persona_prompt = archetype_prompts.get(
         archetype,
-        archetype_prompts["🧐 Skeptical Domain Expert (Staff Engineer / Principal Director)"],
+        archetype_prompts["🎯 Strategic Hiring Manager & Team Lead"],
     )
 
     interviewer_ctx = f"""You are a professional interviewer conducting a realistic job interview.
@@ -1599,12 +1599,12 @@ RULES:
         else:
             st.link_button("👑 Unlock Unlimited Interviews & Complete Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         # ── Interactive Live Workspace (Whiteboard & Scratchpad) ──
-        with st.expander("✏️ Live Workspace: Architecture Whiteboard & Strategy Scratchpad", expanded=False):
-            scratch_tab1, scratch_tab2 = st.tabs(["✏️ Framework & Architecture Whiteboard", "📝 Code & Strategy Notes"])
+        with st.expander("✏️ Live Workspace: Framework Board & Strategy Notes", expanded=False):
+            scratch_tab1, scratch_tab2 = st.tabs(["✏️ Visual Framework & Diagram Board", "📝 Strategy & STAR Notes"])
             with scratch_tab1:
                 st.markdown(
                     '<p style="font-size:0.75rem;color:#8b949e;margin-bottom:8px;">'
-                    '💡 <strong>Tech:</strong> sketch microservices, caches & queues · <strong>Non-Tech:</strong> sketch 2x2 prioritization matrices, customer funnels & flywheel loops to reference while speaking.'
+                    '💡 Sketch customer funnels, 2x2 prioritization matrices, workflow loops, or system architectures to reference while speaking.'
                     '</p>',
                     unsafe_allow_html=True,
                 )
@@ -1612,8 +1612,8 @@ RULES:
                 <div style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:8px;font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
                     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
                         <button onclick="setTool('pen')" id="btn-pen" style="background:#1f6feb;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">✏️ Pen</button>
-                        <button onclick="setTool('rect')" id="btn-rect" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">⬜ Box / Service</button>
-                        <button onclick="setTool('arrow')" id="btn-arrow" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">➔ Arrow</button>
+                        <button onclick="setTool('rect')" id="btn-rect" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">⬜ Box / Step</button>
+                        <button onclick="setTool('arrow')" id="btn-arrow" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">➔ Arrow / Flow</button>
                         <button onclick="clearCanvas()" style="background:#f8514922;color:#ff7b72;border:1px solid #f8514966;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">🗑️ Clear</button>
                         <span style="color:#8b949e;font-size:11px;margin-left:auto;">Canvas persists during session</span>
                     </div>
