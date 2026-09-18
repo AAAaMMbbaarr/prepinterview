@@ -644,19 +644,27 @@ JOB DESCRIPTION:
 
 Return ONLY valid JSON (no markdown, no explanation) in this exact format:
 {{
-  "fit_score": 78,
+  "fit_score": 75,
   "risk_level": "MEDIUM",
-  "strengths": ["strength 1", "strength 2", "strength 3"],
-  "gaps": ["gap 1", "gap 2", "gap 3"],
-  "one_line": "Brief one-line summary of the candidate's fit"
+  "strengths": [
+    "Recruitment Tech: Hands-on experience with AccioJob's two-sided hiring marketplace.",
+    "AI & Automation: Shipped AI-powered voice agents and automated workflows.",
+    "Startup Execution: Growth, GTM and Founder’s Office experience in fast-moving environments."
+  ],
+  "gaps": [
+    "B2B SaaS: Limited dedicated enterprise B2B SaaS PM experience.",
+    "Enterprise HR Tech: No direct experience with enterprise HRIS/payroll systems.",
+    "Core PM: Less evidence of PRDs, feature architecture and traditional product ownership."
+  ],
+  "one_line": "Strong recruitment-tech, growth and AI experience, with a gap in traditional enterprise B2B SaaS PM experience."
 }}
 
 Rules:
-- fit_score: integer 0-100
+- fit_score: integer 0-100 (Interview Readiness score)
 - risk_level: "LOW", "MEDIUM", or "HIGH"
-- strengths: exactly 3 strings, specific to this resume+JD
-- gaps: exactly 3 strings, specific to this resume+JD
-- one_line: one sentence max
+- strengths: exactly 3 items. MUST follow "Category: Description" format with a boldable 1-3 word category label before a colon (e.g. "Recruitment Tech: Hands-on experience...", "AI & Automation: Shipped voice agents..."). Keep descriptions concise and punchy.
+- gaps: exactly 3 items. MUST follow "Category: Description" format with a boldable 1-3 word category label before a colon (e.g. "B2B SaaS: Limited dedicated enterprise...", "Core PM: Less evidence of PRDs..."). Keep descriptions concise and punchy.
+- one_line: exactly one direct sentence summarizing overall fit, key strength domain, and the core gap. Do NOT start with candidate name (e.g. "Ambar is a...") or third-person preamble. Start directly with the substance (e.g. "Strong recruitment-tech, growth and AI experience, with a gap in traditional enterprise B2B SaaS PM experience.")
 """
 
 
@@ -1467,28 +1475,57 @@ elif st.session_state.step == 2:
     summary = results.get("summary", {})
     if summary:
         fit = summary.get("fit_score", "?")
-        risk = summary.get("risk_level", "?")
-        risk_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🔴"}.get(risk, "⚪")
-        one_line = summary.get("one_line", "")
+        risk_raw = str(summary.get("risk_level", "?")).upper()
+        risk_map = {
+            "LOW": ("Low", "🟢", "#4CAF50"),
+            "MEDIUM": ("Medium", "🟡", "#FFC107"),
+            "HIGH": ("High", "🔴", "#FF5252")
+        }
+        risk_label, risk_emoji, risk_color = risk_map.get(risk_raw, (risk_raw.capitalize(), "⚪", "#888888"))
+        one_line = summary.get("one_line", "").strip()
+
+        # Clean any legacy third-person preamble (e.g. "Ambar is a...", "The candidate has...")
+        if one_line:
+            clean_one_line = re.sub(r'^(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?|The candidate)\s+is\s+(?:an?|the)\s+.*?\b(?:with|who|having)\s+', '', one_line, flags=re.IGNORECASE)
+            if clean_one_line and clean_one_line != one_line:
+                one_line = clean_one_line[0].upper() + clean_one_line[1:]
 
         st.markdown(f'<p class="hero-title">{fit}% Interview Readiness</p>', unsafe_allow_html=True)
-        st.markdown(f'<p class="hero-sub">{risk_emoji} {risk} interview risk · {one_line}</p>', unsafe_allow_html=True)
         st.markdown(
-            '<p style="font-size:0.8rem;color:#8b949e;text-align:center;margin-top:-6px;margin-bottom:14px;">'
-            '🎯 <em>Unlike surface keyword tools, Interview Readiness measures how well your actual background holds up to skeptical interview questions.</em>'
-            '</p>',
-            unsafe_allow_html=True,
+            f'<p style="text-align:center;font-size:1.25rem;font-weight:700;color:{risk_color};margin-top:0.35rem;margin-bottom:0.75rem;">'
+            f'{risk_emoji} {risk_label} Interview Risk'
+            f'</p>',
+            unsafe_allow_html=True
         )
+        if one_line:
+            st.markdown(
+                f'<p style="text-align:center;color:#c9d1d9;font-size:1.05rem;max-width:680px;margin:0 auto 1.5rem auto;line-height:1.5;">'
+                f'{one_line}'
+                f'</p>',
+                unsafe_allow_html=True
+            )
+
+        def format_scannable_bullet(item: str) -> str:
+            item = item.strip()
+            if item.startswith("-"):
+                item = item.lstrip("-").strip()
+            if item.startswith("**"):
+                return f"- {item}"
+            if ":" in item:
+                cat, desc = item.split(":", 1)
+                if len(cat.strip()) <= 35:
+                    return f"- **{cat.strip()}:** {desc.strip()}"
+            return f"- {item}"
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<p class="section-head">✅ Your Strengths</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-head" style="color:#4CAF50;font-size:0.95rem;margin-bottom:0.6rem;">✅ Your Strengths</p>', unsafe_allow_html=True)
             for s in summary.get("strengths", []):
-                st.markdown(f"- {s}")
+                st.markdown(format_scannable_bullet(s))
         with col2:
-            st.markdown('<p class="section-head">⚠️ Your Gaps</p>', unsafe_allow_html=True)
+            st.markdown('<p class="section-head" style="color:#FFB74D;font-size:0.95rem;margin-bottom:0.6rem;">⚠️ Your Gaps</p>', unsafe_allow_html=True)
             for g in summary.get("gaps", []):
-                st.markdown(f"- {g}")
+                st.markdown(format_scannable_bullet(g))
 
     st.markdown("---")
     render_pro_bar()
