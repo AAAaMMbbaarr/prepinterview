@@ -1598,6 +1598,7 @@ RULES:
                 st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.link_button("👑 Unlock Unlimited Interviews & Complete Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+    else:
         # ── Interactive Live Workspace (Whiteboard & Scratchpad) ──
         with st.expander("✏️ Live Workspace: Framework Board & Strategy Notes", expanded=False):
             scratch_tab1, scratch_tab2 = st.tabs(["✏️ Visual Framework & Diagram Board", "📝 Strategy & STAR Notes"])
