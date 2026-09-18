@@ -1,6 +1,6 @@
-// PrepInterview Copilot - Clean Content Script & Matcher
+// PrepInterview Copilot - Bulletproof Content Script v1.0.3
 (function() {
-  console.log('[PrepInterview Copilot] Loaded on:', window.location.href);
+  console.log('[PrepInterview Copilot v1.0.3] Initialized');
 
   // --- 1. SKILL TAXONOMY & MATCHER ---
   const TAXONOMY = [
@@ -12,9 +12,10 @@
     "microservices", "system design", "distributed systems", "data structures", "algorithms", "scalability", "linux", "git",
     "machine learning", "deep learning", "nlp", "llm", "genai", "pytorch", "tensorflow", "computer vision", "pandas", "numpy", "scikit-learn",
     // Product & Analytics
-    "product management", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
+    "product management", "product manager", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
     "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
     "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
+    "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate",
     // Business, MBA & Strategy
     "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
     "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
@@ -79,7 +80,7 @@
       score = Math.min(90, Math.round((common / Math.max(1, jdTokens.size)) * 120 + 20));
     }
 
-    score = Math.max(25, Math.min(95, score));
+    score = Math.max(30, Math.min(96, score));
     let tier = 'Reach Role';
     let badge = '🔴';
     let color = '#f85149';
@@ -105,133 +106,149 @@
     };
   }
 
-  // --- 2. CLEAN ELEMENT EXTRACTORS ---
+  // --- 2. ACCURATE LINKEDIN DATA EXTRACTION ---
 
-  function getCleanJobTitle(pane) {
-    const titleSelectors = [
-      '.job-details-jobs-unified-top-card__job-title',
-      '.jobs-unified-top-card__job-title',
-      'h1.t-24',
-      'h1',
-      'h2'
-    ];
+  function getCurrentJobId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('currentJobId');
+    if (id) return id;
+    const match = window.location.pathname.match(/\/jobs\/view\/(\d+)/);
+    return match ? match[1] : window.location.href;
+  }
 
-    const forbidden = ['easy apply', 'apply', 'save', 'preferences', 'prepinterview', 'fit score', 'linkedin', 'share', 'notification'];
-
-    for (const sel of titleSelectors) {
-      const elements = Array.from((pane || document).querySelectorAll(sel));
-      for (const el of elements) {
-        if (el.closest('#prepinterview-copilot-card')) continue;
-        const txt = (el.innerText || '').trim();
-        const lower = txt.toLowerCase();
-        const isForbidden = forbidden.some(f => lower.includes(f));
-        if (txt.length > 3 && txt.length < 80 && !isForbidden) {
-          return txt;
-        }
+  function getJobTitle() {
+    // LinkedIn Job Title is always in an h1 in the top card
+    const titleEl = document.querySelector(
+      '.job-details-jobs-unified-top-card__job-title, ' +
+      '.jobs-unified-top-card__job-title, ' +
+      '.job-details-jobs-unified-top-card h1, ' +
+      '.jobs-unified-top-card h1, ' +
+      '.scaffold-layout__detail h1, ' +
+      'h1.t-24'
+    );
+    if (titleEl && titleEl.innerText.trim().length > 2) {
+      return titleEl.innerText.trim();
+    }
+    // Fallback: any h1 on page that isn't logo
+    const h1s = Array.from(document.querySelectorAll('h1'));
+    for (const h of h1s) {
+      const txt = (h.innerText || '').trim();
+      if (txt.length > 3 && !txt.toLowerCase().includes('linkedin') && !txt.toLowerCase().includes('preferences')) {
+        return txt;
       }
     }
     return 'Target Role';
   }
 
-  function getCleanCompanyName(pane) {
-    const compLink = (pane || document).querySelector('.job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__company-name a, a[href*="/company/"]');
-    if (compLink && compLink.innerText.trim().length > 1) {
-      return compLink.innerText.trim();
-    }
-    const compEl = (pane || document).querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name');
+  function getCompanyName() {
+    const compEl = document.querySelector(
+      '.job-details-jobs-unified-top-card__company-name, ' +
+      '.jobs-unified-top-card__company-name, ' +
+      '.job-details-jobs-unified-top-card__primary-description a, ' +
+      '.scaffold-layout__detail a[href*="/company/"]'
+    );
     if (compEl && compEl.innerText.trim().length > 1) {
       return compEl.innerText.trim();
     }
     return '';
   }
 
-  function getCleanJobDescription(pane) {
-    // 1. Check for dedicated LinkedIn description container
+  function getFullJobDescription() {
+    // Strategy 1: Dedicated description container across document
     const jdSelectors = [
       '#job-details',
       '.jobs-description__content',
       '.jobs-description-content__text',
       '.jobs-box__html-content',
       '.jobs-description',
-      '[class*="jobs-description"]'
+      'article.jobs-description__container',
+      'article'
     ];
 
     for (const sel of jdSelectors) {
-      const el = (pane || document).querySelector(sel);
-      if (el && el.innerText && el.innerText.trim().length > 80) {
+      const el = document.querySelector(sel);
+      if (el && el.innerText && el.innerText.trim().length > 120) {
         let text = el.innerText.trim();
         text = text.replace(/^about the job\s*/i, '');
         return text;
       }
     }
 
-    // 2. Fallback: clone pane and strip top cards, buttons, and our card
-    if (pane) {
-      const clone = pane.cloneNode(true);
+    // Strategy 2: Look for heading "About the job" across entire document
+    const allHeadings = Array.from(document.querySelectorAll('h2, h3, h4, h5, div, span'));
+    for (const h of allHeadings) {
+      const txt = (h.textContent || '').trim().toLowerCase();
+      if (txt === 'about the job' || txt === 'job description' || txt === 'about this job') {
+        let container = h.parentElement;
+        while (container && container !== document.body) {
+          if (container.innerText && container.innerText.length > 200) {
+            let fullText = container.innerText.trim();
+            fullText = fullText.replace(/^about the job\s*/i, '');
+            return fullText;
+          }
+          container = container.parentElement;
+        }
+      }
+    }
+
+    // Strategy 3: Right detail column (strip top card and our card)
+    const detailPane = document.querySelector('.scaffold-layout__detail, .jobs-search__job-details--container, .jobs-search__job-details');
+    if (detailPane) {
+      const clone = detailPane.cloneNode(true);
       const ourCard = clone.querySelector('#prepinterview-copilot-card');
       if (ourCard) ourCard.remove();
-      const ourPill = clone.querySelector('#prepinterview-floating-pill');
-      if (ourPill) ourPill.remove();
-
-      clone.querySelectorAll('button, .artdeco-button, svg, [role="button"], [class*="top-card"], [class*="actions"], header, nav').forEach(el => el.remove());
-
-      let text = clone.innerText.trim();
-      // Remove button residual lines
-      text = text.replace(/^(easy apply|apply|save|share|\s)+/gi, '');
-      return text.trim();
+      const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
+      if (topCard) topCard.remove();
+      clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
+      const res = clone.innerText.trim();
+      if (res.length > 100) return res;
     }
 
     return '';
   }
 
-  function findJobContext() {
-    const allButtons = Array.from(document.querySelectorAll('button, a'));
-    const actionBtn = allButtons.find(el => {
-      const t = (el.innerText || '').trim().toLowerCase();
+  function getAnchorElement() {
+    // Find Apply or Save button
+    const buttons = Array.from(document.querySelectorAll('button, a'));
+    const actionBtn = buttons.find(b => {
+      const t = (b.innerText || '').trim().toLowerCase();
       return t === 'apply' || t === 'easy apply' || t === 'save';
     });
 
-    if (!actionBtn) {
-      return null;
+    if (actionBtn) {
+      // Find the row or top-card container
+      const row = actionBtn.closest('.jobs-apply-button--top-card') ||
+                  actionBtn.closest('.job-details-jobs-unified-top-card__container--two-pane') ||
+                  actionBtn.closest('.jobs-unified-top-card__content--two-pane') ||
+                  actionBtn.parentElement.parentElement;
+      if (row) return row;
     }
 
-    let pane = actionBtn.parentElement;
-    while (pane && pane !== document.body) {
-      if (pane.offsetWidth > 280 && pane.offsetHeight > 280) {
-        break;
-      }
-      pane = pane.parentElement;
-    }
-
-    if (!pane) {
-      pane = document.querySelector('main, .scaffold-layout__detail, .jobs-search__job-details') || document.body;
-    }
-
-    const title = getCleanJobTitle(pane);
-    const company = getCleanCompanyName(pane);
-    const desc = getCleanJobDescription(pane);
-
-    let anchor = actionBtn.parentElement;
-    if (anchor.parentElement && anchor.parentElement.offsetWidth < 600) {
-      anchor = anchor.parentElement;
-    }
-
-    return { pane, anchor, title, company, desc };
+    // Fallback: description element
+    return document.querySelector('#job-details, .jobs-description__content, .jobs-description');
   }
 
-  // --- 3. WIDGET INJECTION ---
+  // --- 3. WIDGET INJECTION & LIFECYCLE ---
+
   async function runInjection() {
     if (!window.location.href.includes('linkedin.com/jobs')) {
       return;
     }
 
-    const ctx = findJobContext();
-    if (!ctx || ctx.desc.length < 40) {
+    const jobId = getCurrentJobId();
+    const existing = document.getElementById('prepinterview-copilot-card');
+
+    // If card is already injected for this EXACT job, do not re-run!
+    if (existing && existing.dataset.jobId === jobId) {
       return;
     }
 
-    const existing = document.getElementById('prepinterview-copilot-card');
-    if (existing && existing.dataset.jobTitle === ctx.title) {
+    const desc = getFullJobDescription();
+    const title = getJobTitle();
+    const company = getCompanyName();
+    const anchor = getAnchorElement();
+
+    if (!desc || desc.length < 50 || !anchor) {
       return;
     }
 
@@ -239,7 +256,7 @@
       existing.remove();
     }
 
-    console.log('[PrepInterview Copilot] Extracted Clean Job:', ctx.title, 'at', ctx.company, '(JD length:', ctx.desc.length, 'chars)');
+    console.log('[PrepInterview Copilot] Extracted Role:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
 
     let resumeText = '';
     try {
@@ -247,17 +264,18 @@
         const stored = await chrome.storage.local.get(['resumeText']);
         resumeText = stored.resumeText || '';
       }
-    } catch (err) {
-      console.warn('[PrepInterview Copilot] Storage read notice:', err);
+    } catch (e) {
+      console.warn('[PrepInterview Copilot] Storage notice:', e);
     }
 
-    const match = calculateMatch(resumeText, ctx.desc);
-    const prepUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(ctx.desc) + '&title=' + encodeURIComponent(ctx.title) + '&company=' + encodeURIComponent(ctx.company) + '&utm_source=linkedin_copilot';
+    const match = calculateMatch(resumeText, desc);
+    const prepUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(desc) + '&title=' + encodeURIComponent(title) + '&company=' + encodeURIComponent(company) + '&utm_source=linkedin_copilot';
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
     card.className = 'prepinterview-widget-card';
-    card.dataset.jobTitle = ctx.title;
+    card.dataset.jobId = jobId;
+    card.dataset.jobTitle = title;
 
     if (match.status === 'no_resume') {
       card.innerHTML = `
@@ -269,7 +287,7 @@
             <span style="font-size:11px; color:#8b949e;">Click extension icon to save resume</span>
           </div>
           <div style="font-size:12px; color:#c9d1d9; line-height:1.4;">
-            Save your resume once in the Chrome toolbar to see your <strong>Fit Score (80%+ High, 50% Moderate)</strong> and skill gaps for <strong>${ctx.title}</strong>!
+            Save your resume once in the Chrome toolbar to see your <strong>Fit Score</strong> and skill gaps for <strong>${title}</strong>!
           </div>
           <a href="${prepUrl}" target="_blank" class="prepinterview-cta-btn" style="margin-top:6px;">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
@@ -296,9 +314,9 @@
           <button class="prepinterview-toggle-btn" id="prepinterview-toggle-btn">View Breakdown ▾</button>
         </div>
 
-        <div class="prepinterview-details" id="prepinterview-details-panel">
+        <div class="prepinterview-details prepinterview-collapsed" id="prepinterview-details-panel">
           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:11px;">
-            <span style="color:#8b949e;">Matched against <strong>${ctx.title}</strong> ${ctx.company ? 'at <strong>' + ctx.company + '</strong>' : ''}</span>
+            <span style="color:#8b949e;">Matched against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''}</span>
           </div>
           
           <div class="prepinterview-label">🟢 Matched Strengths (${match.matchedSkills.length})</div>
@@ -317,42 +335,50 @@
         </div>
       `;
 
+      // Breakdown toggle: ONLY toggles class, NEVER triggers re-injection
       const toggleHeader = card.querySelector('#prepinterview-toggle-header');
       const detailsPanel = card.querySelector('#prepinterview-details-panel');
       const toggleBtn = card.querySelector('#prepinterview-toggle-btn');
 
       if (toggleHeader && detailsPanel && toggleBtn) {
         toggleHeader.addEventListener('click', (e) => {
-          if (e.target.tagName.toLowerCase() === 'a') return;
+          e.stopPropagation();
           const isHidden = detailsPanel.classList.toggle('prepinterview-collapsed');
           toggleBtn.textContent = isHidden ? 'View Breakdown ▾' : 'Hide Breakdown ▴';
         });
       }
     }
 
-    if (ctx.anchor && ctx.anchor.parentElement) {
-      ctx.anchor.insertAdjacentElement('afterend', card);
-    } else {
-      ctx.pane.prepend(card);
-    }
+    // Insert cleanly below action buttons
+    anchor.insertAdjacentElement('afterend', card);
 
+    // Floating pill indicator
     let floatPill = document.getElementById('prepinterview-floating-pill');
     if (!floatPill) {
       floatPill = document.createElement('div');
       floatPill.id = 'prepinterview-floating-pill';
       floatPill.className = 'prepinterview-floating-pill';
       document.body.appendChild(floatPill);
-      floatPill.addEventListener('click', () => {
+      floatPill.addEventListener('click', (e) => {
+        e.stopPropagation();
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     }
     floatPill.innerHTML = `🎯 PrepInterview: <strong>${match.score > 0 ? match.score + '%' : 'Copilot Active'}</strong>`;
   }
 
+  // --- 4. SAFE MUTATION OBSERVER ---
   let debounceTimer = null;
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver((mutations) => {
+    // Ignore any mutation caused by our own card
+    const isOurMutation = mutations.every(m => {
+      const target = m.target;
+      return target && target.closest && (target.closest('#prepinterview-copilot-card') || target.closest('#prepinterview-floating-pill'));
+    });
+    if (isOurMutation) return;
+
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(runInjection, 400);
+    debounceTimer = setTimeout(runInjection, 300);
   });
 
   observer.observe(document.body, {
@@ -360,7 +386,7 @@
     subtree: true
   });
 
-  setTimeout(runInjection, 1000);
+  setTimeout(runInjection, 800);
   setTimeout(runInjection, 2000);
-  window.addEventListener('popstate', () => setTimeout(runInjection, 500));
+  window.addEventListener('popstate', () => setTimeout(runInjection, 400));
 })();
