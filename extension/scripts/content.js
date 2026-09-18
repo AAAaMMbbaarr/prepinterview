@@ -1,142 +1,209 @@
-// PrepInterview Copilot Content Script for LinkedIn Jobs
+// PrepInterview Copilot - All-in-One Resilient Content Script
 (function() {
-  console.log('[PrepInterview Copilot] Content script initialized on', window.location.href);
+  console.log('[PrepInterview Copilot] Loaded on:', window.location.href);
 
-  function findJobDetails() {
-    // 1. Locate Job Description
-    let desc = '';
-    const descSelectors = [
-      '#job-details',
-      '.jobs-description__content',
-      '.jobs-description-content__text',
-      '.jobs-box__html-content',
-      '.jobs-description',
-      '[class*="jobs-description"]',
-      'article'
-    ];
-    for (const sel of descSelectors) {
-      const el = document.querySelector(sel);
-      if (el && el.innerText && el.innerText.trim().length > 60) {
-        desc = el.innerText.trim();
-        break;
-      }
-    }
+  // --- 1. EMBEDDED SKILL TAXONOMY & MATCHER ---
+  const TAXONOMY = [
+    // Tech & Engineering
+    "python", "javascript", "typescript", "java", "c++", "c#", "golang", "go", "ruby", "php", "rust", "swift", "kotlin",
+    "react", "react.js", "next.js", "vue", "angular", "node", "node.js", "express", "fastapi", "django", "flask", "spring boot",
+    "aws", "amazon web services", "azure", "gcp", "google cloud", "docker", "kubernetes", "k8s", "terraform", "ci/cd", "github actions",
+    "postgresql", "postgres", "mysql", "mongodb", "redis", "elasticsearch", "kafka", "rabbitmq", "dynamodb", "graphql", "rest api", "restful",
+    "microservices", "system design", "distributed systems", "data structures", "algorithms", "scalability", "linux", "git",
+    "machine learning", "deep learning", "nlp", "llm", "genai", "pytorch", "tensorflow", "computer vision", "pandas", "numpy", "scikit-learn",
+    // Product & Analytics
+    "product management", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
+    "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
+    "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
+    // Business, MBA & Strategy
+    "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
+    "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
+    // Marketing & Sales
+    "seo", "sem", "ppc", "performance marketing", "cac", "ltv", "hubspot", "salesforce", "lead generation", "cold outreach",
+    "enterprise sales", "content strategy", "email marketing", "social media", "brand strategy", "copywriting", "growth hacking",
+    // Operations & HR
+    "talent acquisition", "recruiting", "employee relations", "performance management", "onboarding", "compensation", "compliance", "payroll"
+  ];
 
-    // Fallback: search for "About the job" heading
-    if (!desc) {
-      const headings = Array.from(document.querySelectorAll('h2, h3, h4, h5, div, span'));
-      for (const h of headings) {
-        const txt = (h.textContent || '').trim().toLowerCase();
-        if (txt === 'about the job' || txt === 'job description') {
-          const parent = h.closest('section, article, div.jobs-description, div');
-          if (parent && parent.innerText.length > 60) {
-            desc = parent.innerText.trim();
-            break;
-          }
-        }
-      }
-    }
-
-    // 2. Locate Job Title
-    let title = 'Target Role';
-    const titleSelectors = [
-      '.job-details-jobs-unified-top-card__job-title',
-      '.jobs-unified-top-card__job-title',
-      'h1.t-24',
-      'h1'
-    ];
-    for (const sel of titleSelectors) {
-      const el = document.querySelector(sel);
-      if (el && el.innerText && el.innerText.trim().length > 1) {
-        title = el.innerText.trim();
-        break;
-      }
-    }
-
-    // 3. Locate Company Name
-    let company = '';
-    const compSelectors = [
-      '.job-details-jobs-unified-top-card__company-name',
-      '.jobs-unified-top-card__company-name',
-      '.job-details-jobs-unified-top-card__primary-description a',
-      '[class*="company-name"]'
-    ];
-    for (const sel of compSelectors) {
-      const el = document.querySelector(sel);
-      if (el && el.innerText && el.innerText.trim().length > 1) {
-        company = el.innerText.trim();
-        break;
-      }
-    }
-
-    // 4. Locate Injection Anchor Target
-    let target = null;
-    let position = 'after';
-
-    // Strategy A: Find the Apply / Save button container
-    const allButtons = Array.from(document.querySelectorAll('button, a'));
-    const applyBtn = allButtons.find(b => {
-      const t = (b.innerText || '').trim().toLowerCase();
-      return t === 'apply' || t === 'easy apply';
-    });
-
-    if (applyBtn) {
-      // Step up to the action bar container
-      const actionsContainer = applyBtn.closest('.jobs-apply-button--top-card') 
-        || applyBtn.closest('.jobs-unified-top-card__content--two-pane')
-        || applyBtn.closest('.job-details-jobs-unified-top-card__container--two-pane')
-        || applyBtn.parentElement.parentElement;
-      if (actionsContainer) {
-        target = actionsContainer;
-        position = 'after';
-      }
-    }
-
-    // Strategy B: Fallback right before "About the job" container or description
-    if (!target) {
-      const descEl = document.querySelector('#job-details, .jobs-description__content, .jobs-description');
-      if (descEl) {
-        target = descEl;
-        position = 'before';
-      }
-    }
-
-    return { desc, title, company, target, position };
+  function normalize(str) {
+    return (str || '').toLowerCase().replace(/[^a-z0-9+#./\s-]/g, ' ');
   }
 
-  async function injectOrUpdateWidget() {
-    // Only proceed on LinkedIn job-related views
-    if (!window.location.href.includes('linkedin.com/jobs')) {
+  function extractSkills(text) {
+    const norm = ' ' + normalize(text) + ' ';
+    const found = new Set();
+    for (const skill of TAXONOMY) {
+      const pattern = new RegExp('(\\s|^)' + skill.replace(/[-/\^$*+?.()|[\]{}]/g, '\\$&') + '(\\s|$)', 'i');
+      if (pattern.test(norm)) {
+        found.add(skill);
+      }
+    }
+    return Array.from(found);
+  }
+
+  function calculateMatch(resumeText, jdText) {
+    if (!resumeText || resumeText.trim().length < 20) {
+      return {
+        status: 'no_resume',
+        score: 0,
+        tier: 'Resume Needed',
+        badge: '⚙️',
+        color: '#8b949e',
+        matchedSkills: [],
+        missingSkills: []
+      };
+    }
+
+    const jdSkills = extractSkills(jdText);
+    const resumeSkills = extractSkills(resumeText);
+
+    const matched = [];
+    const missing = [];
+
+    for (const skill of jdSkills) {
+      if (resumeSkills.includes(skill)) {
+        matched.push(skill);
+      } else {
+        missing.push(skill);
+      }
+    }
+
+    let score = 50;
+    if (jdSkills.length > 0) {
+      score = Math.round((matched.length / jdSkills.length) * 75 + 20);
+    } else {
+      const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
+      const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
+      let common = 0;
+      jdTokens.forEach(t => { if (resTokens.has(t)) common++; });
+      score = Math.min(90, Math.round((common / Math.max(1, jdTokens.size)) * 120 + 20));
+    }
+
+    score = Math.max(25, Math.min(95, score));
+    let tier = 'Reach Role';
+    let badge = '🔴';
+    let color = '#f85149';
+
+    if (score >= 78) {
+      tier = 'Strong Match';
+      badge = '🟢';
+      color = '#3fb950';
+    } else if (score >= 55) {
+      tier = 'Moderate Match';
+      badge = '🟡';
+      color = '#d29922';
+    }
+
+    return {
+      status: 'ready',
+      score: score,
+      tier: tier,
+      badge: badge,
+      color: color,
+      matchedSkills: matched.slice(0, 5),
+      missingSkills: missing.slice(0, 4)
+    };
+  }
+
+  // --- 2. FAIL-PROOF RESILIENT DOM DISCOVERY ---
+  function findJobContext() {
+    // Look for Apply or Save buttons (visible in any LinkedIn job view)
+    const allButtons = Array.from(document.querySelectorAll('button, a'));
+    const actionBtn = allButtons.find(el => {
+      const t = (el.innerText || '').trim().toLowerCase();
+      return t === 'apply' || t === 'easy apply' || t === 'save';
+    });
+
+    if (!actionBtn) {
+      return null;
+    }
+
+    // Climb up to find the active job container pane (width > 280 and height > 280)
+    let pane = actionBtn.parentElement;
+    while (pane && pane !== document.body) {
+      if (pane.offsetWidth > 280 && pane.offsetHeight > 280) {
+        break;
+      }
+      pane = pane.parentElement;
+    }
+
+    if (!pane) {
+      pane = document.querySelector('main, .scaffold-layout__detail, .jobs-search__job-details') || document.body;
+    }
+
+    // Extract title from headings inside pane
+    let title = 'Target Role';
+    const headings = Array.from(pane.querySelectorAll('h1, h2, h3, a[href*="/jobs/view/"]'));
+    for (const h of headings) {
+      const txt = (h.innerText || '').trim();
+      if (txt.length > 2 && !txt.toLowerCase().includes('preferences') && !txt.toLowerCase().includes('linkedin')) {
+        title = txt;
+        break;
+      }
+    }
+
+    // Extract company
+    let company = '';
+    const companyMatch = pane.innerText.match(/([A-Z][A-Za-z0-9&.\s]{2,25})\s*·\s*([A-Za-z\s,]+)/);
+    if (companyMatch) {
+      company = companyMatch[1].trim();
+    }
+
+    // Extract full description text from the pane
+    const desc = pane.innerText || '';
+
+    // Find the button row container to anchor our card
+    let anchor = actionBtn.parentElement;
+    if (anchor.parentElement && anchor.parentElement.offsetWidth < 600) {
+      anchor = anchor.parentElement;
+    }
+
+    return {
+      pane,
+      anchor,
+      title,
+      company,
+      desc
+    };
+  }
+
+  // --- 3. WIDGET INJECTION ---
+  async function runInjection() {
+    const ctx = findJobContext();
+    if (!ctx || ctx.desc.length < 40) {
       return;
     }
 
-    const { desc, title, company, target, position } = findJobDetails();
-
-    if (!desc || !target) {
-      return;
-    }
-
-    // Check if card is already injected for this exact title
+    // Check if card is already injected for this job title
     const existing = document.getElementById('prepinterview-copilot-card');
-    if (existing && existing.dataset.jobTitle === title) {
-      return; // Already up to date
+    if (existing && existing.dataset.jobTitle === ctx.title) {
+      return;
     }
 
     if (existing) {
       existing.remove();
     }
 
-    console.log('[PrepInterview Copilot] Injecting widget for:', title, 'at', company);
+    console.log('[PrepInterview Copilot] Detected job:', ctx.title, 'at', ctx.company);
 
-    const { resumeText } = await chrome.storage.local.get(['resumeText']);
-    const match = window.PrepInterviewMatcher.calculateMatch(resumeText, desc);
+    // Retrieve resume safely
+    let resumeText = '';
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const stored = await chrome.storage.local.get(['resumeText']);
+        resumeText = stored.resumeText || '';
+      }
+    } catch (err) {
+      console.warn('[PrepInterview Copilot] Storage read notice:', err);
+    }
+
+    const match = calculateMatch(resumeText, ctx.desc);
+    const prepUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(ctx.desc) + '&title=' + encodeURIComponent(ctx.title) + '&company=' + encodeURIComponent(ctx.company) + '&utm_source=linkedin_copilot';
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
     card.className = 'prepinterview-widget-card';
-    card.dataset.jobTitle = title;
-
-    const prepUrl = `https://prepinterview.online/?jd=${encodeURIComponent(desc)}&title=${encodeURIComponent(title)}&company=${encodeURIComponent(company)}&utm_source=linkedin_copilot`;
+    card.dataset.jobTitle = ctx.title;
 
     if (match.status === 'no_resume') {
       card.innerHTML = `
@@ -148,7 +215,7 @@
             <span style="font-size:11px; color:#8b949e;">Click extension icon to save resume</span>
           </div>
           <div style="font-size:12px; color:#c9d1d9; line-height:1.4;">
-            Save your resume once in the toolbar to see your <strong>Fit Score (80%+ High, 50% Moderate)</strong> and skill gaps here!
+            Save your resume once in the Chrome toolbar to see your <strong>Fit Score (80%+ High, 50% Moderate)</strong> and skill gaps here!
           </div>
           <a href="${prepUrl}" target="_blank" class="prepinterview-cta-btn" style="margin-top:6px;">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
@@ -177,7 +244,7 @@
 
         <div class="prepinterview-details" id="prepinterview-details-panel">
           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:11px;">
-            <span style="color:#8b949e;">Matched against <strong>${title}</strong> at <strong>${company || 'Hiring Company'}</strong></span>
+            <span style="color:#8b949e;">Matched against <strong>${ctx.title}</strong> ${ctx.company ? 'at <strong>' + ctx.company + '</strong>' : ''}</span>
           </div>
           
           <div class="prepinterview-label">🟢 Matched Strengths (${match.matchedSkills.length})</div>
@@ -196,7 +263,6 @@
         </div>
       `;
 
-      // Toggle breakdown event
       const toggleHeader = card.querySelector('#prepinterview-toggle-header');
       const detailsPanel = card.querySelector('#prepinterview-details-panel');
       const toggleBtn = card.querySelector('#prepinterview-toggle-btn');
@@ -210,18 +276,32 @@
       }
     }
 
-    if (position === 'after') {
-      target.insertAdjacentElement('afterend', card);
+    // Insert right after the button container row
+    if (ctx.anchor && ctx.anchor.parentElement) {
+      ctx.anchor.insertAdjacentElement('afterend', card);
     } else {
-      target.insertAdjacentElement('beforebegin', card);
+      ctx.pane.prepend(card);
     }
+
+    // Also update/inject the floating indicator pill in bottom-right
+    let floatPill = document.getElementById('prepinterview-floating-pill');
+    if (!floatPill) {
+      floatPill = document.createElement('div');
+      floatPill.id = 'prepinterview-floating-pill';
+      floatPill.className = 'prepinterview-floating-pill';
+      document.body.appendChild(floatPill);
+      floatPill.addEventListener('click', () => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+    floatPill.innerHTML = `🎯 PrepInterview: <strong>${match.score > 0 ? match.score + '%' : 'Copilot Active'}</strong>`;
   }
 
-  // Throttle mutation observer calls
+  // Throttle mutation observer
   let debounceTimer = null;
   const observer = new MutationObserver(() => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(injectOrUpdateWidget, 400);
+    debounceTimer = setTimeout(runInjection, 500);
   });
 
   observer.observe(document.body, {
@@ -229,8 +309,7 @@
     subtree: true
   });
 
-  // Run on page load and on popstate/navigation
-  window.addEventListener('popstate', () => setTimeout(injectOrUpdateWidget, 800));
-  setTimeout(injectOrUpdateWidget, 1000);
-  setTimeout(injectOrUpdateWidget, 2500);
+  setTimeout(runInjection, 1000);
+  setTimeout(runInjection, 2500);
+  window.addEventListener('popstate', () => setTimeout(runInjection, 500));
 })();

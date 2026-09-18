@@ -1,16 +1,19 @@
 /* PrepInterview Copilot Injected Styles for LinkedIn */
 .prepinterview-widget-card {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   background: #0d1117 !important;
-  border: 1px solid #30363d !important;
+  border: 2px solid #1f6feb !important;
   border-radius: 12px !important;
-  padding: 14px 16px !important;
-  margin: 12px 0 16px 0 !important;
+  padding: 16px !important;
+  margin: 16px 0 !important;
   color: #c9d1d9 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
-  transition: all 0.3s ease !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6) !important;
   position: relative !important;
-  z-index: 10 !important;
+  z-index: 99999 !important;
+  width: auto !important;
 }
 
 .prepinterview-header {
@@ -25,12 +28,13 @@
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  flex-wrap: wrap !important;
 }
 
 .prepinterview-score-pill {
   font-size: 13px !important;
   font-weight: 700 !important;
-  padding: 4px 10px !important;
+  padding: 5px 12px !important;
   border-radius: 20px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -45,32 +49,33 @@
 }
 
 .prepinterview-toggle-btn {
-  font-size: 11px !important;
+  font-size: 12px !important;
   color: #58a6ff !important;
   background: transparent !important;
   border: none !important;
   cursor: pointer !important;
   font-weight: 600 !important;
+  padding: 4px 8px !important;
 }
 
 .prepinterview-details {
   margin-top: 12px !important;
   padding-top: 12px !important;
-  border-top: 1px solid #21262d !important;
+  border-top: 1px solid #30363d !important;
 }
 
 .prepinterview-pills-row {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 6px !important;
-  margin: 6px 0 10px 0 !important;
+  margin: 6px 0 12px 0 !important;
 }
 
 .prepinterview-pill {
   font-size: 11px !important;
   font-weight: 600 !important;
-  padding: 2px 8px !important;
-  border-radius: 10px !important;
+  padding: 3px 9px !important;
+  border-radius: 12px !important;
 }
 
 .prepinterview-pill-match {
@@ -103,21 +108,49 @@
   color: #ffffff !important;
   font-size: 13px !important;
   font-weight: 700 !important;
-  padding: 10px 16px !important;
+  padding: 12px 18px !important;
   border-radius: 8px !important;
   text-decoration: none !important;
   border: none !important;
   cursor: pointer !important;
   margin-top: 10px !important;
-  box-shadow: 0 2px 8px rgba(31, 111, 235, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(31, 111, 235, 0.4) !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  box-sizing: border-box !important;
 }
 
 .prepinterview-cta-btn:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(31, 111, 235, 0.6) !important;
+  box-shadow: 0 6px 18px rgba(31, 111, 235, 0.6) !important;
+  color: #ffffff !important;
 }
 
 .prepinterview-collapsed {
   display: none !important;
+}
+
+/* Floating status dock in bottom right */
+.prepinterview-floating-pill {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 999999 !important;
+  background: #0d1117 !important;
+  color: #f0f6fc !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  padding: 8px 14px !important;
+  border-radius: 30px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.prepinterview-floating-pill:hover {
+  transform: scale(1.04) !important;
+  border-color: #58a6ff !important;
 }
