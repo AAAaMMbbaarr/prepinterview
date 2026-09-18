@@ -915,6 +915,57 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
     badge_class = "high" if score >= 80 else ("med" if score >= 60 else "low")
     title_text = "🎯 Round 1 High-Stakes Defense Diagnostic" if is_single_round else "🎯 Complete Candidate Debrief & Readiness Diagnostic"
 
+    # Exposed claims & vulnerability lead
+    exposed = debrief.get("exposed_resume_claims", [])
+    weakest = debrief.get("weakest_answer", {})
+    exposed_count = len(exposed) if exposed else (1 if weakest and weakest.get("quote_or_gap") else 0)
+
+    # 1. Lead with Vulnerability Exposure Alert
+    if exposed_count > 0:
+        claim_word = "claim" if exposed_count == 1 else "claims"
+        st.markdown(f"""
+        <div style="background:#2d1515;border:1px solid #ff7b72;border-left:4px solid #f85149;border-radius:10px;padding:12px 16px;margin-bottom:1.2rem;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:1.25rem;">⚠️</span>
+                <span style="font-weight:700;color:#ff7b72;font-size:1.02rem;">
+                    You struggled to defend {exposed_count} resume {claim_word} under pressure
+                </span>
+            </div>
+            <div style="font-size:0.85rem;color:#c9d1d9;margin-top:4px;">
+                The interviewer detected unverified baselines or unclear individual ownership. Review the breakdown below and practice the recommended STAR defense formula.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 2. Progression Delta (if candidate re-drilled weak claim)
+    prev_debrief = st.session_state.get("previous_debrief")
+    if prev_debrief:
+        prev_score = prev_debrief.get("overall_readiness_score", score)
+        prev_scores = prev_debrief.get("scores", {})
+        delta_score = score - prev_score
+        delta_q = q_score - prev_scores.get("quantitative_rigor", q_score)
+        delta_s = s_score - prev_scores.get("star_structure", s_score)
+        delta_p = p_score - prev_scores.get("pressure_defense", p_score)
+
+        def _fmt_delta(val):
+            sign = "+" if val > 0 else ""
+            color = "#3fb950" if val > 0 else ("#8b949e" if val == 0 else "#ff7b72")
+            return f'<span style="color:{color};font-weight:700;">{sign}{val}%</span>'
+
+        st.markdown(f"""
+        <div style="background:#0d1f14;border:1px solid #238636;border-radius:10px;padding:12px 16px;margin-bottom:1.2rem;">
+            <div style="font-weight:700;color:#3fb950;font-size:0.92rem;margin-bottom:6px;">
+                📈 Re-drill Progression Delta (vs. Previous Attempt)
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:0.85rem;color:#c9d1d9;">
+                <div>Overall Readiness: {_fmt_delta(delta_score)}</div>
+                <div>Quantitative Rigor: {_fmt_delta(delta_q)}</div>
+                <div>STAR Brevity: {_fmt_delta(delta_s)}</div>
+                <div>Pressure Defense: {_fmt_delta(delta_p)}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     st.markdown(f"""
     <div class="debrief-card">
         <div class="debrief-header">
@@ -1003,6 +1054,7 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
     col_act1, col_act2 = st.columns([1, 1])
     with col_act1:
         if st.button("🔁 Practice Defending Your Weakest Claim Again", type="primary", use_container_width=True):
+            st.session_state.previous_debrief = debrief
             st.session_state.active_redrill = debrief.get("weakest_answer")
             st.session_state.mock_messages = []
             st.session_state.mock_debrief = None
@@ -1015,6 +1067,7 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
             st.link_button("👑 Unlock Full 4-Round Interview & Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             if st.button("🔄 Start Fresh 4-Round Interview", use_container_width=True):
+                st.session_state.previous_debrief = debrief
                 st.session_state.active_redrill = None
                 st.session_state.mock_messages = []
                 st.session_state.mock_debrief = None
@@ -1075,16 +1128,20 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
         st.markdown("""
         <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.4rem;border-radius:12px;margin:1.5rem 0;">
             <div style="font-size:1.15rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
-                👑 Ready for the Full 4-Round Pressure Simulation?
+                👑 Ready for the Full 4-Round Pressure Simulation? (₹49 One-Time)
             </div>
             <p style="font-size:0.9rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
-                You just defended your #1 claim. The full 4-round simulation tests your remaining claims, technical architecture, and cross-functional leadership scenarios with complete adaptive debriefs.
+                You just defended your #1 claim. Unlock the complete prep toolkit to practice remaining claims, system trade-offs, and leadership scenarios.
             </p>
-            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.75rem 1rem;font-size:0.83rem;color:#ccc;margin-bottom:0.8rem;text-align:left;">
-                ✅ <strong>Full 4-Round Adaptive Mock:</strong> Continuous pressure questioning on all flagged claims.<br>
-                ✅ <strong>Complete Candidate Debrief:</strong> Comprehensive rubric scorecards across all rounds.<br>
-                ✅ <strong>Downloadable Prep Dossier:</strong> Complete personalized interview cheat-sheet.<br>
-                ✅ <strong>One-Time Pass:</strong> Just ₹49. No recurring fees, zero subscription trap.
+            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem 1.1rem;font-size:0.83rem;color:#ccc;margin-bottom:0.8rem;text-align:left;line-height:1.7;">
+                ✅ <strong>1. Full 5-Claim Vulnerability Audit:</strong> All attack vectors & risk categories revealed.<br>
+                ✅ <strong>2. 4-Round Adaptive Voice Simulation:</strong> Multi-turn pressure grilling across your entire background.<br>
+                ✅ <strong>3. Word-for-Word Defense Playbooks:</strong> High-impact STAR formulas for every flagged claim.<br>
+                ✅ <strong>4. Comprehensive Candidate Debrief:</strong> Rigor, brevity, and pressure defense rubrics.<br>
+                ✅ <strong>5. Downloadable Prep Dossier:</strong> Markdown cheat-sheet to review 10 minutes before your real call.
+            </div>
+            <div style="font-size:0.75rem;color:#8b949e;text-align:center;">
+                ⚡ Instant unlock · Razorpay UPI, Cards & NetBanking · 100% money-back guarantee
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1131,13 +1188,78 @@ MODEL = st.session_state.selected_model
 if st.session_state.step == 0:
     render_steps(0)
 
-    st.markdown('<p class="hero-title">Defend Your Resume Under Pressure</p>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-title">Find What Interviewers Will Challenge on Your Resume</p>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="hero-sub" style="margin-bottom:1.5rem;">'
-        'Upload your resume and target role. We pinpoint the exact claims an interviewer will challenge and prepare you with a realistic mock interview.'
+        '<p class="hero-sub" style="margin-bottom:1.2rem;">'
+        'Upload your resume and target job description. We pinpoint the exact claims an interviewer will challenge, grill you in a realistic spoken mock interview, and score your defense under pressure.'
         '</p>',
         unsafe_allow_html=True,
     )
+
+    # ── 5-Step Adversarial Journey Banner ──
+    st.markdown("""
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:10px 14px;margin-bottom:1.4rem;font-size:0.78rem;color:#8b949e;overflow-x:auto;gap:8px;">
+        <span style="color:#58a6ff;font-weight:700;white-space:nowrap;">1. Resume Upload</span>
+        <span style="color:#484f58;">→</span>
+        <span style="color:#f0883e;font-weight:700;white-space:nowrap;">2. Vulnerability Audit</span>
+        <span style="color:#484f58;">→</span>
+        <span style="color:#ff7b72;font-weight:700;white-space:nowrap;">3. Interviewer Challenge</span>
+        <span style="color:#484f58;">→</span>
+        <span style="color:#ffd700;font-weight:700;white-space:nowrap;">4. Pressure Grilling</span>
+        <span style="color:#484f58;">→</span>
+        <span style="color:#3fb950;font-weight:700;white-space:nowrap;">5. Candidate Debrief</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Annotated Live Teardown Example ──
+    with st.expander("🔎 See a Real Resume Defense Teardown (How Interviewers Dissect Claims)", expanded=False):
+        st.markdown("""
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;font-size:0.85rem;line-height:1.6;">
+            <div style="margin-bottom:10px;">
+                <span style="font-size:0.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:0.5px;">📄 Resume Claim Under Inspection</span>
+                <div style="color:#e6edf3;font-weight:600;margin-top:2px;">
+                    "Led mobile web checkout redesign, boosting conversion rate by 42% across 1.2M monthly active sessions."
+                </div>
+            </div>
+            
+            <div style="background:#0d1117;border-left:3px solid #ff7b72;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
+                <span style="font-size:0.72rem;font-weight:700;color:#ff7b72;text-transform:uppercase;letter-spacing:0.5px;">⚠️ The Vulnerability Trap</span>
+                <div style="color:#8b949e;font-size:0.82rem;">
+                    Missing pre-existing baseline, unisolated marketing/seasonality spikes, and ambiguous individual contribution versus engineering team.
+                </div>
+            </div>
+
+            <div style="background:#0d1117;border-left:3px solid #ffd700;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
+                <span style="font-size:0.72rem;font-weight:700;color:#ffd700;text-transform:uppercase;letter-spacing:0.5px;">🧐 Interviewer Grilling Question</span>
+                <div style="color:#ffd700;font-style:italic;">
+                    "What was your baseline conversion rate before the redesign? And how did you isolate your UI modifications from ongoing paid acquisition campaigns or seasonal holiday spikes?"
+                </div>
+            </div>
+
+            <div style="background:#2d1515;border-left:3px solid #f85149;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.72rem;font-weight:700;color:#f85149;text-transform:uppercase;letter-spacing:0.5px;">❌ Typical Candidate Stumble</span>
+                    <span style="font-size:0.72rem;background:#ff4444;color:white;font-weight:700;padding:1px 6px;border-radius:4px;">FAIL · 25% Rigor</span>
+                </div>
+                <div style="color:#e6edf3;font-size:0.82rem;margin-top:4px;">
+                    <em>"Well, we noticed checkout drop-off was pretty high, so our team revamped the entire mobile UI, and after we launched the project the overall conversions went up by 42%."</em>
+                </div>
+                <div style="color:#ff7b72;font-size:0.78rem;margin-top:4px;">
+                    <strong>Why it fails:</strong> Passive "we" hides personal ownership, zero numeric baseline stated, zero statistical holdout or seasonality controls.
+                </div>
+            </div>
+
+            <div style="background:#0d1f14;border-left:3px solid #238636;padding:8px 12px;border-radius:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.72rem;font-weight:700;color:#3fb950;text-transform:uppercase;letter-spacing:0.5px;">✅ Winning STAR Defense Formula</span>
+                    <span style="font-size:0.72rem;background:#238636;color:white;font-weight:700;padding:1px 6px;border-radius:4px;">PASS · 92% Rigor</span>
+                </div>
+                <div style="color:#c9d1d9;font-size:0.82rem;margin-top:4px;">
+                    <em>"Our baseline checkout completion was 2.1% across 1.2M sessions. I personally analyzed drop-off data in Mixpanel, identified payment gateway step drop-offs, and ran a 50/50 randomized A/B test over 3 weeks. By keeping a concurrent holdout group, we eliminated holiday seasonality confounders and verified a true statistically significant lift to 2.98% (+42% relative)."</em>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── Quick Bullet Tester (Optional Expandable) ──
     with st.expander("💡 Want to test 1 resume bullet point first? (Free Live Attack Preview)", expanded=False):
@@ -1555,12 +1677,19 @@ elif st.session_state.step == 2:
                 st.markdown("""
                 <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.4rem;border-radius:12px;margin-top:1.5rem;">
                     <div style="font-size:1.15rem;font-weight:800;color:#ffd700;margin-bottom:0.35rem;">
-                        👑 Unlock All 10+ Question Strategies & Complete Pro Pass
+                        👑 Unlock All 10+ Question Strategies & Complete Pro Pass (₹49)
                     </div>
                     <div style="font-size:0.88rem;color:#e6edf3;line-height:1.5;margin-bottom:0.85rem;">
-                        Get full strategic STAR frameworks for all 10 questions, complete Attack Mode defense playbooks, downloadable Prep Dossier, and unlimited mock interviews.
+                        Get the complete candidate toolkit to walk into your interview with zero surprises:
                     </div>
-                    <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem;margin-bottom:0.9rem;font-size:0.82rem;">
+                    <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem 1.1rem;font-size:0.83rem;color:#ccc;margin-bottom:0.9rem;text-align:left;line-height:1.7;">
+                        ✅ <strong>1. Full 5-Claim Vulnerability Audit:</strong> All attack vectors & risk categories revealed.<br>
+                        ✅ <strong>2. 4-Round Adaptive Voice Simulation:</strong> Multi-turn pressure grilling across your entire background.<br>
+                        ✅ <strong>3. Word-for-Word Defense Playbooks:</strong> High-impact STAR formulas for every flagged claim.<br>
+                        ✅ <strong>4. Comprehensive Candidate Debrief:</strong> Rigor, brevity, and pressure defense rubrics.<br>
+                        ✅ <strong>5. Downloadable Prep Dossier:</strong> Markdown cheat-sheet to review 10 minutes before your real call.
+                    </div>
+                    <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.75rem;margin-bottom:0.8rem;font-size:0.8rem;">
                         <div style="display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding-bottom:5px;margin-bottom:5px;">
                             <span style="color:#8b949e;">1-on-1 Human Mock Calls</span>
                             <span style="color:#f85149;font-weight:600;">₹1,500 – ₹3,000 (1 call)</span>
@@ -1571,11 +1700,11 @@ elif st.session_state.step == 2:
                         </div>
                         <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:2px;">
                             <span style="color:#ffd700;">PrepInterview Pro Pass</span>
-                            <span style="color:#ffd700;font-size:0.9rem;">₹49 (One-Time · No Subscription)</span>
+                            <span style="color:#ffd700;font-size:0.88rem;">₹49 (One-Time · No Subscriptions)</span>
                         </div>
                     </div>
-                    <div style="font-size:0.8rem;color:#8b949e;margin-bottom:0.5rem;">
-                        ☕ <i>Less than a cup of coffee. Landing an 8–15 LPA job pays ₹40,000–₹1,00,000+ extra every month.</i>
+                    <div style="font-size:0.75rem;color:#8b949e;margin-bottom:0.4rem;">
+                        ☕ <i>Less than a cup of coffee. Instant access with full 24-hour money-back guarantee.</i>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
