@@ -43,9 +43,9 @@
     return Array.from(found);
   }
 
-  function calculateMatch(resumeText, jdText, locationMeta) {
+  function calculateMatch(resumeText, jdText, locationMeta, jobTitle) {
     if (window.PrepInterviewMatcher && typeof window.PrepInterviewMatcher.calculateMatch === 'function') {
-      return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta);
+      return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta, jobTitle);
     }
 
     if (!resumeText || resumeText.trim().length < 20) {
@@ -323,7 +323,7 @@
     }
 
     const locationMeta = getJobLocation(pane);
-    const match = calculateMatch(resumeText, desc, locationMeta);
+    const match = calculateMatch(resumeText, desc, locationMeta, title);
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
@@ -355,11 +355,14 @@
 
       const gapPills = match.missingSkills.length > 0 
         ? match.missingSkills.map(s => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${s}</span>`).join('')
-        : '<span style="font-size:11px;color:#3fb950;">No critical gaps detected</span>';
+        : (match.score >= 75
+            ? '<span style="font-size:11px;color:#3fb950;">No critical skill gaps detected</span>'
+            : '<span class="prepinterview-pill prepinterview-pill-gap">⚠️ Functional domain alignment required</span>');
 
+      const disqLabel = match.score < 50 ? '⚠️ Key Qualification Gaps' : '⚠️ Mandatory Criteria Deficit';
       const disqPills = (match.disqualifiers && match.disqualifiers.length > 0)
         ? `
-          <div class="prepinterview-label" style="color:#ff7b72; margin-top:8px;">⚠️ Mandatory Criteria Deficit (${match.disqualifiers.length})</div>
+          <div class="prepinterview-label" style="color:#ff7b72; margin-top:8px;">${disqLabel} (${match.disqualifiers.length})</div>
           <div class="prepinterview-pills-row">
             ${match.disqualifiers.map(d => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${d}</span>`).join('')}
           </div>
