@@ -1,4 +1,4 @@
-// PrepInterview Copilot - Client-Side Skill & FitScore Engine
+// PrepInterview Copilot - Client-Side Multi-Factor Match Engine (Skills, Experience, Location, Education)
 (function() {
   const TAXONOMY = [
     // Tech & Engineering
@@ -41,7 +41,257 @@
     return Array.from(found);
   }
 
-  function calculateMatch(resumeText, jdText) {
+  // --- EXPERIENCE EXTRACTION ---
+  function extractExperience(text) {
+    if (!text || text.trim().length < 10) {
+      return { years: 0, label: 'Not specified' };
+    }
+
+    // 1. Direct explicit mention e.g. "4+ years of experience", "over 5 yrs exp"
+    const explicitRegex = /(?:over|more than|around|approx(?:imately)?|\+)?\s*(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp|background|track record)/i;
+    const explicitMatch = text.slice(0, 1500).match(explicitRegex);
+    let explicitYears = null;
+    if (explicitMatch && explicitMatch[1]) {
+      const parsed = parseFloat(explicitMatch[1]);
+      if (parsed > 0 && parsed <= 35) {
+        explicitYears = parsed;
+      }
+    }
+
+    // 2. Year intervals across work history (e.g. 2020-2024, 2021-Present, etc.)
+    const currentYear = new Date().getFullYear();
+    const intervalRegex = /\b(19\d{2}|20\d{2})\s*(?:-|–|—|to)\s*(19\d{2}|20\d{2}|present|current|now|till date)\b/gi;
+    let match;
+    let minYear = 9999;
+    let maxYear = 0;
+    let foundIntervals = 0;
+
+    while ((match = intervalRegex.exec(text)) !== null) {
+      const start = parseInt(match[1], 10);
+      let end = match[2].toLowerCase();
+      if (end.includes('present') || end.includes('current') || end.includes('now') || end.includes('till')) {
+        end = currentYear;
+      } else {
+        end = parseInt(end, 10);
+      }
+
+      if (start >= 1990 && start <= currentYear && end >= start && (end - start) <= 35) {
+        foundIntervals++;
+        if (start < minYear) minYear = start;
+        if (end > maxYear) maxYear = end;
+      }
+    }
+
+    let calculatedYears = 0;
+    if (foundIntervals > 0 && maxYear >= minYear) {
+      calculatedYears = Math.max(1, maxYear - minYear);
+    }
+
+    const years = explicitYears !== null ? explicitYears : calculatedYears;
+    const label = years > 0 ? `~${years} yr${years === 1 ? '' : 's'}` : 'Not detected';
+
+    return {
+      years: years,
+      label: label
+    };
+  }
+
+  // --- LOCATION EXTRACTION ---
+  function extractCandidateLocation(text) {
+    if (!text) return { city: 'Not specified', isRemote: false, label: 'Not specified' };
+
+    const head = text.slice(0, 1000);
+    const cityMap = [
+      { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru', country: 'India' },
+      { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai', country: 'India' },
+      { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida)\b/i, name: 'Delhi NCR', country: 'India' },
+      { regex: /\b(hyderabad)\b/i, name: 'Hyderabad', country: 'India' },
+      { regex: /\b(pune)\b/i, name: 'Pune', country: 'India' },
+      { regex: /\b(chennai|madras)\b/i, name: 'Chennai', country: 'India' },
+      { regex: /\b(kolkata|calcutta)\b/i, name: 'Kolkata', country: 'India' },
+      { regex: /\b(san francisco|bay area|san jose|sunnyvale|palo alto)\b/i, name: 'San Francisco Bay Area', country: 'US' },
+      { regex: /\b(new york|nyc|manhattan|brooklyn)\b/i, name: 'New York', country: 'US' },
+      { regex: /\b(seattle|redmond)\b/i, name: 'Seattle', country: 'US' },
+      { regex: /\b(austin)\b/i, name: 'Austin', country: 'US' },
+      { regex: /\b(boston|cambridge)\b/i, name: 'Boston', country: 'US' },
+      { regex: /\b(london)\b/i, name: 'London', country: 'UK' },
+      { regex: /\b(singapore)\b/i, name: 'Singapore', country: 'Singapore' },
+      { regex: /\b(dubai)\b/i, name: 'Dubai', country: 'UAE' },
+      { regex: /\b(toronto)\b/i, name: 'Toronto', country: 'Canada' },
+      { regex: /\b(berlin)\b/i, name: 'Berlin', country: 'Germany' }
+    ];
+
+    let foundCity = null;
+    let foundCountry = null;
+    for (const c of cityMap) {
+      if (c.regex.test(head)) {
+        foundCity = c.name;
+        foundCountry = c.country;
+        break;
+      }
+    }
+
+    const isRemote = /\b(remote|work from anywhere|open to remote)\b/i.test(head);
+    let label = foundCity ? `${foundCity}, ${foundCountry}` : (isRemote ? 'Remote / Anywhere' : 'Not specified');
+
+    return {
+      city: foundCity || (isRemote ? 'Remote' : 'Not specified'),
+      country: foundCountry || '',
+      isRemote: isRemote,
+      label: label
+    };
+  }
+
+  // --- EDUCATION & PEDIGREE EXTRACTION ---
+  function extractCandidateEducation(text) {
+    if (!text) return { degree: 'Not specified', isTier1: false, tierName: '', label: 'Not specified' };
+
+    const norm = text.toLowerCase();
+
+    // 1. Degree
+    let degree = 'Bachelor\'s';
+    if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(norm)) {
+      degree = 'PhD';
+    } else if (/\b(m\.?b\.?a\.?|master of business administration|pgdm)\b/i.test(norm)) {
+      degree = 'MBA';
+    } else if (/\b(m\.?tech|m\.?e\.?|master of technology)\b/i.test(norm)) {
+      degree = 'M.Tech';
+    } else if (/\b(m\.?s\.?|master of science|m\.?sc)\b/i.test(norm)) {
+      degree = 'MS';
+    } else if (/\b(b\.?tech|b\.?e\.?|bachelor of technology|bachelor of engineering)\b/i.test(norm)) {
+      degree = 'B.Tech';
+    } else if (/\b(b\.?s\.?|bachelor of science|b\.?sc)\b/i.test(norm)) {
+      degree = 'BS';
+    } else if (/\b(bba|b\.?com|bachelor of commerce|bca)\b/i.test(norm)) {
+      degree = 'BBA/B.Com';
+    } else if (/\b(bachelor|degree)\b/i.test(norm)) {
+      degree = 'Bachelor\'s';
+    } else {
+      degree = 'Graduate';
+    }
+
+    // 2. College / Tier-1 Pedigree
+    let isTier1 = false;
+    let tierName = '';
+
+    if (/\b(iit\b|indian institute of technology)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (IIT)';
+    } else if (/\b(bits pilani|bits\b)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (BITS)';
+    } else if (/\b(nit\b|national institute of technology)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (NIT)';
+    } else if (/\b(iiit\b|dtu\b|delhi technological university|nsut\b|jadavpur university)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (Premier Eng)';
+    } else if (/\b(iim\b|indian institute of management)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (IIM)';
+    } else if (/\b(isb\b|indian school of business|xlri|fms\b|spjimr)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (Premier MBA)';
+    } else if (/\b(stanford|mit\b|harvard|uc berkeley|carnegie mellon|cmu\b|oxford|cambridge|princeton|columbia|caltech)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Global Top-Tier';
+    } else if (/\b(srcc|st\.? stephen|loyola|christ university|st\.? xavier)\b/i.test(text)) {
+      isTier1 = true;
+      tierName = 'Tier-1 (Commerce)';
+    }
+
+    const label = isTier1 ? `${degree} · ${tierName}` : degree;
+
+    return {
+      degree: degree,
+      isTier1: isTier1,
+      tierName: tierName,
+      label: label
+    };
+  }
+
+  // --- JD REQUIREMENTS EXTRACTION ---
+  function extractJdRequirements(jdText, locationMeta) {
+    const rawJd = jdText || '';
+    const rawLoc = locationMeta || '';
+    const combined = (rawLoc + '\n' + rawJd);
+
+    // 1. Experience Required
+    let minExp = null;
+    let maxExp = null;
+    const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+)(?:\s*(?:-|to)\s*(\d+))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
+    const expMatch = rawJd.match(expRegex);
+
+    if (expMatch && expMatch[1]) {
+      minExp = parseInt(expMatch[1], 10);
+      if (expMatch[2]) {
+        maxExp = parseInt(expMatch[2], 10);
+      }
+    } else {
+      const plusMatch = rawJd.match(/(\d+)\+\s*(?:years?|yrs?)/i);
+      if (plusMatch && plusMatch[1]) {
+        minExp = parseInt(plusMatch[1], 10);
+      }
+    }
+
+    // 2. Work Mode & Location
+    let workMode = 'On-site';
+    if (/\b(remote|work from home|wfh|anywhere)\b/i.test(combined)) {
+      workMode = 'Remote';
+    } else if (/\b(hybrid)\b/i.test(combined)) {
+      workMode = 'Hybrid';
+    } else if (/\b(on-site|onsite|in-office)\b/i.test(combined)) {
+      workMode = 'On-site';
+    }
+
+    const cityMap = [
+      { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru' },
+      { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai' },
+      { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida)\b/i, name: 'Delhi NCR' },
+      { regex: /\b(hyderabad)\b/i, name: 'Hyderabad' },
+      { regex: /\b(pune)\b/i, name: 'Pune' },
+      { regex: /\b(chennai)\b/i, name: 'Chennai' },
+      { regex: /\b(kolkata)\b/i, name: 'Kolkata' },
+      { regex: /\b(san francisco|bay area|san jose)\b/i, name: 'San Francisco Bay Area' },
+      { regex: /\b(new york|nyc)\b/i, name: 'New York' },
+      { regex: /\b(seattle)\b/i, name: 'Seattle' },
+      { regex: /\b(austin)\b/i, name: 'Austin' },
+      { regex: /\b(london)\b/i, name: 'London' },
+      { regex: /\b(singapore)\b/i, name: 'Singapore' },
+      { regex: /\b(dubai)\b/i, name: 'Dubai' }
+    ];
+
+    let jobCity = null;
+    for (const c of cityMap) {
+      if (c.regex.test(combined)) {
+        jobCity = c.name;
+        break;
+      }
+    }
+
+    // 3. Education / Tier requirement in JD
+    const tierPreferred = /\b(tier\s*1|tier-1|premier institute|top engineering college|top-tier|ivy league|top tier)\b/i.test(rawJd);
+    let degreeReq = 'Bachelor\'s';
+    if (/\b(mba)\b/i.test(rawJd)) {
+      degreeReq = 'MBA';
+    } else if (/\b(master|ms|m\.?tech)\b/i.test(rawJd)) {
+      degreeReq = 'Master\'s';
+    } else if (/\b(ph\.?d)\b/i.test(rawJd)) {
+      degreeReq = 'PhD';
+    }
+
+    return {
+      minExp: minExp,
+      maxExp: maxExp,
+      workMode: workMode,
+      jobCity: jobCity,
+      tierPreferred: tierPreferred,
+      degreeReq: degreeReq
+    };
+  }
+
+  // --- MULTI-FACTOR EVALUATION ---
+  function evaluateMultiFactor(resumeText, jdText, locationMeta) {
     if (!resumeText || resumeText.trim().length < 20) {
       return {
         status: 'no_resume',
@@ -55,9 +305,9 @@
       };
     }
 
+    // 1. Skills
     const jdSkills = extractSkills(jdText);
     const resumeSkills = extractSkills(resumeText);
-
     const matched = [];
     const missing = [];
 
@@ -69,13 +319,11 @@
       }
     }
 
-    // Skill-based scoring with fallback
     let score = 50;
     if (jdSkills.length > 0) {
       const skillOverlapRatio = matched.length / jdSkills.length;
       score = Math.round(skillOverlapRatio * 70 + 25);
     } else {
-      // Word frequency overlap fallback
       const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
       const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
       let common = 0;
@@ -100,6 +348,125 @@
       color = '#d29922';
     }
 
+    // 2. Experience
+    const candExp = extractExperience(resumeText);
+    const jdReq = extractJdRequirements(jdText, locationMeta);
+
+    let expEvaluation = {
+      status: 'info',
+      icon: 'ℹ️',
+      headline: candExp.label,
+      detail: 'No hard minimum specified in JD'
+    };
+
+    if (jdReq.minExp !== null) {
+      if (candExp.years >= jdReq.minExp) {
+        expEvaluation = {
+          status: 'pass',
+          icon: '✅',
+          headline: `${candExp.years} yrs vs ${jdReq.minExp}+ yrs req`,
+          detail: `Meets or exceeds the ${jdReq.minExp}+ years requirement`
+        };
+      } else {
+        const gap = jdReq.minExp - candExp.years;
+        expEvaluation = {
+          status: 'gap',
+          icon: '⚠️',
+          headline: `${candExp.years} yrs vs ${jdReq.minExp}+ yrs req`,
+          detail: `Has ~${gap} yr experience gap to defend`
+        };
+      }
+    } else if (candExp.years > 0) {
+      expEvaluation = {
+        status: 'pass',
+        icon: '✅',
+        headline: `${candExp.years} yrs experience`,
+        detail: 'Candidate background meets typical role seniority'
+      };
+    }
+
+    // 3. Location & Mode
+    const candLoc = extractCandidateLocation(resumeText);
+    let locEvaluation = {
+      status: 'info',
+      icon: 'ℹ️',
+      headline: jdReq.workMode,
+      detail: jdReq.jobCity ? `Based in ${jdReq.jobCity}` : 'Location flexible'
+    };
+
+    if (jdReq.workMode === 'Remote') {
+      locEvaluation = {
+        status: 'pass',
+        icon: '✅',
+        headline: 'Remote Eligible',
+        detail: `Role is 100% remote (${candLoc.city !== 'Not specified' ? candLoc.city : 'Any location'})`
+      };
+    } else if (jdReq.jobCity && candLoc.city && candLoc.city !== 'Not specified') {
+      if (candLoc.city.toLowerCase() === jdReq.jobCity.toLowerCase()) {
+        locEvaluation = {
+          status: 'pass',
+          icon: '✅',
+          headline: `${candLoc.city} (${jdReq.workMode})`,
+          detail: `Candidate location matches job location (${jdReq.workMode})`
+        };
+      } else {
+        locEvaluation = {
+          status: 'gap',
+          icon: '⚠️',
+          headline: `Relocation (${jdReq.jobCity})`,
+          detail: `Job is in ${jdReq.jobCity}; candidate in ${candLoc.city}`
+        };
+      }
+    } else if (candLoc.city && candLoc.city !== 'Not specified') {
+      locEvaluation = {
+        status: 'info',
+        icon: 'ℹ️',
+        headline: `${candLoc.city} · ${jdReq.workMode}`,
+        detail: `Candidate in ${candLoc.city} (Verify company location policy)`
+      };
+    }
+
+    // 4. Education & College Tier
+    const candEdu = extractCandidateEducation(resumeText);
+    let eduEvaluation = {
+      status: 'info',
+      icon: 'ℹ️',
+      headline: candEdu.label,
+      detail: 'Degree requirements flexible'
+    };
+
+    if (jdReq.tierPreferred) {
+      if (candEdu.isTier1) {
+        eduEvaluation = {
+          status: 'pass',
+          icon: '✅',
+          headline: `${candEdu.degree} · ${candEdu.tierName}`,
+          detail: `Meets JD preference for Tier-1 / Premier institute`
+        };
+      } else {
+        eduEvaluation = {
+          status: 'gap',
+          icon: '⚠️',
+          headline: `${candEdu.degree} (Tier-1 Preferred)`,
+          detail: `JD specifies Tier-1 pedigree; candidate has ${candEdu.degree}`
+        };
+      }
+    } else if (candEdu.isTier1) {
+      eduEvaluation = {
+        status: 'pass',
+        icon: '✅',
+        headline: `${candEdu.degree} · ${candEdu.tierName}`,
+        detail: `Tier-1 pedigree gives strong competitive edge`
+      };
+    } else if (candEdu.degree && candEdu.degree !== 'Graduate') {
+      eduEvaluation = {
+        status: 'pass',
+        icon: '✅',
+        headline: candEdu.degree,
+        detail: `Degree aligns with standard role requirements`
+      };
+    }
+
     return {
       status: 'ready',
       score: score,
@@ -108,12 +475,31 @@
       color: color,
       matchedSkills: matched.slice(0, 5),
       missingSkills: missing.slice(0, 4),
-      totalJdSkills: jdSkills.length
+      totalJdSkills: jdSkills.length,
+      experience: expEvaluation,
+      location: locEvaluation,
+      education: eduEvaluation,
+      candidateProfile: {
+        experience: candExp,
+        location: candLoc,
+        education: candEdu
+      }
     };
   }
 
+  function calculateMatch(resumeText, jdText, locationMeta) {
+    return evaluateMultiFactor(resumeText, jdText, locationMeta);
+  }
+
   window.PrepInterviewMatcher = {
-    calculateMatch: calculateMatch,
-    extractSkills: extractSkills
+    TAXONOMY: TAXONOMY,
+    normalize: normalize,
+    extractSkills: extractSkills,
+    extractExperience: extractExperience,
+    extractCandidateLocation: extractCandidateLocation,
+    extractCandidateEducation: extractCandidateEducation,
+    extractJdRequirements: extractJdRequirements,
+    evaluateMultiFactor: evaluateMultiFactor,
+    calculateMatch: calculateMatch
   };
 })();

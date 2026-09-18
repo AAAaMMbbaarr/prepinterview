@@ -163,6 +163,60 @@ button {
   display: none;
 }
 
+.profile-card {
+  background: #161b22;
+  border: 1px solid #1f6feb66;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.auto-pill {
+  font-size: 9px;
+  font-weight: 700;
+  color: #58a6ff;
+  background: #1f6feb22;
+  border: 1px solid #1f6feb55;
+  padding: 1px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.profile-icon {
+  font-size: 14px;
+}
+
+.profile-meta-title {
+  font-size: 10px;
+  color: #8b949e;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.profile-meta-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
 .info-card {
   background: #161b22;
   border: 1px solid #30363d;

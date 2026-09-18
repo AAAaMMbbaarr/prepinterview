@@ -129,6 +129,80 @@
   display: none !important;
 }
 
+/* Multi-Factor Evaluation Grid & Cards */
+.prepinterview-mini-tag {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  background: #21262d !important;
+  color: #c9d1d9 !important;
+  border: 1px solid #30363d !important;
+  padding: 2px 8px !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.prepinterview-factor-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+  gap: 8px !important;
+  margin: 10px 0 14px 0 !important;
+}
+
+.prepinterview-factor-card {
+  background: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.prepinterview-factor-pass {
+  border-left: 3px solid #3fb950 !important;
+}
+
+.prepinterview-factor-gap {
+  border-left: 3px solid #f85149 !important;
+}
+
+.prepinterview-factor-info {
+  border-left: 3px solid #58a6ff !important;
+}
+
+.prepinterview-factor-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.prepinterview-factor-title {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #8b949e !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.prepinterview-factor-icon {
+  font-size: 12px !important;
+}
+
+.prepinterview-factor-main {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #f0f6fc !important;
+  line-height: 1.3 !important;
+}
+
+.prepinterview-factor-sub {
+  font-size: 11px !important;
+  color: #8b949e !important;
+  line-height: 1.3 !important;
+}
+
 /* Floating status dock in bottom right */
 .prepinterview-floating-pill {
   position: fixed !important;

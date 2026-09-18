@@ -43,7 +43,11 @@
     return Array.from(found);
   }
 
-  function calculateMatch(resumeText, jdText) {
+  function calculateMatch(resumeText, jdText, locationMeta) {
+    if (window.PrepInterviewMatcher && typeof window.PrepInterviewMatcher.calculateMatch === 'function') {
+      return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta);
+    }
+
     if (!resumeText || resumeText.trim().length < 20) {
       return {
         status: 'no_resume',
@@ -104,7 +108,10 @@
       badge: badge,
       color: color,
       matchedSkills: matched.slice(0, 5),
-      missingSkills: missing.slice(0, 4)
+      missingSkills: missing.slice(0, 4),
+      experience: { status: 'info', icon: 'ℹ️', headline: 'Experience', detail: 'Candidate background active' },
+      location: { status: 'info', icon: 'ℹ️', headline: 'Location', detail: 'Analysis active' },
+      education: { status: 'info', icon: 'ℹ️', headline: 'Education', detail: 'Degree evaluation active' }
     };
   }
 
@@ -158,6 +165,23 @@
     );
     if (compEl && compEl.innerText.trim().length > 1) {
       return compEl.innerText.trim();
+    }
+    return '';
+  }
+
+  function getJobLocation(pane) {
+    const locSelectors = [
+      '.job-details-jobs-unified-top-card__primary-description-container',
+      '.jobs-unified-top-card__primary-description',
+      '.jobs-unified-top-card__bullet',
+      '.jobs-unified-top-card__workplace-type',
+      '.scaffold-layout__detail .jobs-unified-top-card__primary-description'
+    ];
+    for (const sel of locSelectors) {
+      const el = (pane || document).querySelector(sel);
+      if (el && el.innerText && el.innerText.trim().length > 2) {
+        return el.innerText.trim();
+      }
     }
     return '';
   }
@@ -298,7 +322,8 @@
       console.warn('[PrepInterview Copilot] Storage notice:', e);
     }
 
-    const match = calculateMatch(resumeText, desc);
+    const locationMeta = getJobLocation(pane);
+    const match = calculateMatch(resumeText, desc, locationMeta);
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
@@ -316,7 +341,7 @@
             <span style="font-size:11px; color:#8b949e;">Click extension icon to save resume</span>
           </div>
           <div style="font-size:12px; color:#c9d1d9; line-height:1.4;">
-            Save your resume once in the Chrome toolbar to see your <strong>Skill Match</strong> and keyword gaps for <strong>${title}</strong>!
+            Save your resume once in the Chrome toolbar to see your <strong>Skill Match</strong>, experience, location, and education fit for <strong>${title}</strong>!
           </div>
           <a href="#" class="prepinterview-cta-btn prepinterview-action-trigger" style="margin-top:6px;">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
@@ -332,6 +357,10 @@
         ? match.missingSkills.map(s => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${s}</span>`).join('')
         : '<span style="font-size:11px;color:#3fb950;">No critical gaps detected</span>';
 
+      const expMini = match.experience ? `<span class="prepinterview-mini-tag">${match.experience.icon} ${match.experience.headline}</span>` : '';
+      const locMini = match.location ? `<span class="prepinterview-mini-tag">${match.location.icon} ${match.location.headline}</span>` : '';
+      const eduMini = match.education ? `<span class="prepinterview-mini-tag">${match.education.icon} ${match.education.headline}</span>` : '';
+
       card.innerHTML = `
         <div class="prepinterview-header" id="prepinterview-toggle-header">
           <div class="prepinterview-badge-row">
@@ -339,16 +368,49 @@
               ${match.badge} ${match.score}% Skill Match
             </span>
             <span class="prepinterview-brand-title">${match.tier}</span>
+            ${expMini}
+            ${locMini}
+            ${eduMini}
           </div>
-          <button class="prepinterview-toggle-btn" id="prepinterview-toggle-btn">View Breakdown ▾</button>
+          <button class="prepinterview-toggle-btn" id="prepinterview-toggle-btn">View Full Breakdown ▾</button>
         </div>
 
         <div class="prepinterview-details prepinterview-collapsed" id="prepinterview-details-panel">
-          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:11px;">
-            <span style="color:#8b949e;">Matched against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''}</span>
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px;">
+            <span style="color:#8b949e;">Matched against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''} ${locationMeta ? '· ' + locationMeta : ''}</span>
+          </div>
+
+          <!-- Multi-Factor Diagnostics Grid -->
+          <div class="prepinterview-factor-grid">
+            <div class="prepinterview-factor-card prepinterview-factor-${match.experience ? match.experience.status : 'info'}">
+              <div class="prepinterview-factor-header">
+                <span class="prepinterview-factor-title">⏳ Experience</span>
+                <span class="prepinterview-factor-icon">${match.experience ? match.experience.icon : 'ℹ️'}</span>
+              </div>
+              <div class="prepinterview-factor-main">${match.experience ? match.experience.headline : 'Not specified'}</div>
+              <div class="prepinterview-factor-sub">${match.experience ? match.experience.detail : ''}</div>
+            </div>
+
+            <div class="prepinterview-factor-card prepinterview-factor-${match.location ? match.location.status : 'info'}">
+              <div class="prepinterview-factor-header">
+                <span class="prepinterview-factor-title">📍 Location & Mode</span>
+                <span class="prepinterview-factor-icon">${match.location ? match.location.icon : 'ℹ️'}</span>
+              </div>
+              <div class="prepinterview-factor-main">${match.location ? match.location.headline : 'Not specified'}</div>
+              <div class="prepinterview-factor-sub">${match.location ? match.location.detail : ''}</div>
+            </div>
+
+            <div class="prepinterview-factor-card prepinterview-factor-${match.education ? match.education.status : 'info'}">
+              <div class="prepinterview-factor-header">
+                <span class="prepinterview-factor-title">🎓 Education & Tier</span>
+                <span class="prepinterview-factor-icon">${match.education ? match.education.icon : 'ℹ️'}</span>
+              </div>
+              <div class="prepinterview-factor-main">${match.education ? match.education.headline : 'Not specified'}</div>
+              <div class="prepinterview-factor-sub">${match.education ? match.education.detail : ''}</div>
+            </div>
           </div>
           
-          <div class="prepinterview-label">🟢 Matched Strengths (${match.matchedSkills.length})</div>
+          <div class="prepinterview-label" style="margin-top:10px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
           <div class="prepinterview-pills-row">
             ${matchPills}
           </div>
@@ -372,7 +434,7 @@
         toggleHeader.addEventListener('click', (e) => {
           e.stopPropagation();
           const isHidden = detailsPanel.classList.toggle('prepinterview-collapsed');
-          toggleBtn.textContent = isHidden ? 'View Breakdown ▾' : 'Hide Breakdown ▴';
+          toggleBtn.textContent = isHidden ? 'View Full Breakdown ▾' : 'Hide Breakdown ▴';
         });
       }
     }

@@ -30,24 +30,56 @@
       <button id="saveBtn" class="btn-primary">💾 Save Resume Locally</button>
       <button id="clearBtn" class="btn-secondary">Clear</button>
     </div>
-    <div id="saveToast" class="toast hidden">✅ Resume saved! Skill Match active on LinkedIn.</div>
+    <div id="saveToast" class="toast hidden">✅ Resume saved! Multi-Factor Match active on LinkedIn.</div>
+  </div>
+
+  <div id="profileCard" class="profile-card hidden">
+    <div class="section-label">
+      <span>✨ Detected Candidate Profile</span>
+      <span class="auto-pill">Auto-Parsed</span>
+    </div>
+    <div class="profile-grid">
+      <div class="profile-item">
+        <span class="profile-icon">⏳</span>
+        <div>
+          <div class="profile-meta-title">Experience</div>
+          <div id="profExp" class="profile-meta-val">--</div>
+        </div>
+      </div>
+      <div class="profile-item">
+        <span class="profile-icon">📍</span>
+        <div>
+          <div class="profile-meta-title">Location</div>
+          <div id="profLoc" class="profile-meta-val">--</div>
+        </div>
+      </div>
+      <div class="profile-item">
+        <span class="profile-icon">🎓</span>
+        <div>
+          <div class="profile-meta-title">Education & Tier</div>
+          <div id="profEdu" class="profile-meta-val">--</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="info-card">
-    <div class="info-title">⚡ How it works on LinkedIn</div>
+    <div class="info-title">⚡ Multi-Factor Analysis on LinkedIn</div>
     <ul class="info-list">
-      <li><strong>🟢 80%+ Match:</strong> High probability of interview shortlist.</li>
-      <li><strong>🟡 55–79%:</strong> Moderate match (2-3 skills to emphasize).</li>
-      <li><strong>🔴 &lt;55%:</strong> Reach role (prepare specific project defenses).</li>
-      <li><strong>🎙️ 1-Click Prep:</strong> Click the badge on LinkedIn to open your live spoken AI mock interview on PrepInterview AI.</li>
+      <li><strong>🛠️ Skill Match:</strong> Keyword overlaps and missing role competencies.</li>
+      <li><strong>⏳ Experience Check:</strong> Candidate years vs. JD requirement.</li>
+      <li><strong>📍 Location & Mode:</strong> City match, Hybrid, or Remote compatibility.</li>
+      <li><strong>🎓 Education & Pedigree:</strong> Degree level and Tier-1 college evaluation.</li>
+      <li><strong>🎙️ 1-Click Prep:</strong> Click the widget on LinkedIn to launch your live spoken AI mock interview.</li>
     </ul>
   </div>
 
   <div class="footer">
     <a href="https://prepinterview.online" target="_blank" class="web-link">Open PrepInterview AI ↗</a>
-    <span class="version">v1.0.3</span>
+    <span class="version">v1.0.4</span>
   </div>
 
+  <script src="../scripts/matcher.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
