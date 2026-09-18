@@ -441,14 +441,12 @@
         const gap = Math.round((jdReq.minExp - candExp.years) * 10) / 10;
         if (gap >= 2) {
           penalties += 35;
-          disqualifiers.push(`Experience: ~${candExp.years || 0} yrs vs. ${jdReq.minExp}+ yrs required (-${gap} yrs gap)`);
         } else if (gap >= 1) {
           penalties += 22;
-          disqualifiers.push(`Experience: ~${candExp.years || 0} yrs vs. ${jdReq.minExp}+ yrs required (-${gap} yr gap)`);
         } else {
           penalties += 12;
-          disqualifiers.push(`Experience: ~${candExp.years} yrs vs. ${jdReq.minExp}+ yrs required (-${gap} yr gap)`);
         }
+        disqualifiers.push(`Work experience not matching`);
       } else {
         bonuses += 4; // Meets or exceeds stated experience requirement
       }
@@ -458,7 +456,7 @@
     if (jdReq.tierPreferred) {
       if (!candEdu.isTier1) {
         penalties += 30;
-        disqualifiers.push(`Pedigree: JD specifically requires Tier-1 / Premier institute (IIT/IIM/BITS/NIT)`);
+        disqualifiers.push(`College criteria not matching`);
       } else {
         bonuses += 6; // Verified Tier-1 pedigree match
       }
@@ -468,10 +466,10 @@
     if (jdReq.degreeMandatory) {
       if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
         penalties += 25;
-        disqualifiers.push(`Degree: Role specifically requires PhD`);
+        disqualifiers.push(`Degree requirement not matching`);
       } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
         penalties += 20;
-        disqualifiers.push(`Degree: Role specifically requires MBA`);
+        disqualifiers.push(`Degree requirement not matching`);
       }
     } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
       bonuses += 3; // Modest bonus if candidate has MBA when preferred
@@ -482,7 +480,7 @@
       if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
         if (candLoc.city.toLowerCase() !== jdReq.jobCity.toLowerCase()) {
           penalties += 18;
-          disqualifiers.push(`Location: On-site in ${jdReq.jobCity} (Candidate located in ${candLoc.city})`);
+          disqualifiers.push(`Job location not matching`);
         } else {
           bonuses += 4; // Local candidate for on-site role
         }
@@ -496,8 +494,7 @@
 
     // If score is low (<50) and no hard criteria deficits exist, explain why (Domain Pivot)
     if (finalScore < 50 && disqualifiers.length === 0) {
-      const roleName = jobTitle || 'this target role';
-      disqualifiers.push(`Domain Alignment: Low functional keyword overlap with ${roleName}`);
+      disqualifiers.push(`Role profile not matching`);
     }
 
     // Determine honest recruiting tier

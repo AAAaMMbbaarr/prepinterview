@@ -359,7 +359,7 @@
             ? '<span style="font-size:11px;color:#3fb950;">No critical skill gaps detected</span>'
             : '<span class="prepinterview-pill prepinterview-pill-gap">⚠️ Functional domain alignment required</span>');
 
-      const disqLabel = match.score < 50 ? '⚠️ Key Qualification Gaps' : '⚠️ Mandatory Criteria Deficit';
+      const disqLabel = '⚠️ Requirement Gaps';
       const disqPills = (match.disqualifiers && match.disqualifiers.length > 0)
         ? `
           <div class="prepinterview-label" style="color:#ff7b72; margin-top:8px;">${disqLabel} (${match.disqualifiers.length})</div>
