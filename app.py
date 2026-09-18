@@ -965,7 +965,7 @@ Return ONLY valid JSON:
         <div>
             <a href="https://prepinterview.online/privacy.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Privacy Policy</a> · 
             <a href="https://prepinterview.online/terms.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Terms of Service & Refund Policy</a> · 
-            <a href="mailto:prepinterview.app@gmail.com" style="color:#8b949e;text-decoration:none;margin:0 8px;">Contact: prepinterview.app@gmail.com</a>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSfP0mZBcah9TZ6qwmtVBkeFUSUX180q5E9OyDy7w2lwMSbYnw/viewform" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Support & Feedback Form</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
