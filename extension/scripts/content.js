@@ -1,6 +1,6 @@
-// PrepInterview Copilot - Bulletproof Content Script v1.0.3
+// PrepInterview Copilot - Full Un-truncated JD Extraction v1.0.4
 (function() {
-  console.log('[PrepInterview Copilot v1.0.3] Initialized');
+  console.log('[PrepInterview Copilot v1.0.4] Initialized');
 
   // --- 1. SKILL TAXONOMY & MATCHER ---
   const TAXONOMY = [
@@ -15,7 +15,7 @@
     "product management", "product manager", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
     "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
     "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
-    "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate",
+    "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate", "independent projects", "ai tools", "analytical thinking",
     // Business, MBA & Strategy
     "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
     "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
@@ -117,7 +117,6 @@
   }
 
   function getJobTitle() {
-    // LinkedIn Job Title is always in an h1 in the top card
     const titleEl = document.querySelector(
       '.job-details-jobs-unified-top-card__job-title, ' +
       '.jobs-unified-top-card__job-title, ' +
@@ -129,7 +128,6 @@
     if (titleEl && titleEl.innerText.trim().length > 2) {
       return titleEl.innerText.trim();
     }
-    // Fallback: any h1 on page that isn't logo
     const h1s = Array.from(document.querySelectorAll('h1'));
     for (const h of h1s) {
       const txt = (h.innerText || '').trim();
@@ -153,8 +151,32 @@
     return '';
   }
 
+  function expandLinkedInMoreButton() {
+    const moreButtons = Array.from(document.querySelectorAll(
+      'button.show-more-less-html__button, ' +
+      'button.show-more-less-html__button--more, ' +
+      'button[aria-label*="more description"], ' +
+      'button[aria-label*="see more"], ' +
+      '.jobs-description button, ' +
+      '.scaffold-layout__detail button'
+    ));
+
+    for (const b of moreButtons) {
+      const txt = (b.innerText || '').trim().toLowerCase();
+      if (txt.includes('more') || txt.includes('see more') || txt.includes('show more')) {
+        try {
+          b.click();
+        } catch (e) {}
+        break;
+      }
+    }
+  }
+
   function getFullJobDescription() {
-    // Strategy 1: Dedicated description container across document
+    // Expand LinkedIn truncated description if present
+    expandLinkedInMoreButton();
+
+    let text = '';
     const jdSelectors = [
       '#job-details',
       '.jobs-description__content',
@@ -167,48 +189,53 @@
 
     for (const sel of jdSelectors) {
       const el = document.querySelector(sel);
-      if (el && el.innerText && el.innerText.trim().length > 120) {
-        let text = el.innerText.trim();
-        text = text.replace(/^about the job\s*/i, '');
-        return text;
+      if (el && el.innerText && el.innerText.trim().length > 100) {
+        text = el.innerText.trim();
+        break;
       }
     }
 
-    // Strategy 2: Look for heading "About the job" across entire document
-    const allHeadings = Array.from(document.querySelectorAll('h2, h3, h4, h5, div, span'));
-    for (const h of allHeadings) {
-      const txt = (h.textContent || '').trim().toLowerCase();
-      if (txt === 'about the job' || txt === 'job description' || txt === 'about this job') {
-        let container = h.parentElement;
-        while (container && container !== document.body) {
-          if (container.innerText && container.innerText.length > 200) {
-            let fullText = container.innerText.trim();
-            fullText = fullText.replace(/^about the job\s*/i, '');
-            return fullText;
+    if (!text) {
+      const allHeadings = Array.from(document.querySelectorAll('h2, h3, h4, h5, div, span'));
+      for (const h of allHeadings) {
+        const txt = (h.textContent || '').trim().toLowerCase();
+        if (txt === 'about the job' || txt === 'job description' || txt === 'about this job') {
+          let container = h.parentElement;
+          while (container && container !== document.body) {
+            if (container.innerText && container.innerText.length > 200) {
+              text = container.innerText.trim();
+              break;
+            }
+            container = container.parentElement;
           }
-          container = container.parentElement;
+          if (text) break;
         }
       }
     }
 
-    // Strategy 3: Right detail column (strip top card and our card)
-    const detailPane = document.querySelector('.scaffold-layout__detail, .jobs-search__job-details--container, .jobs-search__job-details');
-    if (detailPane) {
-      const clone = detailPane.cloneNode(true);
-      const ourCard = clone.querySelector('#prepinterview-copilot-card');
-      if (ourCard) ourCard.remove();
-      const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
-      if (topCard) topCard.remove();
-      clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
-      const res = clone.innerText.trim();
-      if (res.length > 100) return res;
+    if (!text) {
+      const detailPane = document.querySelector('.scaffold-layout__detail, .jobs-search__job-details--container, .jobs-search__job-details');
+      if (detailPane) {
+        const clone = detailPane.cloneNode(true);
+        const ourCard = clone.querySelector('#prepinterview-copilot-card');
+        if (ourCard) ourCard.remove();
+        const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
+        if (topCard) topCard.remove();
+        clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
+        text = clone.innerText.trim();
+      }
     }
 
-    return '';
+    // Clean up residual headers and "... more" strings
+    text = text.replace(/^about the job\s*/i, '');
+    text = text.replace(/\s*\.\.\.\s*more\s*$/gi, '');
+    text = text.replace(/\s*see more\s*$/gi, '');
+    text = text.replace(/\s*show more\s*$/gi, '');
+
+    return text.trim();
   }
 
   function getAnchorElement() {
-    // Find Apply or Save button
     const buttons = Array.from(document.querySelectorAll('button, a'));
     const actionBtn = buttons.find(b => {
       const t = (b.innerText || '').trim().toLowerCase();
@@ -216,7 +243,6 @@
     });
 
     if (actionBtn) {
-      // Find the row or top-card container
       const row = actionBtn.closest('.jobs-apply-button--top-card') ||
                   actionBtn.closest('.job-details-jobs-unified-top-card__container--two-pane') ||
                   actionBtn.closest('.jobs-unified-top-card__content--two-pane') ||
@@ -224,7 +250,6 @@
       if (row) return row;
     }
 
-    // Fallback: description element
     return document.querySelector('#job-details, .jobs-description__content, .jobs-description');
   }
 
@@ -238,7 +263,6 @@
     const jobId = getCurrentJobId();
     const existing = document.getElementById('prepinterview-copilot-card');
 
-    // If card is already injected for this EXACT job, do not re-run!
     if (existing && existing.dataset.jobId === jobId) {
       return;
     }
@@ -269,7 +293,6 @@
     }
 
     const match = calculateMatch(resumeText, desc);
-    const prepUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(desc) + '&title=' + encodeURIComponent(title) + '&company=' + encodeURIComponent(company) + '&utm_source=linkedin_copilot';
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
@@ -289,7 +312,7 @@
           <div style="font-size:12px; color:#c9d1d9; line-height:1.4;">
             Save your resume once in the Chrome toolbar to see your <strong>Fit Score</strong> and skill gaps for <strong>${title}</strong>!
           </div>
-          <a href="${prepUrl}" target="_blank" class="prepinterview-cta-btn" style="margin-top:6px;">
+          <a href="#" class="prepinterview-cta-btn prepinterview-action-trigger" style="margin-top:6px;">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
           </a>
         </div>
@@ -329,13 +352,13 @@
             ${gapPills}
           </div>
 
-          <a href="${prepUrl}" target="_blank" class="prepinterview-cta-btn">
+          <a href="#" class="prepinterview-cta-btn prepinterview-action-trigger">
             🎙️ Practice Spoken Interview for this Job (1-Click) ↗
           </a>
         </div>
       `;
 
-      // Breakdown toggle: ONLY toggles class, NEVER triggers re-injection
+      // Breakdown toggle: ONLY toggles class, NEVER re-injects
       const toggleHeader = card.querySelector('#prepinterview-toggle-header');
       const detailsPanel = card.querySelector('#prepinterview-details-panel');
       const toggleBtn = card.querySelector('#prepinterview-toggle-btn');
@@ -348,6 +371,22 @@
         });
       }
     }
+
+    // 1-Click CTA Launch handler: always captures full expanded description
+    const ctaButtons = card.querySelectorAll('.prepinterview-action-trigger');
+    ctaButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        expandLinkedInMoreButton();
+        const latestDesc = getFullJobDescription() || desc;
+        const targetUrl = 'https://prepinterview.online/?jd=' + encodeURIComponent(latestDesc) +
+                          '&title=' + encodeURIComponent(title) +
+                          '&company=' + encodeURIComponent(company) +
+                          '&utm_source=linkedin_copilot';
+        window.open(targetUrl, '_blank');
+      });
+    });
 
     // Insert cleanly below action buttons
     anchor.insertAdjacentElement('afterend', card);
@@ -370,7 +409,6 @@
   // --- 4. SAFE MUTATION OBSERVER ---
   let debounceTimer = null;
   const observer = new MutationObserver((mutations) => {
-    // Ignore any mutation caused by our own card
     const isOurMutation = mutations.every(m => {
       const target = m.target;
       return target && target.closest && (target.closest('#prepinterview-copilot-card') || target.closest('#prepinterview-floating-pill'));
