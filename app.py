@@ -808,23 +808,62 @@ MODEL = st.session_state.selected_model
 if st.session_state.step == 0:
     render_steps(0)
 
-    st.markdown('<p class="hero-title">Predict What You\'ll Be Asked & Practice Live</p>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-title">Never Get Caught Off-Guard on Your Resume</p>', unsafe_allow_html=True)
     st.markdown(
         '<p class="hero-sub">'
-        'AI Spoken Mock Interviews & Resume Defense for <strong>Product, Business, Strategy, Engineering & Non-Tech Roles</strong>.<br>'
-        'Practice realistic spoken rounds with instant STAR-method rubric scoring tailored to your exact resume & target JD.'
+        'Scan your resume against any target role, pinpoint the claims a senior interviewer will challenge, '
+        'and practice realistic spoken rounds with instant rubric evaluation.'
         '</p>',
         unsafe_allow_html=True,
     )
     st.markdown("""
     <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin:0.5rem 0 1.25rem 0;font-size:0.75rem;">
         <span style="background:#161b22;color:#7ee787;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🚀 Product & Analytics</span>
-        <span style="background:#161b22;color:#ffa657;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💼 Business & MBA</span>
+        <span style="background:#161b22;color:#ffa657;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💼 Business & Strategy</span>
         <span style="background:#161b22;color:#58a6ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">💻 Tech & Engineering</span>
-        <span style="background:#161b22;color:#d2a8ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">📈 Marketing & Sales</span>
-        <span style="background:#161b22;color:#ff7b72;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">🤝 HR & Operations</span>
+        <span style="background:#161b22;color:#d2a8ff;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">📈 Growth & Marketing</span>
+        <span style="background:#161b22;color:#ff7b72;padding:3px 9px;border-radius:12px;border:1px solid #30363d;">⚙️ Operations</span>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── Interactive Proof Engine: Sample Resume Attacks ──
+    with st.expander("👀 See How An Adversarial Interviewer Attacks a Resume Claim (Live Example)", expanded=True):
+        demo_tab_pm, demo_tab_swe = st.tabs(["🚀 Product & Growth Example", "💻 Software Engineering Example"])
+        with demo_tab_pm:
+            st.markdown("""
+            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;">
+                <div style="color:#8b949e;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🎯 Real Candidate Resume Bullet</div>
+                <div style="color:#f0f6fc;font-style:italic;margin-bottom:12px;padding-left:10px;border-left:3px solid #1f6feb;">
+                    "Grew activation rate by 23% and lowered CAC by ₹450 across Q3 paid acquisition campaigns."
+                </div>
+                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 What A Senior Interviewer Actually Attacks</div>
+                <div style="color:#ffd700;margin-bottom:12px;padding-left:10px;border-left:3px solid #ff7b72;">
+                    "What was your baseline cohort size? How did you isolate this 23% lift from seasonal festive promos running simultaneously? And what was your specific individual ownership versus the growth agency?"
+                </div>
+                <div style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:10px;font-size:0.8rem;">
+                    <span style="color:#f85149;font-weight:700;">⚠️ The Diagnosis:</span>
+                    <span style="color:#8b949e;"> High Risk. The metric lacks attribution guardrails. If you cannot state the exact counterfactual, sample size, and personal contribution, the interviewer flags this as unverified resume fluff.</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with demo_tab_swe:
+            st.markdown("""
+            <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;">
+                <div style="color:#8b949e;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🎯 Real Candidate Resume Bullet</div>
+                <div style="color:#f0f6fc;font-style:italic;margin-bottom:12px;padding-left:10px;border-left:3px solid #1f6feb;">
+                    "Architected high-throughput streaming pipeline processing 10M events/day with 99.9% uptime."
+                </div>
+                <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 What A Senior Interviewer Actually Attacks</div>
+                <div style="color:#ffd700;margin-bottom:12px;padding-left:10px;border-left:3px solid #ff7b72;">
+                    "What was your message delivery guarantee—at-least-once or exactly-once? How did you handle partition rebalancing during sudden traffic spikes without duplicate writes to downstream databases?"
+                </div>
+                <div style="background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:10px;font-size:0.8rem;">
+                    <span style="color:#f85149;font-weight:700;">⚠️ The Diagnosis:</span>
+                    <span style="color:#8b949e;"> High Risk. Architecture claim lacks failure-mode guarantees. Staff engineers will instantly test edge cases, race conditions, and dead-letter queue design.</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Check for deep-link from LinkedIn Copilot extension
     param_jd = st.query_params.get("jd", "")
@@ -951,7 +990,7 @@ if st.session_state.step == 0:
     st.markdown("")
 
     # ── CTA ──
-    if st.button("Analyze My Fit →", type="primary", use_container_width=True):
+    if st.button("Scan My Resume for Vulnerabilities →", type="primary", use_container_width=True):
         if not resume_file or not jd_input.strip():
             st.error("Please upload your resume and provide the job description.")
         else:
@@ -965,10 +1004,10 @@ if st.session_state.step == 0:
                 st.rerun()
 
     st.markdown("""
-    <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1.2rem 0;font-size:0.82rem;color:#8b949e;">
-        <div>⚡ <strong>1 Full Mock Round Free</strong></div>
-        <div>🛡️ <strong>Resume Defense & Trap Detection</strong></div>
-        <div>👑 <strong>₹49 Pro Pass vs ₹2,000+ Human Mocks</strong></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1.2rem 0;font-size:0.8rem;color:#8b949e;">
+        <div>🛡️ <strong>Free Resume Vulnerability Audit</strong></div>
+        <div>🎯 <strong>Role-Adaptive Spoken Evaluation</strong></div>
+        <div>🔒 <strong>100% In-Memory Privacy</strong></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1015,6 +1054,46 @@ if st.session_state.step == 0:
         🧪 <b>Preview</b> — Experimental, may be unstable
         </div>
         """, unsafe_allow_html=True)
+
+    # ── Institutional Trust, 100% Money-Back Guarantee & FAQs ──
+    st.markdown("---")
+    st.markdown("""
+    <div style="background:#161b22;border:1px solid #ffd70044;border-left:4px solid #ffd700;border-radius:8px;padding:14px 18px;margin:1.2rem 0;font-size:0.85rem;line-height:1.6;">
+        <div style="font-weight:700;color:#ffd700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+            🛡️ 100% Satisfaction & Money-Back Guarantee
+        </div>
+        <span style="color:#c9d1d9;">
+            We want your interview preparation to be completely risk-free. If our resume vulnerability scan or spoken mock interview does not provide at least one critical insight that improves your interview readiness, simply email us at 
+            <a href="mailto:support@prepinterview.online" style="color:#58a6ff;">support@prepinterview.online</a> within 24 hours of purchasing the ₹49 Pro Pass for a <strong>full refund with zero questions asked</strong>.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.expander("❓ Frequently Asked Questions (Privacy, Role Support & How It Works)"):
+        st.markdown("""
+        **1. What happens to my uploaded resume and audio recordings?**  
+        Your career documents and audio are processed ephemerally in active memory only using Google Gemini APIs. They are **never stored in persistent databases, never sold to recruiters, and never used to train public AI models**.
+        
+        **2. How does Resume Attack Mode work?**  
+        Unlike generic interview bots that ask *"Tell me about a time you led a project"*, our engine extracts the exact claims and quantitative metrics from your resume and tests whether you can defend their baselines, methodology, and trade-offs under pressure.
+        
+        **3. Is this only for Software Engineers?**  
+        No! Our rubrics are role-aware. For Product Managers, Growth leads, and Business/MBA candidates, we probe unit economics, attribution, A/B testing rigor, and stakeholder alignment. For technical roles, we probe system architecture, edge cases, and scaling limits.
+        
+        **4. How does the ₹49 Pro Pass work?**  
+        Every user gets a free resume vulnerability scan, top 5 predicted questions, and a full mock interview round. The ₹49 Pro Pass is a **one-time micro-transaction via UPI or Card** that unlocks unlimited mock retries, all written defense playbooks, and the downloadable Dossier. There are **zero recurring subscriptions**.
+        """)
+
+    st.markdown("""
+    <div style="text-align:center;margin:2rem 0 1rem 0;font-size:0.75rem;color:#6e7681;line-height:1.8;">
+        <div>PrepInterview AI · Autonomous Interview Preparation for Tech & Non-Tech Roles</div>
+        <div>
+            <a href="https://prepinterview.online/privacy.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Privacy Policy</a> · 
+            <a href="https://prepinterview.online/terms.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Terms of Service & Refund Policy</a> · 
+            <a href="mailto:support@prepinterview.online" style="color:#8b949e;text-decoration:none;margin:0 8px;">Contact: support@prepinterview.online</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════
