@@ -206,11 +206,11 @@
 
   // --- EDUCATION & PEDIGREE EXTRACTION ---
   function extractCandidateEducation(text) {
-    if (!text) return { degree: 'Not specified', isTier1: false, tierName: '', label: 'Not specified' };
+    if (!text) return { degree: 'Not specified', tier: 'Tier 3', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
 
     const norm = normalizeWhitespace(text).toLowerCase().replace(/\s+/g, ' ');
 
-    // 1. Degree
+    // 1. Degree Detection
     let degree = 'Bachelor\'s';
     if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(norm)) {
       degree = 'PhD';
@@ -232,41 +232,106 @@
       degree = 'Graduate';
     }
 
-    // 2. College / Tier-1 Pedigree (Robust against non-breaking spaces and all campus formats)
+    // 2. Comprehensive Indian College Tier Classification (Tier 1, Tier 2, Tier 3)
+    let tier = 'Tier 3';
     let isTier1 = false;
+    let isTier2 = false;
     let tierName = '';
 
-    if (/\b(iit\b|iits\b|iitd\b|iitb\b|iitk\b|iitkgp\b|iitm\b|iitr\b|iith\b|iitbhu\b|indian\s+institute\s+of\s+technology)\b/i.test(norm)) {
+    // Clean string for acronym checking (e.g. i.i.t. -> iit)
+    const dotClean = norm.replace(/\./g, '');
+
+    // --- TIER 1 INSTITUTES ---
+    // A. IITs (All 23 campuses + abbreviations + punctuated I.I.T. + hyphens)
+    const isIit = /\b(iit\b|iits\b|iitd\b|iitb\b|iitk\b|iitkgp\b|iitm\b|iitr\b|iith\b|iitg\b|iiti\b|iitgn\b|iitrpr\b|iitp\b|iitbbs\b|iitmandi\b|iitj\b|iittp\b|iitpkd\b|iitdhd\b|iitbhi\b|iitjm\b|iitbhu\b|iitism\b|indian\s+institute\s+of\s+technology)\b/i.test(norm)
+      || /\b(iit\b|iits\b)/i.test(dotClean)
+      || /\b(iit\s*[- ]*(?:bombay|delhi|madras|kanpur|kharagpur|roorkee|guwahati|hyderabad|indore|gandhinagar|ropar|patna|bhubaneswar|mandi|jodhpur|tirupati|palakkad|dharwad|bhilai|jammu|goa|bhu|varanasi|ism|dhanbad))\b/i.test(dotClean);
+
+    // B. BITS Pilani (All Campuses: Pilani, Goa, Hyderabad)
+    const isBits = /\b(bits\s+pilani|bits\s+goa|bits\s+hyderabad|birla\s+institute\s+of\s+technology\s+and\s+science|\bbits\b)/i.test(norm);
+
+    // C. Top Tier-1 NITs
+    const isTier1Nit = /\b(nit\s*[- ]*(?:trichy|tiruchirappalli|surathkal|warangal|rourkela|calicut|nagpur|vnit|jaipur|mnit|allahabad|mnnit|surat|svnit))\b/i.test(norm)
+      || /\b(nitk\b|nitt\b|nitw\b|vnit\b|mnit\b|mnnit\b|svnit\b)/i.test(norm);
+
+    // D. Premier Tech Institutes (IIIT Hyderabad/Bangalore/Delhi/Allahabad, DTU, NSUT, Jadavpur, etc.)
+    const isPremierEng = /\b(iiit\s*[- ]*(?:hyderabad|bangalore|delhi|allahabad)|iiith\b|iiitb\b|iiitd\b|iiita\b|dtu\b|delhi\s+technological\s+university|delhi\s+college\s+of\s+engineering|\bdce\b|nsut\b|netaji\s+subhas|\bnsit\b|jadavpur\s+university|coep\b|college\s+of\s+engineering\s+pune|vjti\b|veermata\s+jijabai|college\s+of\s+engineering\s+guindy|\bceg\b|psg\s+college\s+of\s+technology|psg\s+tech|institute\s+of\s+chemical\s+technology|\bict\s+mumbai\b|iiest\s+shibpur)\b/i.test(norm);
+
+    // E. Premier IIMs & MBA Institutes
+    const isTier1Mba = /\b(iim\b|iims\b|iima\b|iimb\b|iimc\b|iiml\b|iimk\b|iimi\b|indian\s+institute\s+of\s+management)\b/i.test(norm)
+      || /\b(iim\b|iims\b)/i.test(dotClean)
+      || /\b(isb\b|indian\s+school\s+of\s+business|xlri\b|fms\b|faculty\s+of\s+management\s+studies|spjimr\b|sp\s+jain|mdi\s+gurgaon|\bmdi\b|iift\b|jbims\b|tiss\s+mumbai|\btiss\b|sibm\s+pune|nmims\s+mumbai)\b/i.test(norm);
+
+    // F. Premier Commerce/Arts & Global Elite
+    const isOtherTier1 = /\b(srcc\b|shri\s+ram\s+college\s+of\s+commerce|st\.?\s*stephen|lady\s+shri\s+ram|\blsr\b|hindu\s+college|miranda\s+house|loyola\s+college|st\.?\s*xavier|christ\s+university)\b/i.test(norm)
+      || /\b(stanford|mit\b|harvard|uc\s*berkeley|carnegie\s*mellon|cmu\b|oxford|cambridge|princeton|columbia|caltech|yale|cornell|upenn|wharton|insead|london\s+business\s+school|\blbs\b)\b/i.test(norm);
+
+    if (isIit) {
+      tier = 'Tier 1';
       isTier1 = true;
       tierName = 'Tier-1 (IIT)';
-    } else if (/\b(bits\s+pilani|bits\s+goa|bits\s+hyderabad|\bbits\b)\b/i.test(norm)) {
+    } else if (isBits) {
+      tier = 'Tier 1';
       isTier1 = true;
       tierName = 'Tier-1 (BITS)';
-    } else if (/\b(nit\b|nits\b|national\s+institute\s+of\s+technology)\b/i.test(norm)) {
+    } else if (isTier1Nit) {
+      tier = 'Tier 1';
       isTier1 = true;
-      tierName = 'Tier-1 (NIT)';
-    } else if (/\b(iiit\b|dtu\b|delhi\s+technological\s+university|nsut\b|jadavpur\s+university)\b/i.test(norm)) {
+      tierName = 'Tier-1 (Top NIT)';
+    } else if (isPremierEng) {
+      tier = 'Tier 1';
       isTier1 = true;
       tierName = 'Tier-1 (Premier Eng)';
-    } else if (/\b(iim\b|iims\b|iima\b|iimb\b|iimc\b|iiml\b|iimk\b|iimi\b|indian\s+institute\s+of\s+management)\b/i.test(norm)) {
-      isTier1 = true;
-      tierName = 'Tier-1 (IIM)';
-    } else if (/\b(isb\b|indian\s+school\s+of\s+business|xlri|fms\b|spjimr|mdi\b|iift\b)\b/i.test(norm)) {
+    } else if (isTier1Mba) {
+      tier = 'Tier 1';
       isTier1 = true;
       tierName = 'Tier-1 (Premier MBA)';
-    } else if (/\b(stanford|mit\b|harvard|uc\s*berkeley|carnegie\s*mellon|cmu\b|oxford|cambridge|princeton|columbia|caltech)\b/i.test(norm)) {
+    } else if (isOtherTier1) {
+      tier = 'Tier 1';
       isTier1 = true;
-      tierName = 'Global Top-Tier';
-    } else if (/\b(srcc|st\.?\s*stephen|loyola|christ\s+university|st\.?\s*xavier)\b/i.test(norm)) {
-      isTier1 = true;
-      tierName = 'Tier-1 (Commerce)';
+      tierName = 'Tier-1 (Premier)';
+    } else {
+      // --- TIER 2 INSTITUTES ---
+      // Mid/New NITs, Mid IIITs, Reputed Tech Universities (VIT, Manipal, Thapar, RVCE, etc.)
+      const isTier2Nit = /\b(nit\b|nits\b|national\s+institute\s+of\s+technology|manit\b)\b/i.test(norm)
+        || /\b(nit\b|nits\b)/i.test(dotClean);
+
+      const isTier2Iiit = /\b(iiit\b|iiits\b|indian\s+institute\s+of\s+information\s+technology)\b/i.test(norm);
+
+      const isTier2Tech = /\b(thapar\b|tiet\b|vit\b|vellore\s+institute\s+of\s+technology|manipal\s+institute\s+of\s+technology|mit\s+manipal|\bmahe\b|bit\s+mesra|birla\s+institute\s+of\s+technology\s+mesra|rvce\b|rv\s+college\s+of\s+engineering|bmsce\b|bms\s+college\s+of\s+engineering|msrit\b|ramaiah\s+institute|pes\s+university|pesit\b|mit\s+pune|mit\s+world\s+peace|ssn\s+college|sastra\s+university|amrita\s+(?:school\s+of\s+engineering|vishwa|university)|srm\s+(?:university|institute)|kiit\b|kalinga\s+institute|shiv\s+nadar|ashoka\s+university|plaksha|heritage\s+institute|techno\s+india|walchand|spce\b|cummins\s+college|pict\s+pune|dayananda\s+sagar|dsce\b|nirma\s+university|pdeu\b)\b/i.test(norm);
+
+      const isTier2Mba = /\b(imt\s+ghaziabad|imi\s+delhi|ximb\b|xim\s+university|tapmi\b|fore\s+school|gim\s+goa|great\s+lakes|glim\b|irma\b|somaiya\b|lbsim\b|bimtech\b|welingkar\b|weschool\b|liba\b|scmhrd\b|iim\s+(?:amritsar|bodh\s+gaya|jammu|nagpur|sambalpur|sirmaur|visakhapatnam))\b/i.test(norm);
+
+      if (isTier2Nit) {
+        tier = 'Tier 2';
+        isTier2 = true;
+        tierName = 'Tier-2 (NIT)';
+      } else if (isTier2Iiit) {
+        tier = 'Tier 2';
+        isTier2 = true;
+        tierName = 'Tier-2 (IIIT)';
+      } else if (isTier2Tech) {
+        tier = 'Tier 2';
+        isTier2 = true;
+        tierName = 'Tier-2 (Leading Tech)';
+      } else if (isTier2Mba) {
+        tier = 'Tier 2';
+        isTier2 = true;
+        tierName = 'Tier-2 (Respected B-School)';
+      } else {
+        // --- TIER 3 / REGIONAL / STATE AFFILIATED ---
+        tier = 'Tier 3';
+        tierName = 'State / Private University';
+      }
     }
 
-    const label = isTier1 ? `${degree} · ${tierName}` : degree;
+    const label = (tier === 'Tier 1' || tier === 'Tier 2') ? `${degree} · ${tierName}` : degree;
 
     return {
       degree: degree,
+      tier: tier,
       isTier1: isTier1,
+      isTier2: isTier2,
       tierName: tierName,
       label: label
     };
@@ -290,11 +355,14 @@
         maxExp = parseFloat(expMatch[2]);
       }
     } else {
-      const plusMatch = rawJd.match(/(\d+(?:\.\d+)?)\+\s*(?:years?|yrs?)/i);
-      if (plusMatch && plusMatch[1]) {
-        minExp = parseFloat(plusMatch[1]);
+      const altMatch = rawJd.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
+      if (altMatch && altMatch[1]) {
+        minExp = parseFloat(altMatch[1]);
+        if (altMatch[2]) {
+          maxExp = parseFloat(altMatch[2]);
+        }
       } else {
-        const rangeMatch = rawJd.match(/(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i);
+        const rangeMatch = rawJd.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
         if (rangeMatch && rangeMatch[1]) {
           minExp = parseFloat(rangeMatch[1]);
           maxExp = parseFloat(rangeMatch[2]);
@@ -329,13 +397,21 @@
     // 3. Education & Degree requirement in JD
     const normJd = rawJd.toLowerCase();
 
-    // 3. Education / Tier requirement in JD (Strictly require explicit college/tier phrasing to eliminate false positives)
-    const tierPreferred = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campuses)\b/i.test(normJd)
+    // 3. Education / Tier requirement in JD
+    const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campuses)\b/i.test(normJd)
       || /\b(?:colleges?|institutes?|universities)\s*:\s*(?:tier\s*[- ]?1|premier|top\s*[- ]?tier)\b/i.test(normJd)
-      || /\b(?:only|strictly)\s+(?:from\s+)?(?:iits?|iims?|bits\s+pilani|nits?)\b/i.test(normJd)
       || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)(?:[\s\/,|]+(?:and|or)?[\s\/,|]*(?:iits?|iims?|bits(?:\s+pilani)?|nits?))*\s+(?:graduates?|alumni|only|freshers?)\s+(?:preferred|required|mandatory)\b/i.test(normJd)
+      || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)\s+(?:strongly\s+)?preferred\b/i.test(normJd)
       || /\b(?:degree\s+from\s+)?(?:a\s+)?tier\s*[- ]?1\s+(?:college|institute|engineering)\b/i.test(normJd)
       || /\bfrom\s+(?:premier|tier\s*[- ]?1)\s+(?:institutes?|colleges?|b-?schools?)\b/i.test(normJd);
+
+    // Is it strictly mandatory? (e.g. "Only Tier-1", "Tier-1 colleges only", "Strictly IIT", "Mandatory: Tier-1")
+    const isStrictTier1 = /\b(?:only|strictly)\s+(?:candidates\s+|applicants\s+)?(?:from\s+)?(?:iits?|iims?|bits|nits?|tier\s*[- ]?1|premier)\b/i.test(normJd)
+      || /\b(?:tier\s*[- ]?1|premier\s+institute|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|mandatory|required|must)\b/i.test(normJd)
+      || /\b(?:must\s+be|mandatory)\s*:\s*(?:tier\s*[- ]?1|iits?|premier)\b/i.test(normJd);
+
+    const tierPreferred = tierPreferredPattern;
+    const tierMandatory = isStrictTier1;
 
     // Check if PhD is strictly mandatory
     const isPhdMandatory = /\b(ph\.?d\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:a\s+)?ph\.?d|doctorate\s+required)\b/i.test(normJd);
@@ -370,6 +446,7 @@
       workMode: workMode,
       jobCity: jobCity,
       tierPreferred: tierPreferred,
+      tierMandatory: tierMandatory,
       degreeReq: degreeReq,
       degreeMandatory: degreeMandatory,
       mbaPreferred: mbaPreferred
@@ -455,12 +532,26 @@
     }
 
     // --- FACTOR B: COLLEGE TIER & PEDIGREE (Only active if specified in JD) ---
-    if (jdReq.tierPreferred) {
-      if (!candEdu.isTier1) {
-        penalties += 30;
+    if (jdReq.tierMandatory) {
+      // JD STRICTLY MANDATES TIER-1 (e.g. "Only Tier-1 colleges", "Strictly IIT/NIT only")
+      if (candEdu.tier === 'Tier 1') {
+        bonuses += 6; // Meets strict Tier-1 mandate
+      } else if (candEdu.tier === 'Tier 2') {
+        penalties += 15;
         disqualifiers.push(`College not matching`);
       } else {
-        bonuses += 6; // Verified Tier-1 pedigree match
+        penalties += 30;
+        disqualifiers.push(`College not matching`);
+      }
+    } else if (jdReq.tierPreferred) {
+      // JD PREFERS TIER-1 (e.g. "IIT/NIT strongly preferred", "Top-tier college preferred")
+      if (candEdu.tier === 'Tier 1') {
+        bonuses += 6; // Tier-1 candidate gets strong boost
+      } else if (candEdu.tier === 'Tier 2') {
+        bonuses += 2; // Tier-2 candidate meets high bar, NO disqualifier
+      } else {
+        // Tier 3 candidate for preferred role: minor preference penalty, NO disqualifier!
+        penalties += 8;
       }
     }
 

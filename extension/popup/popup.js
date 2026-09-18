@@ -20,10 +20,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   resumeInput.addEventListener('input', updateWordCount);
 
+  async function broadcastUpdate() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        const tabs = await chrome.tabs.query({ url: '*://*.linkedin.com/*' });
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, { action: 'RESUME_UPDATED' }).catch(() => {});
+        });
+      }
+    } catch (e) {}
+  }
+
   saveBtn.addEventListener('click', async () => {
     const text = resumeInput.value.trim();
     await chrome.storage.local.set({ resumeText: text });
     updateWordCount();
+    broadcastUpdate();
     saveToast.classList.remove('hidden');
     setTimeout(() => {
       saveToast.classList.add('hidden');
@@ -34,5 +46,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     resumeInput.value = '';
     await chrome.storage.local.remove('resumeText');
     updateWordCount();
+    broadcastUpdate();
   });
 });

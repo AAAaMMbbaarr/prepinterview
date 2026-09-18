@@ -312,10 +312,6 @@
     const jobId = getCurrentJobId();
     const existing = document.getElementById('prepinterview-copilot-card');
 
-    if (existing && existing.dataset.jobId === jobId) {
-      return;
-    }
-
     const desc = getFullJobDescription(pane);
     const title = getJobTitle(pane);
     const company = getCompanyName(pane);
@@ -324,12 +320,6 @@
     if (!desc || desc.length < 40 || !anchor) {
       return;
     }
-
-    if (existing) {
-      existing.remove();
-    }
-
-    console.log('[PrepInterview Copilot] Anchored in Job Pane:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
 
     let resumeText = '';
     try {
@@ -341,6 +331,18 @@
       console.warn('[PrepInterview Copilot] Storage notice:', e);
     }
 
+    const resumeFingerprint = resumeText ? (resumeText.length + '_' + resumeText.slice(0, 40).replace(/\s+/g, '')) : 'none';
+
+    if (existing && existing.dataset.jobId === jobId && existing.dataset.resumeFingerprint === resumeFingerprint) {
+      return;
+    }
+
+    if (existing) {
+      existing.remove();
+    }
+
+    console.log('[PrepInterview Copilot] Anchored in Job Pane:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
+
     const locationMeta = getJobLocation(pane);
     const match = calculateMatch(resumeText, desc, locationMeta, title);
 
@@ -349,6 +351,7 @@
     card.className = 'prepinterview-widget-card';
     card.dataset.jobId = jobId;
     card.dataset.jobTitle = title;
+    card.dataset.resumeFingerprint = resumeFingerprint;
 
     if (match.status === 'no_resume') {
       card.innerHTML = `
@@ -491,4 +494,28 @@
   setTimeout(runInjection, 800);
   setTimeout(runInjection, 2000);
   window.addEventListener('popstate', () => setTimeout(runInjection, 400));
+
+  // Listen for resume changes in local storage
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes.resumeText) {
+        console.log('[PrepInterview Copilot] Resume updated in storage, refreshing card...');
+        const existing = document.getElementById('prepinterview-copilot-card');
+        if (existing) existing.remove();
+        runInjection();
+      }
+    });
+  }
+
+  // Listen for direct broadcast messages from popup
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg && msg.action === 'RESUME_UPDATED') {
+        console.log('[PrepInterview Copilot] Received RESUME_UPDATED, refreshing card...');
+        const existing = document.getElementById('prepinterview-copilot-card');
+        if (existing) existing.remove();
+        runInjection();
+      }
+    });
+  }
 })();
