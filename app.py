@@ -63,14 +63,17 @@ st.html("""
 st.markdown("""
 <style>
     /* Hide Streamlit branding, footer, deploy button, and viewer badge */
-    #MainMenu {visibility: hidden; display: none;}
+    #MainMenu {visibility: hidden; display: none !important;}
     footer {visibility: hidden; display: none !important;}
     header {visibility: hidden; display: none !important;}
-    div[data-testid="stStatusWidget"] {visibility: hidden; display: none;}
+    div[data-testid="stStatusWidget"] {visibility: hidden; display: none !important;}
     .stDeployButton {display: none !important;}
     [data-testid="stToolbar"] {visibility: hidden; display: none !important;}
-    div[class*="viewerBadge"] {display: none !important;}
-    div[class*="ProfileBadge"] {display: none !important;}
+    [data-testid="stEmbedFooter"] {display: none !important; visibility: hidden !important; height: 0 !important;}
+    div[class*="viewerBadge"] {display: none !important; visibility: hidden !important;}
+    div[class*="ProfileBadge"] {display: none !important; visibility: hidden !important;}
+    div[class*="StatusWidget"] {display: none !important; visibility: hidden !important;}
+    div[class*="stEmbedFooter"] {display: none !important; visibility: hidden !important;}
     div[data-testid="stDecoration"] {display: none !important;}
 
     .block-container {
