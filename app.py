@@ -1471,8 +1471,14 @@ elif st.session_state.step == 2:
         risk_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🔴"}.get(risk, "⚪")
         one_line = summary.get("one_line", "")
 
-        st.markdown(f'<p class="hero-title">{fit}% Fit</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="hero-title">{fit}% Interview Readiness</p>', unsafe_allow_html=True)
         st.markdown(f'<p class="hero-sub">{risk_emoji} {risk} interview risk · {one_line}</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-size:0.8rem;color:#8b949e;text-align:center;margin-top:-6px;margin-bottom:14px;">'
+            '🎯 <em>Unlike surface keyword tools, Interview Readiness measures how well your actual background holds up to skeptical interview questions.</em>'
+            '</p>',
+            unsafe_allow_html=True,
+        )
 
         col1, col2 = st.columns(2)
         with col1:
@@ -1725,7 +1731,7 @@ elif st.session_state.step == 2:
         if summary:
             report_parts.append(
                 f"# Interview Intelligence Report\n\n"
-                f"**Fit Score:** {summary.get('fit_score', '?')}%\n"
+                f"**Interview Readiness:** {summary.get('fit_score', '?')}%\n"
                 f"**Risk Level:** {summary.get('risk_level', '?')}\n\n"
                 f"{summary.get('one_line', '')}\n"
             )

@@ -8,10 +8,12 @@
     "postgresql", "postgres", "mysql", "mongodb", "redis", "elasticsearch", "kafka", "rabbitmq", "dynamodb", "graphql", "rest api", "restful",
     "microservices", "system design", "distributed systems", "data structures", "algorithms", "scalability", "linux", "git",
     "machine learning", "deep learning", "nlp", "llm", "genai", "pytorch", "tensorflow", "computer vision", "pandas", "numpy", "scikit-learn",
-    // Product & Analytics
-    "product management", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
+    // Product, Strategy & Startup
+    "founder office", "founders office", "chief of staff", "strategy", "execution", "startups", "high-growth", "operations", "scaling", "generalist", "cross-functional", "bizops", "business operations",
+    "product management", "product manager", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
     "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
-    "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management",
+    "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
+    "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate", "independent projects", "ai tools", "analytical thinking", "problem solving",
     // Business, MBA & Strategy
     "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
     "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
@@ -23,7 +25,7 @@
   ];
 
   function normalize(str) {
-    return (str || '').toLowerCase().replace(/[^a-z0-9+#./\s-]/g, ' ');
+    return (str || '').toLowerCase().replace(/'/g, '').replace(/[^a-z0-9+#./\s-]/g, ' ');
   }
 
   function extractSkills(text) {
@@ -49,7 +51,7 @@
         color: '#8b949e',
         matchedSkills: [],
         missingSkills: [],
-        message: 'Click extension icon to save your resume and unlock instant Fit Scores.'
+        message: 'Click extension icon to save your resume and unlock instant Skill Match.'
       };
     }
 
@@ -67,33 +69,33 @@
       }
     }
 
-    // Token-based fallback if JD has few direct taxonomy matches
+    // Skill-based scoring with fallback
     let score = 50;
     if (jdSkills.length > 0) {
       const skillOverlapRatio = matched.length / jdSkills.length;
-      score = Math.round(skillOverlapRatio * 75 + 20);
+      score = Math.round(skillOverlapRatio * 70 + 25);
     } else {
-      // Basic word frequency overlap
+      // Word frequency overlap fallback
       const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
       const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
       let common = 0;
       jdTokens.forEach(t => { if (resTokens.has(t)) common++; });
-      score = Math.min(90, Math.round((common / Math.max(1, jdTokens.size)) * 120 + 20));
+      const ratio = common / Math.max(1, jdTokens.size);
+      score = Math.min(68, Math.max(42, Math.round(ratio * 55 + 25)));
     }
 
-    // Clamp score between 25 and 95
-    score = Math.max(25, Math.min(95, score));
+    score = Math.max(30, Math.min(95, score));
 
-    let tier = 'Reach Role';
+    let tier = 'Skill Gap Detected';
     let badge = '🔴';
     let color = '#f85149';
 
-    if (score >= 78) {
-      tier = 'Strong Match';
+    if (score >= 75) {
+      tier = 'Strong Skill Match';
       badge = '🟢';
       color = '#3fb950';
-    } else if (score >= 55) {
-      tier = 'Moderate Match';
+    } else if (score >= 52) {
+      tier = 'Moderate Skill Match';
       badge = '🟡';
       color = '#d29922';
     }
