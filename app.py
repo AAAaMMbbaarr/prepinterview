@@ -1051,33 +1051,33 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
 
     # The Re-drill Action & Next Steps
     st.markdown("---")
-    col_act1, col_act2 = st.columns([1, 1])
-    with col_act1:
-        if st.button("🔁 Practice Defending Your Weakest Claim Again", type="primary", use_container_width=True):
+    
+    # 1. Primary
+    if st.button("🔥 Practice Defending Your Weakest Claim Again", type="primary", use_container_width=True):
+        st.session_state.previous_debrief = debrief
+        st.session_state.active_redrill = debrief.get("weakest_answer")
+        st.session_state.mock_messages = []
+        st.session_state.mock_debrief = None
+        st.session_state.interview_concluded = False
+        st.session_state.clarification_used = False
+        st.session_state["last_spoken"] = -1
+        st.rerun()
+
+    # 2. Paid conversion
+    if is_single_round and not st.session_state.is_pro:
+        st.link_button("👑 Unlock Full 4-Round Interview & Dossier — ₹49", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+    else:
+        if st.button("🔄 Start Fresh 4-Round Interview", use_container_width=True):
             st.session_state.previous_debrief = debrief
-            st.session_state.active_redrill = debrief.get("weakest_answer")
+            st.session_state.active_redrill = None
             st.session_state.mock_messages = []
             st.session_state.mock_debrief = None
             st.session_state.interview_concluded = False
             st.session_state.clarification_used = False
             st.session_state["last_spoken"] = -1
             st.rerun()
-    with col_act2:
-        if is_single_round and not st.session_state.is_pro:
-            st.link_button("👑 Unlock Full 4-Round Interview & Dossier (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-        else:
-            if st.button("🔄 Start Fresh 4-Round Interview", use_container_width=True):
-                st.session_state.previous_debrief = debrief
-                st.session_state.active_redrill = None
-                st.session_state.mock_messages = []
-                st.session_state.mock_debrief = None
-                st.session_state.interview_concluded = False
-                st.session_state.clarification_used = False
-                st.session_state["last_spoken"] = -1
-                st.rerun()
 
     # ── 1-Click Debrief & Action Plan Export ──
-    st.markdown("")
     report_lines = [
         f"# Candidate Interview Debrief & Readiness Diagnostic",
         f"**Platform:** PrepInterview AI (https://prepinterview.online)",
@@ -1115,37 +1115,14 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
             report_lines.append(f"- {c}")
     debrief_export_md = "\n".join(report_lines)
 
+    # 3. Free utility
     st.download_button(
-        "📥 Download Full Debrief & Prep Action Plan (Markdown)",
+        "📥 Download Full Debrief & Prep Action Plan",
         data=debrief_export_md,
         file_name="candidate_debrief_report.md",
         mime="text/markdown",
         use_container_width=True,
     )
-
-    # Free Tier Upgrade Card below Round 1 Diagnostic
-    if is_single_round and not st.session_state.is_pro:
-        st.markdown("""
-        <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.4rem;border-radius:12px;margin:1.5rem 0;">
-            <div style="font-size:1.15rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
-                👑 Ready for the Full 4-Round Pressure Simulation? (₹49 One-Time)
-            </div>
-            <p style="font-size:0.9rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
-                You just defended your #1 claim. Unlock the complete prep toolkit to practice remaining claims, system trade-offs, and leadership scenarios.
-            </p>
-            <div style="background:#0e1117;border:1px solid #30363d;border-radius:8px;padding:0.85rem 1.1rem;font-size:0.83rem;color:#ccc;margin-bottom:0.8rem;text-align:left;line-height:1.7;">
-                ✅ <strong>1. Full 5-Claim Vulnerability Audit:</strong> All attack vectors & risk categories revealed.<br>
-                ✅ <strong>2. 4-Round Adaptive Voice Simulation:</strong> Multi-turn pressure grilling across your entire background.<br>
-                ✅ <strong>3. Word-for-Word Defense Playbooks:</strong> High-impact STAR formulas for every flagged claim.<br>
-                ✅ <strong>4. Comprehensive Candidate Debrief:</strong> Rigor, brevity, and pressure defense rubrics.<br>
-                ✅ <strong>5. Downloadable Prep Dossier:</strong> Markdown cheat-sheet to review 10 minutes before your real call.
-            </div>
-            <div style="font-size:0.75rem;color:#8b949e;text-align:center;">
-                ⚡ Instant unlock · Razorpay UPI, Cards & NetBanking · 100% money-back guarantee
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.link_button("👑 Upgrade to Pro Pass for ₹49 (One-Time)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
 
 
 
@@ -1864,7 +1841,7 @@ CRITICAL INTERVIEW RULES:
     if st.session_state.get("interview_concluded") and st.session_state.get("mock_debrief"):
         render_candidate_debrief(st.session_state.mock_debrief, is_single_round=is_single_round)
 
-        with st.expander("📜 View Full Spoken Interview Transcript", expanded=False):
+        with st.expander("📄 View Full Spoken Interview Transcript", expanded=False):
             for i, msg in enumerate(st.session_state.mock_messages):
                 if msg["role"] == "interviewer":
                     st.markdown(f"**🎤 Interviewer:** {msg['content']}")
@@ -1878,7 +1855,7 @@ CRITICAL INTERVIEW RULES:
                 st.session_state.step = 2
                 st.rerun()
         with col_nav2:
-            if st.button("🔄 New Analysis (Upload Different Resume)", use_container_width=True):
+            if st.button("↻ New Analysis", use_container_width=True):
                 st.session_state.step = 0
                 st.session_state.results = {}
                 st.session_state.mock_messages = []
