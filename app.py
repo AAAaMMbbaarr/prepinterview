@@ -826,9 +826,80 @@ if st.session_state.step == 0:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Interactive Proof Engine: Sample Resume Attacks ──
+    # ── Interactive Proof Engine: Sample Resume Attacks & Live Tester ──
     with st.expander("👀 See How An Adversarial Interviewer Attacks a Resume Claim (Live Example)", expanded=True):
-        demo_tab_pm, demo_tab_swe = st.tabs(["🚀 Product & Growth Example", "💻 Software Engineering Example"])
+        demo_tab_live, demo_tab_pm, demo_tab_swe = st.tabs(["⚡ Test 1 Bullet Live", "🚀 Product & Growth Example", "💻 Software Engineering Example"])
+        with demo_tab_live:
+            st.markdown(
+                '<p style="font-size:0.82rem;color:#8b949e;margin-bottom:8px;">'
+                'Paste any single bullet from your resume to see how a skeptical interviewer will challenge it.'
+                '</p>',
+                unsafe_allow_html=True,
+            )
+            col_b1, col_b2 = st.columns([4, 1])
+            with col_b1:
+                test_bullet_input = st.text_input(
+                    "Test Resume Bullet",
+                    placeholder='e.g., "Led migration to microservices reducing latency by 35%" or "Managed ₹15L marketing budget improving ROI by 2.4x"',
+                    label_visibility="collapsed",
+                    key="bullet_tester_input",
+                )
+            with col_b2:
+                btn_attack_bullet = st.button("⚡ Attack Bullet", use_container_width=True, key="btn_attack_bullet")
+
+            if btn_attack_bullet and test_bullet_input.strip():
+                with st.spinner("Analyzing claim vulnerabilities..."):
+                    prompt = f"""You are a skeptical, elite hiring manager and interviewer analyzing a single resume bullet point.
+Resume Bullet: "{test_bullet_input.strip()}"
+
+Analyze this claim and return a JSON object with:
+1. "attack_question": A razor-sharp, realistic counter-question challenging the baseline, attribution, methodology, scale, or failure mode.
+2. "trap": Why an interviewer will doubt or probe this claim (e.g. missing baseline, unverified attribution, ambiguous personal ownership).
+3. "defense_formula": Concrete framework formula to answer strongly (e.g., State baseline cohort -> explain isolation of variables -> quote measurable delta).
+
+Return ONLY valid JSON:
+{{"attack_question": "...", "trap": "...", "defense_formula": "..."}}"""
+                    res = call_gemini(prompt)
+                    try:
+                        clean_res = res.strip()
+                        if clean_res.startswith("```"):
+                            clean_res = clean_res.split("```")[1]
+                            if clean_res.startswith("json"):
+                                clean_res = clean_res[4:]
+                        data = json.loads(clean_res)
+                        st.session_state["bullet_test_result"] = data
+                    except Exception:
+                        st.session_state["bullet_test_result"] = {
+                            "attack_question": "What was your specific baseline before this initiative, and how did you measure your individual contribution versus your team?",
+                            "trap": "Metric lacks verified baseline and individual ownership boundaries.",
+                            "defense_formula": "State pre-existing baseline -> detail your exact technical/operational decisions -> demonstrate measured business outcome."
+                        }
+
+            if st.session_state.get("bullet_test_result"):
+                res_data = st.session_state["bullet_test_result"]
+                st.markdown(f"""
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;margin-top:10px;">
+                    <div style="color:#ff7b72;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🧐 Skeptical Counter-Question</div>
+                    <div style="color:#ffd700;margin-bottom:10px;padding-left:10px;border-left:3px solid #ff7b72;">
+                        "{res_data.get('attack_question', '')}"
+                    </div>
+                    <div style="color:#f85149;font-size:0.78rem;font-weight:700;margin-bottom:2px;">⚠️ The Vulnerability Trap:</div>
+                    <div style="color:#8b949e;font-size:0.82rem;margin-bottom:10px;">
+                        {res_data.get('trap', '')}
+                    </div>
+                    <div style="background:#0d1117;border:1px solid #23863644;border-left:3px solid #238636;border-radius:6px;padding:8px 12px;font-size:0.82rem;">
+                        <strong style="color:#3fb950;">🛡️ Defense Formula:</strong>
+                        <span style="color:#c9d1d9;"> {res_data.get('defense_formula', '')}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown(
+                    '<p style="font-size:0.78rem;color:#7ee787;margin-top:6px;text-align:right;">'
+                    '✓ Tested 1 bullet. Drop your full resume below to scan all 5+ vulnerable claims & practice live.'
+                    '</p>',
+                    unsafe_allow_html=True,
+                )
+
         with demo_tab_pm:
             st.markdown("""
             <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;font-size:0.86rem;line-height:1.6;">
@@ -904,15 +975,15 @@ if st.session_state.step == 0:
     if resume_file:
         st.success(f"✓ {resume_file.name}")
 
-    # ── Enterprise Zero-Retention Privacy Shield ──
+    # ── In-Memory Processing & Privacy Commitment ──
     st.markdown(
         """
         <div style="background:#161b22;border:1px solid #23863644;border-left:4px solid #238636;border-radius:8px;padding:10px 14px;margin:8px 0 16px 0;font-size:0.78rem;line-height:1.5;">
             <div style="font-weight:700;color:#3fb950;margin-bottom:3px;display:flex;align-items:center;gap:6px;">
-                🔒 100% In-Memory Processing & Zero-Retention Guarantee
+                🔒 In-Memory Processing & Privacy Commitment
             </div>
             <span style="color:#8b949e;">
-                Your resume is processed ephemerally during your active session. Career documents, proprietary architectures, and confidential startup/business metrics are <strong>never stored in persistent databases, never logged, and never used to train AI models</strong>.
+                We do not store your resume or audio in our own systems. Career documents, private architectures, and voice inputs are processed ephemerally during your active session and are never saved to our servers, sold to recruiters, or used to train models.
             </span>
         </div>
         """,
@@ -1055,33 +1126,37 @@ if st.session_state.step == 0:
         </div>
         """, unsafe_allow_html=True)
 
-    # ── Institutional Trust, 100% Money-Back Guarantee & FAQs ──
+    # ── Institutional Trust, Satisfaction Promise & FAQs ──
     st.markdown("---")
     st.markdown("""
     <div style="background:#161b22;border:1px solid #ffd70044;border-left:4px solid #ffd700;border-radius:8px;padding:14px 18px;margin:1.2rem 0;font-size:0.85rem;line-height:1.6;">
         <div style="font-weight:700;color:#ffd700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-            🛡️ 100% Satisfaction & Money-Back Guarantee
+            🛡️ Satisfaction & Refund Promise
         </div>
         <span style="color:#c9d1d9;">
-            We want your interview preparation to be completely risk-free. If our resume vulnerability scan or spoken mock interview does not provide at least one critical insight that improves your interview readiness, simply email us at 
-            <a href="mailto:support@prepinterview.online" style="color:#58a6ff;">support@prepinterview.online</a> within 24 hours of purchasing the ₹49 Pro Pass for a <strong>full refund with zero questions asked</strong>.
+            We want your interview preparation to be completely risk-free. If our resume vulnerability scan or spoken mock interview does not provide at least one critical insight that improves your interview readiness, reach out to us at 
+            <a href="mailto:prepinterview.app@gmail.com" style="color:#58a6ff;">prepinterview.app@gmail.com</a> within 24 hours of purchasing the ₹49 Pro Pass and we will issue a full refund to your original payment method.
         </span>
     </div>
     """, unsafe_allow_html=True)
 
-    with st.expander("❓ Frequently Asked Questions (Privacy, Role Support & How It Works)"):
+    with st.expander("❓ Frequently Asked Questions (Who Built This, Privacy & How It Works)"):
         st.markdown("""
-        **1. What happens to my uploaded resume and audio recordings?**  
-        Your career documents and audio are processed ephemerally in active memory only using Google Gemini APIs. They are **never stored in persistent databases, never sold to recruiters, and never used to train public AI models**.
+        **1. Who built PrepInterview AI?**  
+        PrepInterview was built independently by Ambar, a product and tech builder who kept seeing candidates (and himself) get blindsided by tough resume-defense questions in interviews. Most interview prep tools just ask generic questions like *"Tell me about yourself."* PrepInterview was built to do the uncomfortable, necessary work: testing whether you can actually defend every number and claim on your resume.
+
+        **2. What happens to my uploaded resume and audio recordings?**  
+        We do not store your resume or audio in our own systems. Your documents and voice recordings are processed ephemerally during your active session and are never saved to our servers, sold to recruiters, or used to train models.
         
-        **2. How does Resume Attack Mode work?**  
-        Unlike generic interview bots that ask *"Tell me about a time you led a project"*, our engine extracts the exact claims and quantitative metrics from your resume and tests whether you can defend their baselines, methodology, and trade-offs under pressure.
+        **3. How does Resume Attack Mode work?**  
+        Unlike generic interview bots that ask textbook questions, our engine extracts the exact claims and quantitative metrics from your resume and tests whether you can defend their baselines, methodology, and trade-offs under pressure.
         
-        **3. Is this only for Software Engineers?**  
+        **4. Is this only for Software Engineers?**  
         No! Our rubrics are role-aware. For Product Managers, Growth leads, and Business/MBA candidates, we probe unit economics, attribution, A/B testing rigor, and stakeholder alignment. For technical roles, we probe system architecture, edge cases, and scaling limits.
         
-        **4. How does the ₹49 Pro Pass work?**  
-        Every user gets a free resume vulnerability scan, top 5 predicted questions, and a full mock interview round. The ₹49 Pro Pass is a **one-time micro-transaction via UPI or Card** that unlocks unlimited mock retries, all written defense playbooks, and the downloadable Dossier. There are **zero recurring subscriptions**.
+        **5. What is Free vs. what does the ₹49 Pro Pass include?**  
+        • **100% Free:** Interactive 1-bullet live tester, full resume vulnerability audit (top 5 predicted questions & claim risks), and Round 1 of the spoken voice interview.  
+        • **₹49 Pro Pass (One-Time):** Full 4-round mock interview with adaptive grilling, all written defense playbooks for every flagged claim, and downloadable Prep Dossier. Zero subscriptions.
         """)
 
     st.markdown("""
@@ -1090,7 +1165,7 @@ if st.session_state.step == 0:
         <div>
             <a href="https://prepinterview.online/privacy.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Privacy Policy</a> · 
             <a href="https://prepinterview.online/terms.html" target="_blank" style="color:#8b949e;text-decoration:none;margin:0 8px;">Terms of Service & Refund Policy</a> · 
-            <a href="mailto:support@prepinterview.online" style="color:#8b949e;text-decoration:none;margin:0 8px;">Contact: support@prepinterview.online</a>
+            <a href="mailto:prepinterview.app@gmail.com" style="color:#8b949e;text-decoration:none;margin:0 8px;">Contact: prepinterview.app@gmail.com</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1353,43 +1428,38 @@ elif st.session_state.step == 2:
                     st.markdown(f"**What could go wrong:** {first_a.get('what_could_go_wrong', '')}")
                     st.markdown(f"**Your defense:** {first_a.get('defense', '')}")
 
-                # Remaining attacks
+                # Remaining attacks (Transparent display: show claim & attack, gate only deep defense playbook)
                 rem_attacks = attacks[1:]
                 if rem_attacks:
                     is_atk_unlocked = st.session_state.is_pro or st.session_state.unlocked_attacks
-                    if is_atk_unlocked:
-                        for a in rem_attacks:
-                            claim = a.get("resume_claim", "")
-                            label = f'🎯 "{claim[:80]}..."' if len(claim) > 80 else f'🎯 "{claim}"'
-                            with st.expander(label):
-                                st.markdown(f"**Attack question:** {a.get('attack_question', '')}")
-                                st.markdown(f"**What could go wrong:** {a.get('what_could_go_wrong', '')}")
+                    for a in rem_attacks:
+                        claim = a.get("resume_claim", "")
+                        label = f'🎯 "{claim[:80]}..."' if len(claim) > 80 else f'🎯 "{claim}"'
+                        with st.expander(label, expanded=False):
+                            st.markdown(f"**Attack question:** {a.get('attack_question', '')}")
+                            st.markdown(f"**What could go wrong:** {a.get('what_could_go_wrong', '')}")
+                            if is_atk_unlocked:
                                 st.markdown(f"**Your defense:** {a.get('defense', '')}")
-                    else:
-                        st.markdown(f"""
-                        <div class="lock-card">
-                            <div style="font-size:0.95rem;font-weight:700;color:#ff6b6b;margin-bottom:0.3rem;">
-                                🔒 {len(rem_attacks)} More Resume Vulnerabilities & Defense Strategies Locked
+                            else:
+                                st.markdown(
+                                    "<div style='background:#0e1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;font-size:0.82rem;color:#8b949e;margin-top:6px;'>"
+                                    "🔒 <strong>Detailed Written Defense Playbook:</strong> Unlocked with Pro Pass (₹49)"
+                                    "</div>",
+                                    unsafe_allow_html=True,
+                                )
+
+                    if not is_atk_unlocked:
+                        st.markdown("""
+                        <div class="lock-card" style="margin-top:1.2rem;border:1px solid #ffd70044;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);">
+                            <div style="font-size:0.95rem;font-weight:700;color:#ffd700;margin-bottom:0.3rem;">
+                                👑 Unlock Written Defense Playbooks for All Flagged Claims
                             </div>
-                            <div class="blur-preview">
-                                🎯 "Scaled quarterly product acquisition & revenue retention by 150%..."<br>
-                                • Attack: How did you isolate causation from seasonal marketing trends? What was the true payback period?<br>
-                                • Defense: Anchor on A/B testing holdout groups, cohort churn curves, and unit economic guardrails.
-                            </div>
-                            <div style="font-size:0.8rem;color:#aaa;margin-top:0.5rem;">
-                                Skeptical interviewers will target these exact claims. Unlock all defense playbooks:
+                            <div style="font-size:0.83rem;color:#c9d1d9;margin-bottom:0.6rem;">
+                                Get the exact word-for-word counter-arguments, attribution frameworks, and metric proof points to defend every vulnerable bullet.
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-                        if ENABLE_SPONSOR_ADS:
-                            col_ak1, col_ak2 = st.columns(2)
-                            with col_ak1:
-                                if st.button("⚡ Unlock All Defenses (10s Ad)", key="btn_ad_attacks", use_container_width=True):
-                                    run_sponsor_ad_countdown("attacks")
-                            with col_ak2:
-                                st.link_button("👑 Pro Pass (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
-                        else:
-                            st.link_button("👑 Unlock All Defense Strategies (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
+                        st.link_button("👑 Unlock All Defense Strategies (₹49)", "https://rzp.io/rzp/vSIuH5yL", use_container_width=True)
         else:
             st.info("Could not parse attack analysis. Try re-running.")
 
@@ -1589,7 +1659,7 @@ RULES:
         with st.spinner("Interviewer is preparing the first question..."):
             first_msg = call_gemini(
                 interviewer_ctx
-                + "\n\nStart the interview. Greet the candidate briefly and ask your first question."
+                + "\n\nStart the interview. Greet the candidate briefly and immediately challenge their single most critical or vulnerable resume claim directly related to this target job description. Do NOT ask an easy softball or generic icebreaker like 'tell me about yourself' — dive straight into their real claims under your persona."
             )
             st.session_state.mock_messages = [
                 {"role": "interviewer", "content": first_msg}
@@ -1627,18 +1697,19 @@ RULES:
         inject_tts(st.session_state.mock_messages[last_ai_idx]["content"])
         st.session_state["last_spoken"] = last_ai_idx
 
-    # ── Check Voice Interview Completion (1 Full 4-Question Round Free) ──
+    # ── Check Voice Interview Completion (Question 1 Free Evaluation Round) ──
     candidate_turns = sum(1 for m in st.session_state.mock_messages if m["role"] == "candidate")
-    can_answer_voice = st.session_state.is_pro or st.session_state.unlocked_voice or (candidate_turns < 4)
+    can_answer_voice = st.session_state.is_pro or st.session_state.unlocked_voice or (candidate_turns < 1)
 
     if not can_answer_voice:
         st.markdown("""
         <div class="lock-card" style="border:1px solid #ffd700;background:linear-gradient(135deg, #1a1608 0%, #11141c 100%);padding:1.5rem;border-radius:12px;margin:1.2rem 0;">
-            <div style="font-size:1.3rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
-                🎉 Full 4-Round Mock Interview Complete!
+            <div style="font-size:1.25rem;font-weight:800;color:#ffd700;margin-bottom:0.4rem;">
+                🎯 Round 1 Voice Evaluation Complete!
             </div>
             <p style="font-size:0.95rem;color:#e6edf3;line-height:1.5;margin-bottom:0.75rem;">
-                Outstanding effort! You've just completed a full realistic interview simulation with real-time AI voice evaluation and speech rubric scoring.
+                You've experienced how our AI interviewer challenges your claims and evaluates your spoken delivery.
+                Unlock the complete 4-round mock interview with adaptive follow-ups, full written defense playbooks, and your complete candidate debrief for a single ₹49 pass.
             </p>
             <div style="background:#0e1117;padding:1rem;border-radius:8px;margin-bottom:1rem;border:1px solid #30363d;">
                 <div style="font-weight:700;color:#fff;font-size:0.9rem;margin-bottom:0.4rem;">👑 What PrepInterview Pro (₹49) Unlocks:</div>
@@ -1884,8 +1955,8 @@ RULES:
             st.rerun()
     with col2:
         if st.button("🔄 Restart Interview", use_container_width=True):
-            if not st.session_state.is_pro and candidate_turns >= 4:
-                st.warning("💡 You've completed your 1 free full-length mock interview! Upgrade to Pro Pass (₹49) for unlimited practice rounds and retries.")
+            if not st.session_state.is_pro and candidate_turns >= 1:
+                st.warning("💡 You've completed your free voice evaluation trial! Upgrade to Pro Pass (₹49) for unlimited 4-round mock interviews and retries.")
             else:
                 st.html("<script>window.speechSynthesis.cancel();</script>")
                 st.session_state.mock_messages = []
