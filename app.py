@@ -1211,56 +1211,6 @@ if st.session_state.step == 0:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Annotated Live Teardown Example ──
-    with st.expander("🔎 See a Real Resume Defense Teardown (How Interviewers Dissect Claims)", expanded=False):
-        st.markdown("""
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;font-size:0.85rem;line-height:1.6;">
-            <div style="margin-bottom:10px;">
-                <span style="font-size:0.72rem;font-weight:700;color:#58a6ff;text-transform:uppercase;letter-spacing:0.5px;">📄 Resume Claim Under Inspection</span>
-                <div style="color:#e6edf3;font-weight:600;margin-top:2px;">
-                    "Led mobile web checkout redesign, boosting conversion rate by 42% across 1.2M monthly active sessions."
-                </div>
-            </div>
-            
-            <div style="background:#0d1117;border-left:3px solid #ff7b72;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
-                <span style="font-size:0.72rem;font-weight:700;color:#ff7b72;text-transform:uppercase;letter-spacing:0.5px;">⚠️ The Vulnerability Trap</span>
-                <div style="color:#8b949e;font-size:0.82rem;">
-                    Missing pre-existing baseline, unisolated marketing/seasonality spikes, and ambiguous individual contribution versus engineering team.
-                </div>
-            </div>
-
-            <div style="background:#0d1117;border-left:3px solid #ffd700;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
-                <span style="font-size:0.72rem;font-weight:700;color:#ffd700;text-transform:uppercase;letter-spacing:0.5px;">🧐 Interviewer Grilling Question</span>
-                <div style="color:#ffd700;font-style:italic;">
-                    "What was your baseline conversion rate before the redesign? And how did you isolate your UI modifications from ongoing paid acquisition campaigns or seasonal holiday spikes?"
-                </div>
-            </div>
-
-            <div style="background:#2d1515;border-left:3px solid #f85149;padding:8px 12px;border-radius:4px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.72rem;font-weight:700;color:#f85149;text-transform:uppercase;letter-spacing:0.5px;">❌ Typical Candidate Stumble</span>
-                    <span style="font-size:0.72rem;background:#ff4444;color:white;font-weight:700;padding:1px 6px;border-radius:4px;">FAIL · 25% Rigor</span>
-                </div>
-                <div style="color:#e6edf3;font-size:0.82rem;margin-top:4px;">
-                    <em>"Well, we noticed checkout drop-off was pretty high, so our team revamped the entire mobile UI, and after we launched the project the overall conversions went up by 42%."</em>
-                </div>
-                <div style="color:#ff7b72;font-size:0.78rem;margin-top:4px;">
-                    <strong>Why it fails:</strong> Passive "we" hides personal ownership, zero numeric baseline stated, zero statistical holdout or seasonality controls.
-                </div>
-            </div>
-
-            <div style="background:#0d1f14;border-left:3px solid #238636;padding:8px 12px;border-radius:4px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.72rem;font-weight:700;color:#3fb950;text-transform:uppercase;letter-spacing:0.5px;">✅ Winning STAR Defense Formula</span>
-                    <span style="font-size:0.72rem;background:#238636;color:white;font-weight:700;padding:1px 6px;border-radius:4px;">PASS · 92% Rigor</span>
-                </div>
-                <div style="color:#c9d1d9;font-size:0.82rem;margin-top:4px;">
-                    <em>"Our baseline checkout completion was 2.1% across 1.2M sessions. I personally analyzed drop-off data in Mixpanel, identified payment gateway step drop-offs, and ran a 50/50 randomized A/B test over 3 weeks. By keeping a concurrent holdout group, we eliminated holiday seasonality confounders and verified a true statistically significant lift to 2.98% (+42% relative)."</em>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
     # ── Quick Bullet Tester (Optional Expandable) ──
     with st.expander("💡 Want to test 1 resume bullet point first? (Free Live Attack Preview)", expanded=False):
         st.markdown(
