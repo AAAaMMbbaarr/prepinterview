@@ -221,21 +221,40 @@
       'article'
     ];
 
+    const junkSelectors = [
+      '#prepinterview-copilot-card',
+      '.jobs-premium-applicant-insights',
+      '[data-view-name*="applicant-insights"]',
+      '.jobs-unified-top-card__applicant-count',
+      '.jobs-premium-insights',
+      '.hiring-team',
+      '.jobs-poster-profile',
+      '.jobs-company__box',
+      '.artdeco-card',
+      'button',
+      'svg',
+      '[role="button"]'
+    ].join(',');
+
     for (const sel of jdSelectors) {
       const el = (pane || document).querySelector(sel);
       if (el && el.innerText && el.innerText.trim().length > 100) {
-        text = el.innerText.trim();
+        const clone = el.cloneNode(true);
+        try {
+          clone.querySelectorAll(junkSelectors).forEach(n => n.remove());
+        } catch (e) {}
+        text = clone.innerText.trim();
         break;
       }
     }
 
     if (!text && pane) {
       const clone = pane.cloneNode(true);
-      const ourCard = clone.querySelector('#prepinterview-copilot-card');
-      if (ourCard) ourCard.remove();
-      const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
-      if (topCard) topCard.remove();
-      clone.querySelectorAll('button, svg, [role="button"]').forEach(b => b.remove());
+      try {
+        clone.querySelectorAll(junkSelectors).forEach(n => n.remove());
+        const topCard = clone.querySelector('.job-details-jobs-unified-top-card, .jobs-unified-top-card, [class*="top-card"]');
+        if (topCard) topCard.remove();
+      } catch (e) {}
       text = clone.innerText.trim();
     }
 

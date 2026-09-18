@@ -326,14 +326,16 @@
       else jobCity = cityMatch[1];
     }
 
-    // 3. Education / Tier requirement in JD (Strictly check educational context to avoid false positives from "top-tier clients/firms")
-    const eduContextMatch = rawJd.match(/(?:education|degree|qualification|graduate|college|institute|university|background|alumni|student)[\s\S]{0,80}?(?:tier\s*1|tier-1|premier\s+institute|top\s+tier|ivy\s+league|iits?|iims?|bits\s+pilani|nits?)/i)
-      || rawJd.match(/(?:tier\s*1|tier-1|premier\s+institute|top-tier|ivy\s+league|iits?|iims?|bits\s+pilani|nits?)[\s\S]{0,80}?(?:college|university|institute|degree|graduates?|alumni|candidates?)/i);
-
-    const tierPreferred = Boolean(eduContextMatch);
-
     // 3. Education & Degree requirement in JD
     const normJd = rawJd.toLowerCase();
+
+    // 3. Education / Tier requirement in JD (Strictly require explicit college/tier phrasing to eliminate false positives)
+    const tierPreferred = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campuses)\b/i.test(normJd)
+      || /\b(?:colleges?|institutes?|universities)\s*:\s*(?:tier\s*[- ]?1|premier|top\s*[- ]?tier)\b/i.test(normJd)
+      || /\b(?:only|strictly)\s+(?:from\s+)?(?:iits?|iims?|bits\s+pilani|nits?)\b/i.test(normJd)
+      || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)(?:[\s\/,|]+(?:and|or)?[\s\/,|]*(?:iits?|iims?|bits(?:\s+pilani)?|nits?))*\s+(?:graduates?|alumni|only|freshers?)\s+(?:preferred|required|mandatory)\b/i.test(normJd)
+      || /\b(?:degree\s+from\s+)?(?:a\s+)?tier\s*[- ]?1\s+(?:college|institute|engineering)\b/i.test(normJd)
+      || /\bfrom\s+(?:premier|tier\s*[- ]?1)\s+(?:institutes?|colleges?|b-?schools?)\b/i.test(normJd);
 
     // Check if PhD is strictly mandatory
     const isPhdMandatory = /\b(ph\.?d\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:a\s+)?ph\.?d|doctorate\s+required)\b/i.test(normJd);
@@ -456,7 +458,7 @@
     if (jdReq.tierPreferred) {
       if (!candEdu.isTier1) {
         penalties += 30;
-        disqualifiers.push(`College criteria not matching`);
+        disqualifiers.push(`College not matching`);
       } else {
         bonuses += 6; // Verified Tier-1 pedigree match
       }
@@ -466,10 +468,10 @@
     if (jdReq.degreeMandatory) {
       if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
         penalties += 25;
-        disqualifiers.push(`Degree requirement not matching`);
+        disqualifiers.push(`Degree not matching`);
       } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
         penalties += 20;
-        disqualifiers.push(`Degree requirement not matching`);
+        disqualifiers.push(`Degree not matching`);
       }
     } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
       bonuses += 3; // Modest bonus if candidate has MBA when preferred
@@ -480,7 +482,7 @@
       if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
         if (candLoc.city.toLowerCase() !== jdReq.jobCity.toLowerCase()) {
           penalties += 18;
-          disqualifiers.push(`Job location not matching`);
+          disqualifiers.push(`Location not matching`);
         } else {
           bonuses += 4; // Local candidate for on-site role
         }
@@ -539,7 +541,7 @@
     return evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle);
   }
 
-  window.PrepInterviewMatcher = {
+  const api = {
     TAXONOMY: TAXONOMY,
     normalize: normalize,
     extractSkills: extractSkills,
@@ -550,4 +552,11 @@
     evaluateMultiFactor: evaluateMultiFactor,
     calculateMatch: calculateMatch
   };
+
+  if (typeof window !== 'undefined') {
+    window.PrepInterviewMatcher = api;
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  }
 })();
