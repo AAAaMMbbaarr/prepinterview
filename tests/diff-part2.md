@@ -1,8 +1,8 @@
 # PrepInterview Copilot — Behavior Diff vs v1.0.5
 
-**Generated Date:** 2026-09-19T08:52:47.513Z
+**Generated Date:** 2026-09-19T09:23:00.576Z
 **Total Evaluation Pairs:** 120
-**Changed Pairs:** 85 / 120 (70.8%)
+**Changed Pairs:** 87 / 120 (72.5%)
 
 ## Summary of Changes
 
@@ -27,28 +27,30 @@ In v1.0.6, the skill matching engine was upgraded to a 475-skill taxonomy with a
 | fresher_tier3 x jd_38 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | Work experience not matching |
 | fresher_tier3 x jd_40 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | Work experience not matching |
 | mid_tier2_vit x jd_01 | 77 | 98 | +21 | Moderate Match (Gaps to Defend) | Strong Match | Work experience not matching | None |
-| mid_tier2_vit x jd_02 | 49 | 73 | +24 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
+| mid_tier2_vit x jd_02 | 49 | 73 | +24 | Moderate Match (Gaps to Defend) | Good Match | Location not matching | Location not matching |
 | mid_tier2_vit x jd_04 | 39 | 35 | -4 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
+| mid_tier2_vit x jd_06 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Role profile not matching |
 | mid_tier2_vit x jd_07 | 30 | 42 | +12 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| mid_tier2_vit x jd_08 | 41 | 21 | -20 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Work experience not matching | Work experience not matching |
+| mid_tier2_vit x jd_08 | 41 | 21 | -20 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Work experience not matching |
 | mid_tier2_vit x jd_09 | 96 | 79 | -17 | Strong Match | Good Match | None | None |
-| mid_tier2_vit x jd_10 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Work experience not matching | Work experience not matching |
+| mid_tier2_vit x jd_10 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Role profile not matching |
 | mid_tier2_vit x jd_11 | 64 | 36 | -28 | Moderate Match (Gaps to Defend) | Reach Role (Critical Gaps) | None | None |
 | mid_tier2_vit x jd_12 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | College not matching, Degree not matching, Location not matching | College not matching, Degree not matching, Location not matching, Work experience not matching |
-| mid_tier2_vit x jd_13 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Work experience not matching | Work experience not matching |
+| mid_tier2_vit x jd_13 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Role profile not matching |
 | mid_tier2_vit x jd_15 | 83 | 98 | +15 | Strong Match | Strong Match | None | None |
 | mid_tier2_vit x jd_16 | 50 | 20 | -30 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | College not matching, Work experience not matching | College not matching, Work experience not matching |
-| mid_tier2_vit x jd_17 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | Work experience not matching |
 | mid_tier2_vit x jd_18 | 82 | 65 | -17 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
-| mid_tier2_vit x jd_19 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | College not matching | College not matching, Work experience not matching |
+| mid_tier2_vit x jd_19 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | College not matching | College not matching, Role profile not matching |
 | mid_tier2_vit x jd_22 | 61 | 55 | -6 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
-| mid_tier2_vit x jd_24 | 32 | 20 | -12 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Work experience not matching | Work experience not matching |
+| mid_tier2_vit x jd_23 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Degree not matching, Work experience not matching | Degree not matching, Role profile not matching |
+| mid_tier2_vit x jd_24 | 32 | 21 | -11 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | None |
 | mid_tier2_vit x jd_25 | 20 | 22 | +2 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
 | mid_tier2_vit x jd_26 | 47 | 35 | -12 | Moderate Match (Gaps to Defend) | Reach Role (Critical Gaps) | Work experience not matching | Work experience not matching |
+| mid_tier2_vit x jd_28 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Role profile not matching |
 | mid_tier2_vit x jd_29 | 92 | 98 | +6 | Strong Match | Strong Match | None | None |
-| mid_tier2_vit x jd_30 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Work experience not matching | Work experience not matching |
 | mid_tier2_vit x jd_31 | 29 | 40 | +11 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
-| mid_tier2_vit x jd_32 | 70 | 82 | +12 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Location not matching, Work experience not matching | Location not matching |
+| mid_tier2_vit x jd_32 | 70 | 79 | +9 | Reach Role (Critical Gaps) | Good Match | Location not matching, Work experience not matching | Location not matching |
+| mid_tier2_vit x jd_33 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Work experience not matching | Role profile not matching |
 | mid_tier2_vit x jd_34 | 77 | 74 | -3 | Good Match | Good Match | None | None |
 | mid_tier2_vit x jd_35 | 75 | 98 | +23 | Good Match | Strong Match | None | None |
 | mid_tier2_vit x jd_36 | 20 | 26 | +6 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | College not matching | College not matching |
@@ -61,33 +63,33 @@ In v1.0.6, the skill matching engine was upgraded to a 475-skill taxonomy with a
 | senior_tier1_iit x jd_03 | 87 | 98 | +11 | Strong Match | Strong Match | None | None |
 | senior_tier1_iit x jd_04 | 52 | 53 | +1 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_05 | 32 | 29 | -3 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_06 | 77 | 33 | -44 | Good Match | Moderate Match (Gaps to Defend) | None | Work experience not matching |
+| senior_tier1_iit x jd_06 | 77 | 20 | -57 | Good Match | Reach Role (Critical Gaps) | None | Role profile not matching |
 | senior_tier1_iit x jd_07 | 42 | 20 | -22 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_08 | 98 | 94 | -4 | Strong Match | Strong Match | None | None |
+| senior_tier1_iit x jd_08 | 98 | 79 | -19 | Strong Match | Good Match | None | None |
 | senior_tier1_iit x jd_09 | 71 | 43 | -28 | Moderate Match (Gaps to Defend) | Reach Role (Critical Gaps) | None | None |
-| senior_tier1_iit x jd_10 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
 | senior_tier1_iit x jd_11 | 24 | 36 | +12 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
-| senior_tier1_iit x jd_12 | 59 | 57 | -2 | Moderate Match (Gaps to Defend) | Reach Role (Critical Gaps) | Location not matching | Location not matching, Work experience not matching |
-| senior_tier1_iit x jd_13 | 71 | 67 | -4 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
+| senior_tier1_iit x jd_12 | 59 | 57 | -2 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching, Work experience not matching |
+| senior_tier1_iit x jd_13 | 71 | 51 | -20 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | Role profile not matching |
 | senior_tier1_iit x jd_14 | 74 | 55 | -19 | Good Match | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_15 | 33 | 50 | +17 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | None |
 | senior_tier1_iit x jd_16 | 67 | 52 | -15 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
-| senior_tier1_iit x jd_17 | 26 | 45 | +19 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | None |
+| senior_tier1_iit x jd_17 | 26 | 45 | +19 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | Role profile not matching |
 | senior_tier1_iit x jd_18 | 32 | 24 | -8 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_19 | 85 | 43 | -42 | Strong Match | Reach Role (Critical Gaps) | None | Work experience not matching |
+| senior_tier1_iit x jd_19 | 85 | 43 | -42 | Strong Match | Reach Role (Critical Gaps) | None | Role profile not matching |
 | senior_tier1_iit x jd_20 | 32 | 37 | +5 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
 | senior_tier1_iit x jd_21 | 75 | 68 | -7 | Good Match | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_22 | 24 | 20 | -4 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
+| senior_tier1_iit x jd_23 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Degree not matching | Degree not matching, Role profile not matching |
 | senior_tier1_iit x jd_24 | 26 | 25 | -1 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
 | senior_tier1_iit x jd_25 | 20 | 35 | +15 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
 | senior_tier1_iit x jd_26 | 98 | 73 | -25 | Strong Match | Good Match | None | None |
 | senior_tier1_iit x jd_27 | 53 | 50 | -3 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_28 | 75 | 37 | -38 | Good Match | Moderate Match (Gaps to Defend) | None | Work experience not matching |
+| senior_tier1_iit x jd_28 | 75 | 27 | -48 | Good Match | Reach Role (Critical Gaps) | None | Role profile not matching |
 | senior_tier1_iit x jd_29 | 54 | 45 | -9 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_30 | 70 | 50 | -20 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_31 | 57 | 63 | +6 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_32 | 61 | 67 | +6 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_33 | 47 | 22 | -25 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Role profile not matching | Work experience not matching |
+| senior_tier1_iit x jd_33 | 47 | 20 | -27 | Moderate Match (Gaps to Defend) | Reach Role (Critical Gaps) | Role profile not matching | Role profile not matching |
 | senior_tier1_iit x jd_34 | 53 | 68 | +15 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |
 | senior_tier1_iit x jd_35 | 38 | 50 | +12 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | None |
 | senior_tier1_iit x jd_36 | 39 | 47 | +8 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Role profile not matching | None |

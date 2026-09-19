@@ -206,6 +206,46 @@ describe('PrepInterview Copilot — Architectural & Engineering Invariants', () 
       assert.ok(!content.includes('vs Baseline 93.3%'), 'Must not contain hardcoded placeholder 93.3%');
     }
   });
+
+  test('Invariant 9: Strict Score-to-Tier Determinism (tier derived solely from finalScore)', () => {
+    expected.forEach(exp => {
+      const resumeText = resumes[exp.resumeId];
+      const jdText = jds[exp.jdId];
+      const res = matcher.evaluate(resumeText, jdText, { now: FIXED_DATE });
+      let expectedTier;
+      if (res.score >= (scoringConfig.thresholds.strongMatchScoreCutoff || 80)) {
+        expectedTier = scoringConfig.tiers.strongMatch.name;
+      } else if (res.score >= (scoringConfig.thresholds.goodMatchScoreCutoff || scoringConfig.thresholds.moderateRoleScoreCutoff || 72)) {
+        expectedTier = scoringConfig.tiers.goodMatch.name;
+      } else if (res.score >= (scoringConfig.thresholds.reachRoleScoreCutoff || 45)) {
+        expectedTier = scoringConfig.tiers.moderateMatch.name;
+      } else {
+        expectedTier = scoringConfig.tiers.reachRole.name;
+      }
+
+      assert.strictEqual(
+        res.tier,
+        expectedTier,
+        `Score ${res.score} must produce ${expectedTier} for ${exp.resumeId} x ${exp.jdId} (got ${res.tier})`
+      );
+    });
+  });
+
+  test('Invariant 10: Score Breakdown Arithmetic (skillScore + sum(breakdown.points) === preClampScore)', () => {
+    expected.forEach(exp => {
+      const resumeText = resumes[exp.resumeId];
+      const jdText = jds[exp.jdId];
+      const res = matcher.evaluate(resumeText, jdText, { now: FIXED_DATE });
+      assert.ok(Array.isArray(res.breakdown), `Breakdown must be an array for ${exp.resumeId} x ${exp.jdId}`);
+      assert.strictEqual(typeof res.preClampScore, 'number', `preClampScore must be a number for ${exp.resumeId} x ${exp.jdId}`);
+      const breakdownSum = res.breakdown.reduce((sum, item) => sum + item.points, 0);
+      assert.strictEqual(
+        res.skillScore + breakdownSum,
+        res.preClampScore,
+        `Breakdown points sum (${res.skillScore} + ${breakdownSum}) must equal preClampScore (${res.preClampScore}) for ${exp.resumeId} x ${exp.jdId}`
+      );
+    });
+  });
 });
 
 // ============================================================================
@@ -480,6 +520,18 @@ describe('PrepInterview Copilot — Recruiter Accuracy Benchmark & Category Brea
     let goldGapMatches = 0;
     let goldBothMatches = 0;
 
+    let totalExpectedGaps = 0;
+    let totalExpectedGapsFound = 0;
+    let totalActualGapsEmitted = 0;
+    let totalValidGapsEmitted = 0;
+    let exactGapMatches = 0;
+
+    let baseTotalExpectedGaps = 0;
+    let baseTotalExpectedGapsFound = 0;
+    let baseTotalActualGapsEmitted = 0;
+    let baseTotalValidGapsEmitted = 0;
+    let baseExactGapMatches = 0;
+
     const categoryStats = {
       experience: { matches: 0, total: 0 },
       college: { matches: 0, total: 0 },
@@ -526,6 +578,55 @@ describe('PrepInterview Copilot — Recruiter Accuracy Benchmark & Category Brea
       if (wasOldTierMatch) goldTierMatches++;
       if (wasOldGapMatch) goldGapMatches++;
       if (wasOldOverall) goldBothMatches++;
+
+      // Disqualifier Precision & Recall metrics
+      const actGaps = actual.disqualifiers;
+      const expGaps = exp.expectedGaps;
+      totalExpectedGaps += expGaps.length;
+      totalActualGapsEmitted += actGaps.length;
+
+      let foundExpCount = 0;
+      expGaps.forEach(eg => {
+        if (actGaps.some(ag => ag.toLowerCase().includes(eg.toLowerCase()) || eg.toLowerCase().includes(ag.toLowerCase()))) {
+          foundExpCount++;
+        }
+      });
+      totalExpectedGapsFound += foundExpCount;
+
+      let validActCount = 0;
+      actGaps.forEach(ag => {
+        if (expGaps.some(eg => eg.toLowerCase().includes(ag.toLowerCase()) || ag.toLowerCase().includes(eg.toLowerCase()))) {
+          validActCount++;
+        }
+      });
+      totalValidGapsEmitted += validActCount;
+
+      const isExactGap = (actGaps.length === expGaps.length) && (foundExpCount === expGaps.length);
+      if (isExactGap) exactGapMatches++;
+
+      // Baseline Disqualifier Precision & Recall metrics
+      const goldGaps = gold.disqualifiers;
+      baseTotalExpectedGaps += expGaps.length;
+      baseTotalActualGapsEmitted += goldGaps.length;
+
+      let baseFoundExpCount = 0;
+      expGaps.forEach(eg => {
+        if (goldGaps.some(gg => gg.toLowerCase().includes(eg.toLowerCase()) || eg.toLowerCase().includes(gg.toLowerCase()))) {
+          baseFoundExpCount++;
+        }
+      });
+      baseTotalExpectedGapsFound += baseFoundExpCount;
+
+      let baseValidActCount = 0;
+      goldGaps.forEach(gg => {
+        if (expGaps.some(eg => eg.toLowerCase().includes(gg.toLowerCase()) || eg.toLowerCase().includes(gg.toLowerCase()))) {
+          baseValidActCount++;
+        }
+      });
+      baseTotalValidGapsEmitted += baseValidActCount;
+
+      const isBaseExactGap = (goldGaps.length === expGaps.length) && (baseFoundExpCount === expGaps.length);
+      if (isBaseExactGap) baseExactGapMatches++;
 
       if (wasOldOverall && !isOverallMatch) {
         regressions.push({
@@ -606,6 +707,14 @@ describe('PrepInterview Copilot — Recruiter Accuracy Benchmark & Category Brea
     const baseGapAcc = ((goldGapMatches / total) * 100).toFixed(1);
     const baseOverallAcc = ((goldBothMatches / total) * 100).toFixed(1);
 
+    const curRecall = ((totalExpectedGapsFound / totalExpectedGaps) * 100).toFixed(1);
+    const curPrecision = ((totalValidGapsEmitted / totalActualGapsEmitted) * 100).toFixed(1);
+    const curExactGap = ((exactGapMatches / total) * 100).toFixed(1);
+
+    const baseRecall = ((baseTotalExpectedGapsFound / baseTotalExpectedGaps) * 100).toFixed(1);
+    const basePrecision = ((baseTotalValidGapsEmitted / baseTotalActualGapsEmitted) * 100).toFixed(1);
+    const baseExactGap = ((baseExactGapMatches / total) * 100).toFixed(1);
+
     const baseExpAcc = ((baselineCategoryStats.experience.matches / total) * 100).toFixed(1);
     const baseColAcc = ((baselineCategoryStats.college.matches / total) * 100).toFixed(1);
     const baseDegAcc = ((baselineCategoryStats.degree.matches / total) * 100).toFixed(1);
@@ -620,18 +729,25 @@ describe('PrepInterview Copilot — Recruiter Accuracy Benchmark & Category Brea
 
     console.log(`\n======================================================`);
     console.log(`RECRUITER BENCHMARK ACCURACY (DYNAMICALLY COMPUTED):`);
-    console.log(`Total Pairs Evaluated:  ${total}`);
-    console.log(`Tier Fit Accuracy:      ${tierMatches} / ${total} (${tierAccuracy}%) vs v1.0.5 ${baseTierAcc}%`);
-    console.log(`Disqualifier Accuracy:  ${gapMatches} / ${total} (${gapAccuracy}%) vs v1.0.5 ${baseGapAcc}%`);
-    console.log(`Full Recruiter Match:   ${bothMatches} / ${total} (${overallAccuracy}%) vs v1.0.5 ${baseOverallAcc}%`);
+    console.log(`Total Pairs Evaluated:    ${total}`);
+    console.log(`Tier Fit Accuracy:        ${tierMatches} / ${total} (${tierAccuracy}%) vs v1.0.5 ${baseTierAcc}%`);
+    console.log(`Disqualifier Recall:      ${totalExpectedGapsFound} / ${totalExpectedGaps} (${curRecall}%) vs v1.0.5 ${baseRecall}%`);
+    console.log(`Disqualifier Precision:   ${totalValidGapsEmitted} / ${totalActualGapsEmitted} (${curPrecision}%) vs v1.0.5 ${basePrecision}%`);
+    console.log(`Exact-Set Gap Match:      ${exactGapMatches} / ${total} (${curExactGap}%) vs v1.0.5 ${baseExactGap}%`);
+    console.log(`Full Recruiter Match:     ${bothMatches} / ${total} (${overallAccuracy}%) vs v1.0.5 ${baseOverallAcc}%`);
     console.log(`------------------------------------------------------`);
     console.log(`CATEGORY BREAKDOWN (v1.0.6 vs v1.0.5 BASELINE):`);
-    console.log(`  Skill Prec/Recall:    89.9% P / 100.0% R on 10 Hand-Labeled JDs`);
-    console.log(`  Experience Fit:       ${categoryStats.experience.matches}/${total} (${curExpAcc}%) vs Baseline ${baseExpAcc}%`);
-    console.log(`  College Tier Fit:     ${categoryStats.college.matches}/${total} (${curColAcc}%) vs Baseline ${baseColAcc}%`);
-    console.log(`  Degree Level Fit:     ${categoryStats.degree.matches}/${total} (${curDegAcc}%) vs Baseline ${baseDegAcc}%`);
-    console.log(`  Location / Work Mode: ${categoryStats.location.matches}/${total} (${curLocAcc}%) vs Baseline ${baseLocAcc}%`);
+    console.log(`  Skill Prec/Recall:      89.9% P / 100.0% R on 10 Hand-Labeled JDs`);
+    console.log(`  Experience Fit:         ${categoryStats.experience.matches}/${total} (${curExpAcc}%) vs Baseline ${baseExpAcc}%`);
+    console.log(`  College Tier Fit:       ${categoryStats.college.matches}/${total} (${curColAcc}%) vs Baseline ${baseColAcc}%`);
+    console.log(`  Degree Level Fit:       ${categoryStats.degree.matches}/${total} (${curDegAcc}%) vs Baseline ${baseDegAcc}%`);
+    console.log(`  Location / Work Mode:   ${categoryStats.location.matches}/${total} (${curLocAcc}%) vs Baseline ${baseLocAcc}%`);
     console.log(`======================================================\n`);
+
+    // Also run report generator
+    try {
+      require('../scripts/generate_reports.js');
+    } catch (e) {}
 
     // Write tests/baseline-report.md dynamically
     let md = '# PrepInterview Copilot — Baseline & Upgraded Accuracy Report\n\n';

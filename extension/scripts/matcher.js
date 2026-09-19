@@ -847,6 +847,8 @@
       return {
         status: 'no_resume',
         score: 0,
+        preClampScore: 0,
+        breakdown: [],
         tier: 'Resume Needed',
         badge: '⚙️',
         color: '#8b949e',
@@ -921,30 +923,56 @@
     let penalties = 0;
     let bonuses = 0;
     const disqualifiers = [];
+    const breakdown = [];
+    const notes = [];
+    let hardGaps = [];
+    let softGaps = [];
 
     // FACTOR A: WORK EXPERIENCE
     if (jdReq.minExp !== null && jdReq.minExp > 0) {
-      const expYears = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
+      const hasDomain = Boolean(jdReq.roleFamily && jdReq.roleFamily !== 'unknown');
+      const expYears = hasDomain
+        ? ((candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years)
+        : ((candExp.totalYears !== undefined) ? candExp.totalYears : candExp.years);
+
       if (expYears < jdReq.minExp) {
         const gap = Math.round((jdReq.minExp - expYears) * 10) / 10;
-        if (gap >= 2) {
-          penalties += config.penalties.experienceGapLarge;
-        } else if (gap >= 1) {
-          penalties += config.penalties.experienceGapMedium;
+        if (gap <= 0.5) {
+          const pen = (config.penalties.experienceGapTolerance !== undefined) ? config.penalties.experienceGapTolerance : 3;
+          penalties += pen;
+          breakdown.push({ label: 'Experience Shortfall (<= 0.5 yr tolerance)', points: -pen });
+          notes.push('Slightly below the stated minimum');
+          softGaps.push('Experience shortfall under 1 year');
+          // No red disqualifier!
         } else {
-          penalties += config.penalties.experienceGapSmall;
+          if (gap >= 2) {
+            penalties += config.penalties.experienceGapLarge;
+            breakdown.push({ label: 'Experience Gap (>= 2 yrs)', points: -config.penalties.experienceGapLarge });
+            hardGaps.push('Experience shortfall >= 1 year');
+          } else if (gap >= 1) {
+            penalties += config.penalties.experienceGapMedium;
+            breakdown.push({ label: 'Experience Gap (>= 1 yr)', points: -config.penalties.experienceGapMedium });
+            hardGaps.push('Experience shortfall >= 1 year');
+          } else {
+            penalties += config.penalties.experienceGapSmall;
+            breakdown.push({ label: 'Experience Gap (< 1 yr)', points: -config.penalties.experienceGapSmall });
+            softGaps.push('Experience shortfall under 1 year');
+          }
+          disqualifiers.push(config.disqualifierMessages.workExperience);
         }
-        disqualifiers.push(config.disqualifierMessages.workExperience);
       } else {
         // Candidate meets or exceeds minExp!
         const overqualifiedThreshold = (config.experience && config.experience.overqualifiedYearsThreshold) || 3.0;
         const isOverqualified = jdReq.maxExp !== null && (expYears > (jdReq.maxExp + overqualifiedThreshold));
 
         if (isOverqualified) {
-          penalties += (config.penalties.overqualified || 4);
-          // Overqualified: soft penalty, NO bonus, NO red disqualifier!
+          const oqPen = (config.penalties.overqualified !== undefined) ? config.penalties.overqualified : 4;
+          penalties += oqPen;
+          breakdown.push({ label: 'Overqualified Penalty', points: -oqPen });
+          notes.push((config.experience && config.experience.overqualifiedNote) || 'May be junior for you');
         } else {
           bonuses += config.bonuses.experienceMeetsRequirement;
+          breakdown.push({ label: 'Experience Meets Requirement', points: config.bonuses.experienceMeetsRequirement });
         }
       }
     }
@@ -953,34 +981,50 @@
     if (config.flags && config.flags.enableRoleProfileDisqualifier) {
       const totalYears = (candExp.totalYears !== undefined) ? candExp.totalYears : candExp.years;
       const fresherExemption = (config.experience && config.experience.fresherExemptionYears) || 1.0;
-      if (totalYears > fresherExemption && jdReq.minExp > 0) {
+      const isEntryLevel = jdReq.isFresher || (jdReq.minExp !== null && jdReq.minExp === 0);
+
+      if (totalYears >= fresherExemption && !isEntryLevel) {
         const jdFamily = jdReq.roleFamily;
         if (jdFamily && jdFamily !== 'unknown') {
-          const candidateFamilies = candExp.roleFamilies || {};
-          const yearsInOtherFamilies = Object.entries(candidateFamilies)
-            .filter(([fam, yrs]) => fam !== jdFamily && fam !== 'unknown')
-            .reduce((acc, [, yrs]) => acc + yrs, 0);
-
-          const yearsInJdFamily = candidateFamilies[jdFamily] || 0;
-          const yearsInUnknown = candidateFamilies['unknown'] || 0;
-          const relevantExp = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
-
-          // "unknown" family never counts as zero (it does not trigger role-mismatch knockout)
-          // Rule: adjacency credit > 0 must prevent "Role profile not matching"
-          const adjMatrix = (config.experience && config.experience.roleAdjacency) || {};
+          const adjMatrix = (config.experience && config.experience.roleAdjacency) || DEFAULT_CONFIG.experience.roleAdjacency || {};
           const jdAdj = adjMatrix[jdFamily] || {};
-          const hasAdjacencyCredit = Object.entries(candidateFamilies).some(([fam, yrs]) => {
-            if (yrs <= 0) return false;
-            if (fam === jdFamily) return true;
-            return (jdAdj[fam] || 0) > 0;
-          });
+          let maxCredit = 0;
+          const candidateFamilies = candExp.roleFamilies || {};
+          const candFams = Object.keys(candidateFamilies).filter(f => (candidateFamilies[f] || 0) > 0);
 
-          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0 && yearsInUnknown === 0 && !hasAdjacencyCredit) {
+          if (candFams.length === 0) {
+            maxCredit = 0.5;
+          } else {
+            for (const fam of candFams) {
+              let c = 0;
+              if (fam === jdFamily) {
+                c = 1.0;
+              } else if (fam === 'unknown') {
+                c = (typeof jdAdj['unknown'] === 'number') ? jdAdj['unknown'] : 0.5;
+              } else if (typeof jdAdj[fam] === 'number') {
+                c = jdAdj[fam];
+              } else {
+                c = 0.0;
+              }
+              if (c > maxCredit) maxCredit = c;
+            }
+          }
+
+          const threshold = (config.thresholds && config.thresholds.roleMismatchCreditThreshold !== undefined)
+            ? config.thresholds.roleMismatchCreditThreshold
+            : 0.25;
+
+          if (maxCredit <= threshold) {
             disqualifiers.push(config.disqualifierMessages.roleProfile);
+            hardGaps.push('Role profile not matching');
+
+            // Suppress experience gap for the same cause
             const expIdx = disqualifiers.indexOf(config.disqualifierMessages.workExperience);
             if (expIdx !== -1) {
               disqualifiers.splice(expIdx, 1);
             }
+            hardGaps = hardGaps.filter(g => !g.toLowerCase().includes('experience'));
+            softGaps = softGaps.filter(g => !g.toLowerCase().includes('experience'));
           }
         }
       }
@@ -990,22 +1034,30 @@
     if (jdReq.tierMandatory) {
       if (candEdu.tier === 'Tier 1') {
         bonuses += config.bonuses.collegeTierMandatoryTier1;
+        breakdown.push({ label: 'College Tier 1 Mandatory Bonus', points: config.bonuses.collegeTierMandatoryTier1 });
       } else if (candEdu.tier === 'Tier 2') {
         penalties += config.penalties.collegeTierMandatoryTier2;
+        breakdown.push({ label: 'College Tier 2 Mandatory Penalty', points: -config.penalties.collegeTierMandatoryTier2 });
         disqualifiers.push(config.disqualifierMessages.college);
+        hardGaps.push('Mandatory college mismatch');
       } else if (candEdu.tier === 'Tier 3') {
         penalties += config.penalties.collegeTierMandatoryTier3;
+        breakdown.push({ label: 'College Tier 3 Mandatory Penalty', points: -config.penalties.collegeTierMandatoryTier3 });
         disqualifiers.push(config.disqualifierMessages.college);
+        hardGaps.push('Mandatory college mismatch');
       } else {
         // 'unknown': 0 penalty, no disqualifier
       }
     } else if (jdReq.tierPreferred) {
       if (candEdu.tier === 'Tier 1') {
         bonuses += config.bonuses.collegeTierPreferredTier1;
+        breakdown.push({ label: 'College Tier 1 Preferred Bonus', points: config.bonuses.collegeTierPreferredTier1 });
       } else if (candEdu.tier === 'Tier 2') {
         bonuses += config.bonuses.collegeTierPreferredTier2;
+        breakdown.push({ label: 'College Tier 2 Preferred Bonus', points: config.bonuses.collegeTierPreferredTier2 });
       } else if (candEdu.tier === 'Tier 3') {
         penalties += config.penalties.collegeTierPreferredTier3;
+        breakdown.push({ label: 'College Tier 3 Preferred Penalty', points: -config.penalties.collegeTierPreferredTier3 });
       }
     }
 
@@ -1013,16 +1065,24 @@
     if (jdReq.degreeMandatory) {
       if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
         penalties += config.penalties.degreePhdMandatory;
+        breakdown.push({ label: 'PhD Mandatory Penalty', points: -config.penalties.degreePhdMandatory });
         disqualifiers.push(config.disqualifierMessages.degree);
+        hardGaps.push('Mandatory degree mismatch');
       } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
         penalties += config.penalties.degreeMbaMandatory;
+        breakdown.push({ label: 'MBA Mandatory Penalty', points: -config.penalties.degreeMbaMandatory });
         disqualifiers.push(config.disqualifierMessages.degree);
+        hardGaps.push('Mandatory degree mismatch');
       } else if (jdReq.degreeReq === 'B.Tech' && !/\b(B\.Tech|M\.Tech|BE|ME)\b/i.test(candEdu.degree)) {
-        penalties += config.penalties.degreeMismatch || 15;
+        const bTechPen = config.penalties.degreeMismatch || 15;
+        penalties += bTechPen;
+        breakdown.push({ label: 'B.Tech Mandatory Penalty', points: -bTechPen });
         disqualifiers.push(config.disqualifierMessages.degree);
+        hardGaps.push('Mandatory degree mismatch');
       }
     } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
       bonuses += config.bonuses.degreeMbaPreferred;
+      breakdown.push({ label: 'MBA Preferred Bonus', points: config.bonuses.degreeMbaPreferred });
     }
 
     // FACTOR C: LOCATION
@@ -1040,53 +1100,69 @@
 
       if (isSameCity || isSameRegion) {
         bonuses += config.bonuses.locationMatch;
+        breakdown.push({ label: 'Location Match Bonus', points: config.bonuses.locationMatch });
       } else {
         if (jdReq.workMode === 'On-site') {
           penalties += config.penalties.locationMismatch;
+          breakdown.push({ label: 'On-site Location Mismatch Penalty', points: -config.penalties.locationMismatch });
           disqualifiers.push(config.disqualifierMessages.location);
+          softGaps.push('On-site location mismatch');
+        } else if (jdReq.workMode === 'Hybrid') {
+          notes.push((config.location && config.location.hybridSoftNote) || 'Relocation needed');
+          softGaps.push('Hybrid relocation');
         }
       }
     }
 
-    let finalScore = Math.round(skillScore - penalties + bonuses);
-    finalScore = Math.max(config.bounds.min, Math.min(config.bounds.max, finalScore));
+    let preScore = Math.round(skillScore - penalties + bonuses);
+    const caps = config.caps || { softGapsOnly: 79, oneHardGap: 71, twoOrMoreHardGaps: 44 };
+    let maxAllowed = (config.bounds && config.bounds.max) || 98;
 
-    let tier = config.tiers.goodMatch.name;
-    let badge = config.tiers.goodMatch.badge;
-    let color = config.tiers.goodMatch.color;
+    if (hardGaps.length >= 2) {
+      maxAllowed = caps.twoOrMoreHardGaps;
+    } else if (hardGaps.length === 1) {
+      maxAllowed = caps.oneHardGap;
+    } else if (softGaps.length > 0) {
+      maxAllowed = caps.softGapsOnly;
+    }
 
-    if (disqualifiers.length >= config.thresholds.reachRoleMaxDisqualifiers || finalScore < config.thresholds.reachRoleScoreCutoff) {
-      tier = config.tiers.reachRole.name;
-      badge = config.tiers.reachRole.badge;
-      color = config.tiers.reachRole.color;
-    } else if (disqualifiers.length === 1 || (finalScore >= config.thresholds.reachRoleScoreCutoff && finalScore < config.thresholds.moderateRoleScoreCutoff)) {
-      tier = config.tiers.moderateMatch.name;
-      badge = config.tiers.moderateMatch.badge;
-      color = config.tiers.moderateMatch.color;
-    } else if (finalScore >= config.thresholds.strongMatchScoreCutoff) {
+    if (preScore > maxAllowed) {
+      const capDelta = maxAllowed - preScore;
+      breakdown.push({ label: 'Capped: unmet requirement', points: capDelta });
+      preScore = maxAllowed;
+    }
+
+    const preClampScore = preScore;
+    const finalScore = Math.max(config.bounds.min, Math.min(config.bounds.max, preClampScore));
+
+    // Tier is derived solely from finalScore
+    let tier, badge, color;
+    if (finalScore >= (config.thresholds.strongMatchScoreCutoff || 80)) {
       tier = config.tiers.strongMatch.name;
       badge = config.tiers.strongMatch.badge;
       color = config.tiers.strongMatch.color;
-    }
-
-    // Cap combined effect: a gap under 1.5 years cannot alone push an experienced candidate into Reach
-    if (candExp.totalYears >= 1.0) {
-      const expShortfall = (jdReq.minExp !== null && candExp.relevantYears < jdReq.minExp)
-        ? Math.round((jdReq.minExp - candExp.relevantYears) * 10) / 10
-        : 0;
-      if (expShortfall > 0 && expShortfall < 1.5) {
-        const nonExpDisqualifiers = disqualifiers.filter(d => !d.toLowerCase().includes('experience'));
-        if (nonExpDisqualifiers.length === 0 && tier === config.tiers.reachRole.name) {
-          tier = config.tiers.moderateMatch.name;
-          badge = config.tiers.moderateMatch.badge;
-          color = config.tiers.moderateMatch.color;
-        }
-      }
+    } else if (finalScore >= (config.thresholds.goodMatchScoreCutoff || config.thresholds.moderateRoleScoreCutoff || 72)) {
+      tier = config.tiers.goodMatch.name;
+      badge = config.tiers.goodMatch.badge;
+      color = config.tiers.goodMatch.color;
+    } else if (finalScore >= (config.thresholds.reachRoleScoreCutoff || 45)) {
+      tier = config.tiers.moderateMatch.name;
+      badge = config.tiers.moderateMatch.badge;
+      color = config.tiers.moderateMatch.color;
+    } else {
+      tier = config.tiers.reachRole.name;
+      badge = config.tiers.reachRole.badge;
+      color = config.tiers.reachRole.color;
     }
 
     return {
       status: 'ready',
       score: finalScore,
+      preClampScore: preClampScore,
+      breakdown: breakdown,
+      notes: notes,
+      hardGaps: hardGaps,
+      softGaps: softGaps,
       tier: tier,
       badge: badge,
       color: color,

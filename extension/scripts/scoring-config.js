@@ -25,6 +25,7 @@
       experienceGapLarge: 35,   // gap >= 2 years
       experienceGapMedium: 22,  // gap >= 1 year
       experienceGapSmall: 12,   // gap < 1 year
+      experienceGapTolerance: 3, // gap <= 0.5 year tolerance
       overqualified: 4,         // candidate > maxExp + 3 years
       collegeTierMandatoryTier2: 15,
       collegeTierMandatoryTier3: 30,
@@ -41,25 +42,216 @@
       degreeMbaPreferred: 3,
       locationMatch: 4
     },
+    gapSeverity: {
+      hard: [
+        'mandatory_college',
+        'mandatory_degree',
+        'experience_shortfall_large',
+        'role_profile_mismatch'
+      ],
+      soft: [
+        'experience_shortfall_small',
+        'location_mismatch',
+        'hybrid_relocation'
+      ]
+    },
+    caps: {
+      softGapsOnly: 79,
+      oneHardGap: 71,
+      twoOrMoreHardGaps: 44
+    },
     experience: {
       internshipWeight: 0.5,
       overqualifiedYearsThreshold: 3.0,
       overqualifiedNote: 'May be junior for you',
       fresherExemptionYears: 1.0,
+      // Direction: roleAdjacency[JD_FAMILY][CANDIDATE_FAMILY] = credit multiplier
+      // Rows = JD Family being applied to
+      // Columns = Candidate Family background
       roleAdjacency: {
-        product: { growth: 0.75, strategy_bizops: 0.75, design: 0.75, data_analytics: 0.5, engineering_swe: 0.5, marketing: 0.5, customer_success: 0.5, unknown: 0.5 },
-        growth: { product: 0.75, marketing: 0.75, data_analytics: 0.5, sales: 0.5, customer_success: 0.5, unknown: 0.5 },
-        strategy_bizops: { product: 0.75, finance: 0.75, operations: 0.5, growth: 0.5, unknown: 0.5 },
-        data_analytics: { engineering_swe: 0.5, product: 0.5, finance: 0.5, marketing: 0.5, unknown: 0.5 },
-        engineering_swe: { data_analytics: 0.5, product: 0.5, unknown: 0.5 },
-        sales: { customer_success: 0.75, growth: 0.5, strategy_bizops: 0.5, marketing: 0.5, unknown: 0.5 },
-        operations: { strategy_bizops: 0.5, hr_recruiting: 0.5, customer_success: 0.5, unknown: 0.5 },
-        hr_recruiting: { operations: 0.5, strategy_bizops: 0.5, unknown: 0.5 },
-        customer_success: { sales: 0.75, operations: 0.5, product: 0.5, marketing: 0.5, unknown: 0.5 },
-        finance: { strategy_bizops: 0.75, data_analytics: 0.5, operations: 0.5, unknown: 0.5 },
-        marketing: { growth: 0.75, product: 0.5, sales: 0.5, design: 0.5, customer_success: 0.5, unknown: 0.5 },
-        design: { product: 0.75, marketing: 0.5, engineering_swe: 0.5, unknown: 0.5 },
-        unknown: { unknown: 1.0 }
+        product: {
+          product: 1.0,
+          growth: 0.75,
+          strategy_bizops: 0.75,
+          design: 0.75,
+          data_analytics: 0.5,
+          engineering_swe: 0.5,
+          marketing: 0.5,
+          customer_success: 0.5,
+          sales: 0.25,
+          operations: 0.25,
+          finance: 0.25,
+          hr_recruiting: 0.1,
+          unknown: 0.5
+        },
+        growth: {
+          growth: 1.0,
+          product: 0.75,
+          marketing: 0.75,
+          data_analytics: 0.5,
+          sales: 0.5,
+          customer_success: 0.5,
+          strategy_bizops: 0.5,
+          engineering_swe: 0.25,
+          design: 0.25,
+          operations: 0.25,
+          finance: 0.2,
+          hr_recruiting: 0.1,
+          unknown: 0.5
+        },
+        strategy_bizops: {
+          strategy_bizops: 1.0,
+          finance: 0.75,
+          product: 0.75,
+          operations: 0.5,
+          growth: 0.5,
+          data_analytics: 0.5,
+          marketing: 0.25,
+          sales: 0.25,
+          customer_success: 0.25,
+          engineering_swe: 0.2,
+          design: 0.1,
+          hr_recruiting: 0.2,
+          unknown: 0.5
+        },
+        data_analytics: {
+          data_analytics: 1.0,
+          engineering_swe: 0.5,
+          finance: 0.5,
+          product: 0.2,
+          growth: 0.2,
+          marketing: 0.25,
+          strategy_bizops: 0.25,
+          operations: 0.2,
+          customer_success: 0.1,
+          sales: 0.1,
+          design: 0.1,
+          hr_recruiting: 0.1,
+          unknown: 0.5
+        },
+        engineering_swe: {
+          engineering_swe: 1.0,
+          data_analytics: 0.5,
+          product: 0.2,
+          growth: 0.2,
+          design: 0.25,
+          strategy_bizops: 0.1,
+          marketing: 0.1,
+          sales: 0.1,
+          customer_success: 0.1,
+          operations: 0.1,
+          finance: 0.1,
+          hr_recruiting: 0.1,
+          unknown: 0.5
+        },
+        sales: {
+          sales: 1.0,
+          customer_success: 0.75,
+          growth: 0.5,
+          marketing: 0.5,
+          strategy_bizops: 0.5,
+          operations: 0.25,
+          product: 0.0,
+          finance: 0.2,
+          hr_recruiting: 0.2,
+          engineering_swe: 0.0,
+          data_analytics: 0.1,
+          design: 0.1,
+          unknown: 0.5
+        },
+        operations: {
+          operations: 1.0,
+          strategy_bizops: 0.5,
+          hr_recruiting: 0.5,
+          customer_success: 0.5,
+          finance: 0.5,
+          sales: 0.25,
+          product: 0.25,
+          growth: 0.25,
+          marketing: 0.2,
+          engineering_swe: 0.1,
+          data_analytics: 0.2,
+          design: 0.1,
+          unknown: 0.5
+        },
+        hr_recruiting: {
+          hr_recruiting: 1.0,
+          operations: 0.5,
+          strategy_bizops: 0.5,
+          customer_success: 0.25,
+          sales: 0.2,
+          marketing: 0.2,
+          product: 0.1,
+          growth: 0.1,
+          finance: 0.2,
+          engineering_swe: 0.1,
+          data_analytics: 0.1,
+          design: 0.1,
+          unknown: 0.5
+        },
+        customer_success: {
+          customer_success: 1.0,
+          sales: 0.75,
+          operations: 0.5,
+          product: 0.5,
+          marketing: 0.5,
+          growth: 0.5,
+          strategy_bizops: 0.25,
+          hr_recruiting: 0.2,
+          finance: 0.2,
+          engineering_swe: 0.1,
+          data_analytics: 0.1,
+          design: 0.1,
+          unknown: 0.5
+        },
+        finance: {
+          finance: 1.0,
+          strategy_bizops: 0.75,
+          data_analytics: 0.5,
+          operations: 0.5,
+          product: 0.25,
+          growth: 0.2,
+          sales: 0.2,
+          marketing: 0.2,
+          hr_recruiting: 0.2,
+          customer_success: 0.1,
+          engineering_swe: 0.1,
+          design: 0.1,
+          unknown: 0.5
+        },
+        marketing: {
+          marketing: 1.0,
+          growth: 0.75,
+          product: 0.5,
+          sales: 0.5,
+          design: 0.5,
+          customer_success: 0.5,
+          strategy_bizops: 0.25,
+          operations: 0.2,
+          finance: 0.2,
+          hr_recruiting: 0.2,
+          data_analytics: 0.25,
+          engineering_swe: 0.1,
+          unknown: 0.5
+        },
+        design: {
+          design: 1.0,
+          product: 0.75,
+          marketing: 0.5,
+          engineering_swe: 0.5,
+          growth: 0.25,
+          customer_success: 0.1,
+          strategy_bizops: 0.1,
+          operations: 0.1,
+          finance: 0.1,
+          hr_recruiting: 0.1,
+          sales: 0.1,
+          data_analytics: 0.1,
+          unknown: 0.5
+        },
+        unknown: {
+          unknown: 1.0
+        }
       }
     },
     location: {
@@ -88,7 +280,8 @@
       reachRoleScoreCutoff: 45,
       moderateRoleScoreCutoff: 72,
       strongMatchScoreCutoff: 80,
-      domainPivotThreshold: 50
+      domainPivotThreshold: 50,
+      roleMismatchCreditThreshold: 0.25
     },
     disqualifierMessages: {
       workExperience: 'Work experience not matching',
