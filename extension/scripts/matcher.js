@@ -313,26 +313,38 @@
     july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
   };
 
+  const ROLE_FAMILIES = {
+    product: /\b(?:product\s+(?:manager|management|owner|intern|lead|head|vp|specialist)|\bpm\b|\bapm\b|\bgpm\b|associate\s+product\s+manager|group\s+product\s+manager|technical\s+product\s+manager|\btpm\b)\b/i,
+    growth: /\b(?:growth|growth\s+hacker|growth\s+lead|growth\s+marketing|user\s+acquisition|growth\s+specialist|growth\s+manager)\b/i,
+    strategy_bizops: /\b(?:strategy|bizops|business\s+operations|chief\s+of\s+staff|founder(?:'s|\s+office)|strategic\s+initiatives|corporate\s+strategy)\b/i,
+    data_analytics: /\b(?:data\s+analyst|data\s+scientist|analytics|business\s+analyst|bi\s+analyst|business\s+intelligence|data\s+engineer|machine\s+learning|ml\s+engineer|deep\s+learning|ai\s+engineer)\b/i,
+    engineering_swe: /\b(?:software\s+engineer(?:ing)?|software\s+developer|\bswe\b|\bsde\b|\bsde-?[123iIvV]+\b|frontend|back-?end|full-?stack|web\s+developer|tech\s+lead|engineering\s+lead|engineering\s+manager|\bem\b|architect)\b/i,
+    sales: /\b(?:sales|account\s+executive|\bae\b|\bbdr\b|\bsdr\b|business\s+development|enterprise\s+sales|sales\s+manager|sales\s+director)\b/i,
+    operations: /\b(?:operations|operations\s+manager|program\s+manager|project\s+manager|customer\s+success|customer\s+support|supply\s+chain|logistics)\b/i
+  };
+
+  function detectRoleFamily(text) {
+    if (!text) return 'unknown';
+    for (const [family, regex] of Object.entries(ROLE_FAMILIES)) {
+      if (regex.test(text)) return family;
+    }
+    return 'unknown';
+  }
+
   // --- 5. EXPERIENCE EXTRACTION ---
   function extractExperience(text, context) {
     if (!text || text.trim().length < 10) {
-      return { years: 0, label: 'Not specified' };
+      return { years: 0, totalYears: 0, relevantYears: 0, label: 'Not specified', months: 0, roleFamilies: {} };
     }
 
+    const config = (context && context.config) ? context.config : DEFAULT_CONFIG;
+    const jdRoleFamily = (context && context.jdRoleFamily) ? context.jdRoleFamily : null;
     const clean = normalizeWhitespace(text);
-
-    const explicitRegex = /(?:over|more than|around|approx(?:imately)?|\+)?\s*(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp|background|track record)/i;
-    const explicitMatch = clean.slice(0, 1500).match(explicitRegex);
-    if (explicitMatch && explicitMatch[1]) {
-      const parsed = parseFloat(explicitMatch[1]);
-      if (parsed > 0 && parsed <= 35) {
-        return { years: parsed, label: `~${parsed} yrs` };
-      }
-    }
 
     const refDate = (context && context.now) ? new Date(context.now) : new Date(2026, 8, 19);
     const defaultCurrentYear = !isNaN(refDate.getTime()) ? refDate.getFullYear() : 2026;
     const defaultCurrentMonth = !isNaN(refDate.getTime()) ? refDate.getMonth() : 8;
+    const currentMaxKey = defaultCurrentYear * 12 + defaultCurrentMonth;
 
     let expSection = clean;
     const expMatch = clean.match(/\b(?:experience|work experience|employment history|professional experience)\b/i);
@@ -342,90 +354,181 @@
       expSection = endMatch ? fromExp.slice(0, endMatch.index) : fromExp;
     }
 
-    const monthNames = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
-    
+    const monthRegex = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
     const rangeRegex = new RegExp(
-      `\\b(${monthNames})?\\s*([12]\\d{3})\\s*(?:-|to)\\s*(?:(${monthNames})?\\s*([12]\\d{3})|(present|current|now|till date))\\b`,
+      '(?:(' + monthRegex + '|[0-9]{1,2})[\\/\'\\s.-]+)?\'?([12][0-9]{3}|[0-9]{2})\\s*(?:[-–—~]|to)\\s*(?:(present|current|now|till\\s+date|today)|(?:(' + monthRegex + '|[0-9]{1,2})[\\/\'\\s.-]+)?\'?([12][0-9]{3}|[0-9]{2}))',
       'gi'
     );
 
-    const intervals = [];
-    let match;
-    while ((match = rangeRegex.exec(expSection)) !== null) {
-      const startMonthStr = (match[1] || 'jan').toLowerCase();
-      const startYear = parseInt(match[2], 10);
-      const isPresent = Boolean(match[5]);
-      const endMonthStr = match[3] ? match[3].toLowerCase() : (isPresent ? 'sep' : 'dec');
-      const endYear = match[4] ? parseInt(match[4], 10) : defaultCurrentYear;
+    const internshipWeight = (config.experience && config.experience.internshipWeight) || 0.5;
+    const calendarMonths = new Map();
+    const familyCounts = {};
 
-      const startMonth = MONTH_MAP[startMonthStr] !== undefined ? MONTH_MAP[startMonthStr] : 0;
-      const endMonth = MONTH_MAP[endMonthStr] !== undefined ? MONTH_MAP[endMonthStr] : (isPresent ? defaultCurrentMonth : 11);
+    const lines = expSection.split(/\r?\n/);
+    let currentRoleFamily = 'unknown';
+    let currentIsInternship = false;
 
-      const startTotalMonths = startYear * 12 + startMonth;
-      const endTotalMonths = endYear * 12 + endMonth;
+    for (let i = 0; i < lines.length; i++) {
+      const rawLine = lines[i];
+      const line = rawLine.trim();
+      if (!line) continue;
 
-      if (endTotalMonths >= startTotalMonths) {
-        intervals.push({ start: startTotalMonths, end: endTotalMonths });
+      if (/\b(b\.?tech|m\.?tech|mba|bachelor|master|degree|university|college|cgpa|gpa)\b/i.test(line)) {
+        continue;
+      }
+
+      const detectedFam = detectRoleFamily(line);
+      if (detectedFam !== 'unknown') {
+        currentRoleFamily = detectedFam;
+        currentIsInternship = /\b(intern|internship|trainee|apprentice)\b/i.test(line);
+      } else if (/\b(intern|internship|trainee|apprentice)\b/i.test(line)) {
+        currentIsInternship = true;
+      }
+
+      let match;
+      rangeRegex.lastIndex = 0;
+      while ((match = rangeRegex.exec(line)) !== null) {
+        let roleFam = currentRoleFamily;
+        let isInt = currentIsInternship;
+
+        if (roleFam === 'unknown' && i + 1 < lines.length) {
+          const nextFam = detectRoleFamily(lines[i + 1]);
+          if (nextFam !== 'unknown') roleFam = nextFam;
+          if (/\b(intern|internship|trainee|apprentice)\b/i.test(lines[i + 1])) isInt = true;
+        }
+
+        const roleWeight = isInt ? internshipWeight : 1.0;
+
+        let startMonth = 0;
+        if (match[1]) {
+          const mLower = match[1].toLowerCase();
+          startMonth = (MONTH_MAP[mLower] !== undefined) ? MONTH_MAP[mLower] : Math.max(0, Math.min(11, parseInt(match[1], 10) - 1));
+        }
+
+        let startYear = parseInt(match[2], 10);
+        if (startYear < 100) startYear += 2000;
+
+        let endYear = defaultCurrentYear;
+        let endMonth = defaultCurrentMonth;
+
+        if (match[3]) {
+          endYear = defaultCurrentYear;
+          endMonth = defaultCurrentMonth;
+        } else if (match[5]) {
+          endYear = parseInt(match[5], 10);
+          if (endYear < 100) endYear += 2000;
+
+          if (match[4]) {
+            const endMLower = match[4].toLowerCase();
+            endMonth = (MONTH_MAP[endMLower] !== undefined) ? MONTH_MAP[endMLower] : Math.max(0, Math.min(11, parseInt(match[4], 10) - 1));
+          } else {
+            endMonth = 11;
+          }
+        }
+
+        const startKey = startYear * 12 + startMonth;
+        const endKey = Math.min(endYear * 12 + endMonth, currentMaxKey);
+
+        if (startKey <= endKey && startYear >= 1990 && startKey <= currentMaxKey) {
+          for (let k = startKey; k <= endKey; k++) {
+            const existing = calendarMonths.get(k);
+            if (!existing) {
+              calendarMonths.set(k, { weight: roleWeight, roleFamily: roleFam });
+            } else {
+              if (roleWeight > existing.weight) {
+                existing.weight = roleWeight;
+              }
+              if (existing.roleFamily === 'unknown' && roleFam !== 'unknown') {
+                existing.roleFamily = roleFam;
+              }
+            }
+          }
+        }
       }
     }
 
-    const singleDateRegex = new RegExp(`\\b(${monthNames})\\s*([12]\\d{3})\\b`, 'gi');
-    let sMatch;
-    while ((sMatch = singleDateRegex.exec(expSection)) !== null) {
-      const mStr = sMatch[1].toLowerCase();
-      const yr = parseInt(sMatch[2], 10);
-      const m = MONTH_MAP[mStr] !== undefined ? MONTH_MAP[mStr] : 0;
-      const totalM = yr * 12 + m;
-      const alreadyCovered = intervals.some(inv => totalM >= inv.start && totalM <= inv.end);
-      if (!alreadyCovered) {
-        const nowTotalM = defaultCurrentYear * 12 + defaultCurrentMonth;
-        intervals.push({ start: totalM, end: Math.max(totalM + 1, nowTotalM) });
-      }
-    }
+    let totalWeightedMonths = 0;
+    let relevantWeightedMonths = 0;
+    const adjMatrix = (config.experience && config.experience.roleAdjacency) || DEFAULT_CONFIG.experience.roleAdjacency || {};
 
-    if (intervals.length === 0) {
-      return { years: 0, label: 'Not detected' };
-    }
+    for (const [, entry] of calendarMonths.entries()) {
+      totalWeightedMonths += entry.weight;
+      familyCounts[entry.roleFamily] = (familyCounts[entry.roleFamily] || 0) + (entry.weight / 12);
 
-    intervals.sort((a, b) => a.start - b.start);
-    const merged = [intervals[0]];
-    for (let i = 1; i < intervals.length; i++) {
-      const prev = merged[merged.length - 1];
-      const curr = intervals[i];
-      if (curr.start <= prev.end) {
-        prev.end = Math.max(prev.end, curr.end);
+      if (!jdRoleFamily || jdRoleFamily === 'unknown' || entry.roleFamily === jdRoleFamily) {
+        relevantWeightedMonths += entry.weight;
       } else {
-        merged.push(curr);
+        const familyAdj = adjMatrix[jdRoleFamily] || {};
+        const mult = (typeof familyAdj[entry.roleFamily] === 'number') ? familyAdj[entry.roleFamily] : 0;
+        relevantWeightedMonths += entry.weight * mult;
       }
     }
 
-    const totalMonths = merged.reduce((acc, curr) => acc + (curr.end - curr.start + 1), 0);
-    const calculatedYears = Math.round((totalMonths / 12) * 10) / 10;
+    let calculatedTotalYears = Math.round((totalWeightedMonths / 12) * 10) / 10;
+    let calculatedRelevantYears = Math.round((relevantWeightedMonths / 12) * 10) / 10;
+
+    // Check explicit regex fallback if date range was missing or sparse
+    if (calculatedTotalYears === 0) {
+      const explicitRegex = /(?:over|more than|around|approx(?:imately)?|\+)?\s*(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp|background|track record)/i;
+      const explicitMatch = clean.slice(0, 1500).match(explicitRegex);
+      if (explicitMatch && explicitMatch[1]) {
+        const parsed = parseFloat(explicitMatch[1]);
+        if (parsed > 0 && parsed <= 35) {
+          calculatedTotalYears = parsed;
+          calculatedRelevantYears = parsed;
+        }
+      }
+    }
+
+    for (const fam in familyCounts) {
+      familyCounts[fam] = Math.round(familyCounts[fam] * 10) / 10;
+    }
 
     return {
-      years: calculatedYears,
-      label: calculatedYears > 0 ? `~${calculatedYears} yrs` : 'Not detected',
-      months: totalMonths
+      years: calculatedRelevantYears,
+      totalYears: calculatedTotalYears,
+      relevantYears: calculatedRelevantYears,
+      label: calculatedTotalYears > 0 ? ('~' + calculatedTotalYears + ' yrs') : 'Not detected',
+      months: totalWeightedMonths,
+      calendarMonthsCount: calendarMonths.size,
+      roleFamilies: familyCounts
     };
   }
 
-  // --- 6. LOCATION EXTRACTION ---
-  function extractCandidateLocation(text) {
-    if (!text) return { city: 'Not specified', isRemote: false, label: 'Not specified' };
+  // --- 6. LOCATION EXTRACTION WITH REGIONAL CLUSTERING ---
+  function getCityRegion(cityName, config) {
+    if (!cityName) return null;
+    const lower = cityName.toLowerCase().trim();
+    const regions = (config && config.location && config.location.regions) || (DEFAULT_CONFIG.location && DEFAULT_CONFIG.location.regions) || {};
+    for (const [regionName, cityList] of Object.entries(regions)) {
+      if (cityList.some(c => c.toLowerCase() === lower || lower.includes(c.toLowerCase()) || c.toLowerCase().includes(lower))) {
+        return regionName;
+      }
+    }
+    return null;
+  }
+
+  function extractCandidateLocation(text, config) {
+    if (!text) return { city: 'Not specified', country: '', isRemote: false, region: null, label: 'Not specified' };
 
     const norm = normalizeWhitespace(text);
-    const splitIndex = norm.search(/\b(education|experience|work history|projects|summary)\b/i);
+    const splitIndex = norm.search(/\b(education|experience|work history|projects|summary|skills)\b/i);
     const headerBlock = (splitIndex > 50 ? norm.slice(0, splitIndex) : norm.slice(0, 450));
     const cleanHeader = headerBlock.replace(/\b(iit|iim|nit|university|institute|college)\s+[a-z]+/gi, '');
 
     const cityMap = (CollegesData && CollegesData.CITY_MAP) ? CollegesData.CITY_MAP : [
       { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru', country: 'India' },
-      { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida)\b/i, name: 'Delhi NCR', country: 'India' },
-      { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai', country: 'India' },
-      { regex: /\b(hyderabad)\b/i, name: 'Hyderabad', country: 'India' },
-      { regex: /\b(pune)\b/i, name: 'Pune', country: 'India' },
+      { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida|greater noida|faridabad|ghaziabad)\b/i, name: 'Delhi NCR', country: 'India' },
+      { regex: /\b(mumbai|navi mumbai|thane|bombay)\b/i, name: 'Mumbai', country: 'India' },
+      { regex: /\b(hyderabad|secunderabad)\b/i, name: 'Hyderabad', country: 'India' },
+      { regex: /\b(pune|pimpri-chinchwad)\b/i, name: 'Pune', country: 'India' },
       { regex: /\b(chennai|madras)\b/i, name: 'Chennai', country: 'India' },
       { regex: /\b(kolkata|calcutta)\b/i, name: 'Kolkata', country: 'India' },
+      { regex: /\b(ahmedabad|gandhinagar)\b/i, name: 'Ahmedabad', country: 'India' },
+      { regex: /\b(jaipur)\b/i, name: 'Jaipur', country: 'India' },
+      { regex: /\b(chandigarh|mohali|panchkula)\b/i, name: 'Chandigarh', country: 'India' },
+      { regex: /\b(kochi|cochin)\b/i, name: 'Kochi', country: 'India' },
+      { regex: /\b(indore)\b/i, name: 'Indore', country: 'India' },
       { regex: /\b(san francisco|bay area|san jose|sunnyvale|palo alto)\b/i, name: 'San Francisco Bay Area', country: 'US' },
       { regex: /\b(new york|nyc|manhattan|brooklyn)\b/i, name: 'New York', country: 'US' },
       { regex: /\b(seattle|redmond)\b/i, name: 'Seattle', country: 'US' },
@@ -450,19 +553,21 @@
     }
 
     const isRemote = /\b(remote|work from anywhere|open to remote)\b/i.test(cleanHeader);
-    let label = foundCity ? `${foundCity}, ${foundCountry}` : (isRemote ? 'Remote / Anywhere' : 'Not specified');
+    const region = foundCity ? getCityRegion(foundCity, config) : null;
+    let label = foundCity ? (foundCity + ', ' + foundCountry) : (isRemote ? 'Remote / Anywhere' : 'Not specified');
 
     return {
       city: foundCity || (isRemote ? 'Remote' : 'Not specified'),
       country: foundCountry || '',
       isRemote: isRemote,
+      region: region,
       label: label
     };
   }
 
   // --- 7. EDUCATION & PEDIGREE EXTRACTION ---
-  function extractCandidateEducation(text) {
-    if (!text) return { degree: 'Not specified', tier: 'Tier 3', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
+  function extractCandidateEducation(text, config) {
+    if (!text) return { degree: 'Not specified', tier: 'unknown', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
 
     const norm = normalizeWhitespace(text).toLowerCase().replace(/\s+/g, ' ');
 
@@ -487,88 +592,12 @@
       degree = 'Graduate';
     }
 
-    let tier = 'Tier 3';
-    let isTier1 = false;
-    let isTier2 = false;
-    let tierName = '';
-
-    const dotClean = norm.replace(/\./g, '');
-
-    const isIit = /\b(iit\b|iits\b|iitd\b|iitb\b|iitk\b|iitkgp\b|iitm\b|iitr\b|iith\b|iitg\b|iiti\b|iitgn\b|iitrpr\b|iitp\b|iitbbs\b|iitmandi\b|iitj\b|iittp\b|iitpkd\b|iitdhd\b|iitbhi\b|iitjm\b|iitbhu\b|iitism\b|indian\s+institute\s+of\s+technology)\b/i.test(norm)
-      || /\b(iit\b|iits\b)/i.test(dotClean)
-      || /\b(iit\s*[- ]*(?:bombay|delhi|madras|kanpur|kharagpur|roorkee|guwahati|hyderabad|indore|gandhinagar|ropar|patna|bhubaneswar|mandi|jodhpur|tirupati|palakkad|dharwad|bhilai|jammu|goa|bhu|varanasi|ism|dhanbad))\b/i.test(dotClean);
-
-    const isBits = /\b(bits\s+pilani|bits\s+goa|bits\s+hyderabad|birla\s+institute\s+of\s+technology\s+and\s+science|\bbits\b)/i.test(norm);
-
-    const isTier1Nit = /\b(nit\s*[- ]*(?:trichy|tiruchirappalli|surathkal|warangal|rourkela|calicut|nagpur|vnit|jaipur|mnit|allahabad|mnnit|surat|svnit))\b/i.test(norm)
-      || /\b(nitk\b|nitt\b|nitw\b|vnit\b|mnit\b|mnnit\b|svnit\b)/i.test(norm);
-
-    const isPremierEng = /\b(iiit\s*[- ]*(?:hyderabad|bangalore|delhi|allahabad)|iiith\b|iiitb\b|iiitd\b|iiita\b|dtu\b|delhi\s+technological\s+university|delhi\s+college\s+of\s+engineering|\bdce\b|nsut\b|netaji\s+subhas|\bnsit\b|jadavpur\s+university|coep\b|college\s+of\s+engineering\s+pune|vjti\b|veermata\s+jijabai|college\s+of\s+engineering\s+guindy|\bceg\b|psg\s+college\s+of\s+technology|psg\s+tech|institute\s+of\s+chemical\s+technology|\bict\s+mumbai\b|iiest\s+shibpur)\b/i.test(norm);
-
-    const isTier1Mba = /\b(iim\b|iims\b|iima\b|iimb\b|iimc\b|iiml\b|iimk\b|iimi\b|indian\s+institute\s+of\s+management)\b/i.test(norm)
-      || /\b(iim\b|iims\b)/i.test(dotClean)
-      || /\b(isb\b|indian\s+school\s+of\s+business|xlri\b|fms\b|faculty\s+of\s+management\s+studies|spjimr\b|sp\s+jain|mdi\s+gurgaon|\bmdi\b|iift\b|jbims\b|tiss\s+mumbai|\btiss\b|sibm\s+pune|nmims\s+mumbai)\b/i.test(norm);
-
-    const isOtherTier1 = /\b(srcc\b|shri\s+ram\s+college\s+of\s+commerce|st\.?\s*stephen|lady\s+shri\s+ram|\blsr\b|hindu\s+college|miranda\s+house|loyola\s+college|st\.?\s*xavier|christ\s+university)\b/i.test(norm)
-      || /\b(stanford|mit\b|harvard|uc\s*berkeley|carnegie\s*mellon|cmu\b|oxford|cambridge|princeton|columbia|caltech|yale|cornell|upenn|wharton|insead|london\s+business\s+school|\blbs\b)\b/i.test(norm);
-
-    if (isIit) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (IIT)';
-    } else if (isBits) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (BITS)';
-    } else if (isTier1Nit) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (Top NIT)';
-    } else if (isPremierEng) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (Premier Eng)';
-    } else if (isTier1Mba) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (Premier MBA)';
-    } else if (isOtherTier1) {
-      tier = 'Tier 1';
-      isTier1 = true;
-      tierName = 'Tier-1 (Premier)';
-    } else {
-      const isTier2Nit = /\b(nit\b|nits\b|national\s+institute\s+of\s+technology|manit\b)\b/i.test(norm)
-        || /\b(nit\b|nits\b)/i.test(dotClean);
-
-      const isTier2Iiit = /\b(iiit\b|iiits\b|indian\s+institute\s+of\s+information\s+technology)\b/i.test(norm);
-
-      const isTier2Tech = /\b(thapar\b|tiet\b|vit\b|vellore\s+institute\s+of\s+technology|manipal\s+institute\s+of\s+technology|mit\s+manipal|\bmahe\b|bit\s+mesra|birla\s+institute\s+of\s+technology\s+mesra|rvce\b|rv\s+college\s+of\s+engineering|bmsce\b|bms\s+college\s+of\s+engineering|msrit\b|ramaiah\s+institute|pes\s+university|pesit\b|mit\s+pune|mit\s+world\s+peace|ssn\s+college|sastra\s+university|amrita\s+(?:school\s+of\s+engineering|vishwa|university)|srm\s+(?:university|institute)|kiit\b|kalinga\s+institute|shiv\s+nadar|ashoka\s+university|plaksha|heritage\s+institute|techno\s+india|walchand|spce\b|cummins\s+college|pict\s+pune|dayananda\s+sagar|dsce\b|nirma\s+university|pdeu\b)\b/i.test(norm);
-
-      const isTier2Mba = /\b(imt\s+ghaziabad|imi\s+delhi|ximb\b|xim\s+university|tapmi\b|fore\s+school|gim\s+goa|great\s+lakes|glim\b|irma\b|somaiya\b|lbsim\b|bimtech\b|welingkar\b|weschool\b|liba\b|scmhrd\b|iim\s+(?:amritsar|bodh\s+gaya|jammu|nagpur|sambalpur|sirmaur|visakhapatnam))\b/i.test(norm);
-
-      if (isTier2Nit) {
-        tier = 'Tier 2';
-        isTier2 = true;
-        tierName = 'Tier-2 (NIT)';
-      } else if (isTier2Iiit) {
-        tier = 'Tier 2';
-        isTier2 = true;
-        tierName = 'Tier-2 (IIIT)';
-      } else if (isTier2Tech) {
-        tier = 'Tier 2';
-        isTier2 = true;
-        tierName = 'Tier-2 (Leading Tech)';
-      } else if (isTier2Mba) {
-        tier = 'Tier 2';
-        isTier2 = true;
-        tierName = 'Tier-2 (Respected B-School)';
-      } else {
-        tier = 'Tier 3';
-        tierName = 'State / Private University';
-      }
-    }
-
-    const label = (tier === 'Tier 1' || tier === 'Tier 2') ? `${degree} · ${tierName}` : degree;
+    const detectedTier = (CollegesData && CollegesData.detectCollegeTier) ? CollegesData.detectCollegeTier(norm) : 'unknown';
+    const tier = detectedTier || 'unknown';
+    const isTier1 = (tier === 'Tier 1');
+    const isTier2 = (tier === 'Tier 2');
+    const tierName = (tier === 'Tier 1') ? 'Tier-1' : (tier === 'Tier 2' ? 'Tier-2' : (tier === 'Tier 3' ? 'Tier-3' : ''));
+    const label = (tier !== 'unknown') ? (degree + ' · ' + tier) : degree;
 
     return {
       degree: degree,
@@ -581,34 +610,77 @@
   }
 
   // --- 8. JD REQUIREMENTS EXTRACTION ---
-  function extractJdRequirements(jdText, locationMeta) {
+  const NUMBER_WORDS = {
+    zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    fifteen: 15, twenty: 20
+  };
+
+  function parseNumberWord(word) {
+    if (!word) return null;
+    const w = word.toLowerCase().trim();
+    if (NUMBER_WORDS[w] !== undefined) return NUMBER_WORDS[w];
+    const n = parseFloat(w);
+    return isNaN(n) ? null : n;
+  }
+
+  function extractJdRequirements(jdText, locationMeta, config) {
     const rawJd = normalizeWhitespace(jdText || '');
     const rawLoc = normalizeWhitespace(locationMeta || '');
     const combined = (rawLoc + '\n' + rawJd);
 
+    // Blurb filter: remove marketing/company blurbs
+    const filteredJd = rawJd.replace(/\b(?:over|with|founded|celebrating|more than)\s+\d+\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|history|innovation|leadership|excellence|serving)\b/gi, ' ');
+
     let minExp = null;
     let maxExp = null;
-    const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
-    const expMatch = rawJd.match(expRegex);
 
-    if (expMatch && expMatch[1]) {
-      minExp = parseFloat(expMatch[1]);
-      if (expMatch[2]) {
-        maxExp = parseFloat(expMatch[2]);
+    // Check for fresher / entry level phrases first
+    const isFresher = /\b(?:fresher|freshers|entry[- ]level|new\s+grad|new\s+graduate|no\s+prior\s+experience|no\s+experience\s+required)\b/i.test(filteredJd);
+    if (isFresher) {
+      minExp = 0;
+    }
+
+    if (minExp === null) {
+      const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
+      const expMatch = filteredJd.match(expRegex);
+      if (expMatch && expMatch[1]) {
+        minExp = parseFloat(expMatch[1]);
+        if (expMatch[2]) maxExp = parseFloat(expMatch[2]);
       }
-    } else {
-      const altMatch = rawJd.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
+    }
+
+    if (minExp === null) {
+      const altMatch = filteredJd.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
       if (altMatch && altMatch[1]) {
         minExp = parseFloat(altMatch[1]);
-        if (altMatch[2]) {
-          maxExp = parseFloat(altMatch[2]);
-        }
+        if (altMatch[2]) maxExp = parseFloat(altMatch[2]);
+      }
+    }
+
+    if (minExp === null) {
+      const rangeMatch = filteredJd.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
+      if (rangeMatch && rangeMatch[1]) {
+        minExp = parseFloat(rangeMatch[1]);
+        maxExp = parseFloat(rangeMatch[2]);
+      }
+    }
+
+    if (minExp === null) {
+      const words = 'zero|one|two|three|four|five|six|seven|eight|nine|ten';
+      const wordMatch = filteredJd.match(new RegExp('(?:minimum(?:\\s+of)?|at\\s+least)?\\s*(' + words + ')\\s*(?:-|to)?\\s*(' + words + ')?\\s*(?:years?|yrs?)\\s+(?:of)?\\s*(?:[a-zA-Z\\s]{0,35}?)?(?:experience|exp)', 'i'));
+      if (wordMatch && wordMatch[1]) {
+        minExp = parseNumberWord(wordMatch[1]);
+        if (wordMatch[2]) maxExp = parseNumberWord(wordMatch[2]);
+      }
+    }
+
+    if (minExp === null) {
+      const anyExpMatch = filteredJd.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
+      if (anyExpMatch) {
+        minExp = parseFloat(anyExpMatch[1]);
       } else {
-        const rangeMatch = rawJd.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
-        if (rangeMatch && rangeMatch[1]) {
-          minExp = parseFloat(rangeMatch[1]);
-          maxExp = parseFloat(rangeMatch[2]);
-        }
+        minExp = 0;
       }
     }
 
@@ -622,12 +694,12 @@
     }
 
     let jobCity = null;
-    const cityMatch = combined.match(/\b(bengaluru|bangalore|delhi|new delhi|ncr|gurugram|gurgaon|noida|mumbai|hyderabad|pune|chennai|kolkata|san francisco|new york|london|singapore|dubai)\b/i);
+    const cityMatch = combined.match(/\b(bengaluru|bangalore|delhi|new delhi|ncr|gurugram|gurgaon|noida|greater noida|faridabad|ghaziabad|mumbai|navi mumbai|thane|hyderabad|pune|chennai|kolkata|ahmedabad|jaipur|chandigarh|kochi|indore|san francisco|new york|seattle|austin|boston|london|singapore|dubai)\b/i);
     if (cityMatch) {
       const c = cityMatch[1].toLowerCase();
       if (c === 'bangalore' || c === 'bengaluru') jobCity = 'Bengaluru';
-      else if (c === 'gurgaon' || c === 'gurugram' || c === 'noida' || c === 'delhi' || c === 'new delhi' || c === 'ncr') jobCity = 'Delhi NCR';
-      else if (c === 'mumbai') jobCity = 'Mumbai';
+      else if (c === 'gurgaon' || c === 'gurugram' || c === 'noida' || c === 'delhi' || c === 'new delhi' || c === 'ncr' || c === 'greater noida' || c === 'faridabad' || c === 'ghaziabad') jobCity = 'Delhi NCR';
+      else if (c === 'mumbai' || c === 'navi mumbai' || c === 'thane') jobCity = 'Mumbai';
       else if (c === 'pune') jobCity = 'Pune';
       else if (c === 'hyderabad') jobCity = 'Hyderabad';
       else if (c === 'chennai') jobCity = 'Chennai';
@@ -636,56 +708,41 @@
     }
 
     const normJd = rawJd.toLowerCase();
+    const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
+    const tierMandatoryPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:mandatory|required|must have|only)\b/i;
+    const iitPreferredPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
+    const iitMandatoryPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:mandatory|required|only)\b/i;
 
-    const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campuses)\b/i.test(normJd)
-      || /\b(?:colleges?|institutes?|universities)\s*:\s*(?:tier\s*[- ]?1|premier|top\s*[- ]?tier)\b/i.test(normJd)
-      || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)(?:[\s\/,|]+(?:and|or)?[\s\/,|]*(?:iits?|iims?|bits(?:\s+pilani)?|nits?))*\s+(?:graduates?|alumni|only|freshers?)\s+(?:preferred|required|mandatory)\b/i.test(normJd)
-      || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)\s+(?:strongly\s+)?preferred\b/i.test(normJd)
-      || /\b(?:degree\s+from\s+)?(?:a\s+)?tier\s*[- ]?1\s+(?:college|institute|engineering)\b/i.test(normJd)
-      || /\bfrom\s+(?:premier|tier\s*[- ]?1)\s+(?:institutes?|colleges?|b-?schools?)\b/i.test(normJd);
+    const tierMandatory = tierMandatoryPattern.test(normJd) || iitMandatoryPattern.test(normJd);
+    const tierPreferred = !tierMandatory && (tierPreferredPattern.test(normJd) || iitPreferredPattern.test(normJd));
 
-    const isStrictTier1 = /\b(?:only|strictly)\s+(?:candidates\s+|applicants\s+)?(?:from\s+)?(?:iits?|iims?|bits|nits?|tier\s*[- ]?1|premier)\b/i.test(normJd)
-      || /\b(?:tier\s*[- ]?1|premier\s+institute|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|mandatory|required|must)\b/i.test(normJd)
-      || /\b(?:must\s+be|mandatory)\s*:\s*(?:tier\s*[- ]?1|iits?|premier)\b/i.test(normJd);
+    const phdReq = /\b(?:ph\.?d|doctorate)\s+(?:is\s+)?(?:mandatory|required|must have)\b/i.test(normJd);
+    const mbaMandatory = /\b(?:mba|pgdm)\s+(?:is\s+)?(?:mandatory|required|must have)\b/i.test(normJd);
+    const mbaPref = !mbaMandatory && /\b(?:mba|pgdm)\s+(?:is\s+)?(?:preferred|plus|a plus|desired)\b/i.test(normJd);
+    const btechMandatory = /\b(?:b\.?tech|b\.?e\.?|bachelor\s+of\s+engineering|bachelor\s+of\s+technology)\s*(?:degree\s*)?(?:is\s+)?(?:mandatory|required|must\s+have)\b/i.test(normJd);
 
-    const isPhdMandatory = /\b(ph\.?d\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:a\s+)?ph\.?d|doctorate\s+required)\b/i.test(normJd);
+    let degreeMandatory = phdReq || mbaMandatory || btechMandatory;
+    let degreeReq = phdReq ? 'PhD' : (mbaMandatory ? 'MBA' : (btechMandatory ? 'B.Tech' : null));
 
-    const isMbaAlternativeOrPreferred = /\b(?:b\.?tech|b\.?e\.?|bachelors?)\s*[\/|\bor\b]\s*mba\b/i.test(normJd)
-      || /\bmba\s*[\/|\bor\b]\s*(?:b\.?tech|b\.?e\.?|bachelors?)\b/i.test(normJd)
-      || /\bmba\s+(?:is\s+)?(?:preferred|desirable|plus|optional|advantage)\b/i.test(normJd)
-      || /\b(?:preferred|desirable)\s*:\s*mba\b/i.test(normJd);
-
-    const isStrictMba = !isMbaAlternativeOrPreferred && /\b(mba\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:an\s+)?mba|mandatory\s*:\s*mba|degree\s+required\s*:\s*mba|minimum\s+qualification\s*:\s*mba)\b/i.test(normJd);
-
-    let degreeReq = 'Bachelor\'s';
-    let degreeMandatory = false;
-    let mbaPreferred = false;
-
-    if (isPhdMandatory) {
-      degreeReq = 'PhD';
-      degreeMandatory = true;
-    } else if (isStrictMba) {
-      degreeReq = 'MBA';
-      degreeMandatory = true;
-    } else if (isMbaAlternativeOrPreferred) {
-      degreeReq = 'Bachelor\'s';
-      mbaPreferred = true;
-    }
+    const roleFamily = detectRoleFamily(combined);
 
     return {
       minExp: minExp,
       maxExp: maxExp,
       workMode: workMode,
       jobCity: jobCity,
-      tierPreferred: tierPreferredPattern,
-      tierMandatory: isStrictTier1,
-      degreeReq: degreeReq,
+      region: getCityRegion(jobCity, config),
+      tierMandatory: tierMandatory,
+      tierPreferred: tierPreferred,
       degreeMandatory: degreeMandatory,
-      mbaPreferred: mbaPreferred
+      degreeReq: degreeReq,
+      mbaPreferred: mbaPref,
+      isFresher: isFresher,
+      roleFamily: roleFamily
     };
   }
 
-  // --- 9. PURE EVALUATION FUNCTION ---
+  // --- 9. EVALUATE ---
   function evaluate(resumeText, jdText, context = {}) {
     const config = context.config || DEFAULT_CONFIG;
     const locationMeta = context.locationMeta || '';
@@ -742,7 +799,6 @@
     if (weightedTotal > 0) {
       skillScore = Math.round((weightedMatched / weightedTotal) * 100);
     } else {
-      // Improved fallback phrase extraction
       const jdPhrases = extractFallbackPhrases(jdText);
       const resPhrases = extractFallbackPhrases(resumeText);
       if (jdPhrases.length > 0) {
@@ -761,10 +817,11 @@
       }
     }
 
-    const candExp = extractExperience(resumeText, context);
-    const jdReq = extractJdRequirements(jdText, locationMeta);
-    const candEdu = extractCandidateEducation(resumeText);
-    const candLoc = extractCandidateLocation(resumeText);
+    const jdReq = extractJdRequirements(jdText, locationMeta, config);
+    const expContext = Object.assign({}, context, { jdRoleFamily: jdReq.roleFamily, config: config });
+    const candExp = extractExperience(resumeText, expContext);
+    const candEdu = extractCandidateEducation(resumeText, config);
+    const candLoc = extractCandidateLocation(resumeText, config);
 
     let penalties = 0;
     let bonuses = 0;
@@ -772,8 +829,9 @@
 
     // FACTOR A: WORK EXPERIENCE
     if (jdReq.minExp !== null && jdReq.minExp > 0) {
-      if (candExp.years < jdReq.minExp) {
-        const gap = Math.round((jdReq.minExp - candExp.years) * 10) / 10;
+      const expYears = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
+      if (expYears < jdReq.minExp) {
+        const gap = Math.round((jdReq.minExp - expYears) * 10) / 10;
         if (gap >= 2) {
           penalties += config.penalties.experienceGapLarge;
         } else if (gap >= 1) {
@@ -783,7 +841,42 @@
         }
         disqualifiers.push(config.disqualifierMessages.workExperience);
       } else {
-        bonuses += config.bonuses.experienceMeetsRequirement;
+        // Candidate meets or exceeds minExp!
+        const overqualifiedThreshold = (config.experience && config.experience.overqualifiedYearsThreshold) || 3.0;
+        const isOverqualified = jdReq.maxExp !== null && (expYears > (jdReq.maxExp + overqualifiedThreshold));
+
+        if (isOverqualified) {
+          penalties += (config.penalties.overqualified || 4);
+          // Overqualified: soft penalty, NO bonus, NO red disqualifier!
+        } else {
+          bonuses += config.bonuses.experienceMeetsRequirement;
+        }
+      }
+    }
+
+    // Role Profile Disqualifier
+    if (config.flags && config.flags.enableRoleProfileDisqualifier) {
+      const totalYears = (candExp.totalYears !== undefined) ? candExp.totalYears : candExp.years;
+      const fresherExemption = (config.experience && config.experience.fresherExemptionYears) || 1.0;
+      if (totalYears > fresherExemption && jdReq.minExp > 0) {
+        const jdFamily = jdReq.roleFamily;
+        if (jdFamily && jdFamily !== 'unknown') {
+          const candidateFamilies = candExp.roleFamilies || {};
+          const yearsInOtherFamilies = Object.entries(candidateFamilies)
+            .filter(([fam, yrs]) => fam !== jdFamily && fam !== 'unknown')
+            .reduce((acc, [, yrs]) => acc + yrs, 0);
+
+          const yearsInJdFamily = candidateFamilies[jdFamily] || 0;
+          const relevantExp = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
+
+          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0) {
+            disqualifiers.push(config.disqualifierMessages.roleProfile);
+            const expIdx = disqualifiers.indexOf(config.disqualifierMessages.workExperience);
+            if (expIdx !== -1) {
+              disqualifiers.splice(expIdx, 1);
+            }
+          }
+        }
       }
     }
 
@@ -794,16 +887,18 @@
       } else if (candEdu.tier === 'Tier 2') {
         penalties += config.penalties.collegeTierMandatoryTier2;
         disqualifiers.push(config.disqualifierMessages.college);
-      } else {
+      } else if (candEdu.tier === 'Tier 3') {
         penalties += config.penalties.collegeTierMandatoryTier3;
         disqualifiers.push(config.disqualifierMessages.college);
+      } else {
+        // 'unknown': 0 penalty, no disqualifier
       }
     } else if (jdReq.tierPreferred) {
       if (candEdu.tier === 'Tier 1') {
         bonuses += config.bonuses.collegeTierPreferredTier1;
       } else if (candEdu.tier === 'Tier 2') {
         bonuses += config.bonuses.collegeTierPreferredTier2;
-      } else {
+      } else if (candEdu.tier === 'Tier 3') {
         penalties += config.penalties.collegeTierPreferredTier3;
       }
     }
@@ -816,29 +911,36 @@
       } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
         penalties += config.penalties.degreeMbaMandatory;
         disqualifiers.push(config.disqualifierMessages.degree);
+      } else if (jdReq.degreeReq === 'B.Tech' && !/\b(B\.Tech|M\.Tech|BE|ME)\b/i.test(candEdu.degree)) {
+        penalties += config.penalties.degreeMismatch || 15;
+        disqualifiers.push(config.disqualifierMessages.degree);
       }
     } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
       bonuses += config.bonuses.degreeMbaPreferred;
     }
 
     // FACTOR C: LOCATION
-    if (jdReq.workMode === 'On-site' && jdReq.jobCity) {
-      if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
-        if (candLoc.city.toLowerCase() !== jdReq.jobCity.toLowerCase()) {
+    if (jdReq.workMode === 'Remote') {
+      bonuses += config.bonuses.locationMatch;
+    } else if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
+      const candRegion = candLoc.region || getCityRegion(candLoc.city, config);
+      const jdRegion = jdReq.region || getCityRegion(jdReq.jobCity, config);
+
+      const isSameCity = jdReq.jobCity && (candLoc.city.toLowerCase() === jdReq.jobCity.toLowerCase());
+      const isSameRegion = candRegion && jdRegion && (candRegion === jdRegion);
+
+      if (isSameCity || isSameRegion) {
+        bonuses += config.bonuses.locationMatch;
+      } else {
+        if (jdReq.workMode === 'On-site') {
           penalties += config.penalties.locationMismatch;
           disqualifiers.push(config.disqualifierMessages.location);
-        } else {
-          bonuses += config.bonuses.locationMatch;
         }
       }
     }
 
     let finalScore = Math.round(skillScore - penalties + bonuses);
     finalScore = Math.max(config.bounds.min, Math.min(config.bounds.max, finalScore));
-
-    if (config.flags && config.flags.enableRoleProfileDisqualifier && finalScore < config.thresholds.domainPivotThreshold && disqualifiers.length === 0) {
-      disqualifiers.push(config.disqualifierMessages.roleProfile);
-    }
 
     let tier = config.tiers.goodMatch.name;
     let badge = config.tiers.goodMatch.badge;
@@ -903,6 +1005,7 @@
     extractCandidateLocation: extractCandidateLocation,
     extractCandidateEducation: extractCandidateEducation,
     extractJdRequirements: extractJdRequirements,
+    detectRoleFamily: detectRoleFamily,
     evaluate: evaluate,
     evaluateMultiFactor: evaluateMultiFactor,
     calculateMatch: calculateMatch

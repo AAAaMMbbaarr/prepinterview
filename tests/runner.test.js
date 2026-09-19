@@ -680,3 +680,301 @@ describe('PrepInterview Copilot — Recruiter Accuracy Benchmark & Category Brea
     assert.strictEqual(total, 120, 'Benchmark evaluated all 120 pairs');
   });
 });
+
+// ============================================================================
+// SUITE 5: PART 3 HARD-REQUIREMENT LOGIC & BEHAVIOR DIFF VS PART 2
+// ============================================================================
+describe('PrepInterview Copilot — Part 3 Hard-Requirement Logic', () => {
+
+  test('Date parsing across diverse formats (en-dash, numeric, 2-digit years, written)', () => {
+    const fixedRef = new Date(2026, 8, 19); // September 2026
+
+    // Format 1: Jul 2023 – Present (en-dash, present)
+    const res1 = `
+EXPERIENCE
+Senior Software Engineer, TechCorp
+Jul 2023 – Present
+• Building web services
+`;
+    const exp1 = matcher.extractExperience(res1, { now: fixedRef });
+    assert.ok(exp1.totalYears >= 3.1 && exp1.totalYears <= 3.3, `Jul 2023 – Present should be ~3.2-3.3 yrs, got ${exp1.totalYears}`);
+
+    // Format 2: 07/2023 - 09/2024 (slash formatted)
+    const res2 = `
+EXPERIENCE
+Software Engineer, Alpha Inc
+07/2023 - 09/2024
+• Developed APIs
+`;
+    const exp2 = matcher.extractExperience(res2, { now: fixedRef });
+    assert.ok(exp2.totalYears >= 1.2 && exp2.totalYears <= 1.3, `07/2023 - 09/2024 should be ~1.2-1.3 yrs, got ${exp2.totalYears}`);
+
+    // Format 3: 2021–23 (en-dash, 2-digit end year)
+    const res3 = `
+EXPERIENCE
+Analyst, Beta Corp
+2021–23
+• Data analysis
+`;
+    const exp3 = matcher.extractExperience(res3, { now: fixedRef });
+    assert.ok(exp3.totalYears >= 2.8 && exp3.totalYears <= 3.2, `2021–23 should be ~3.0 yrs, got ${exp3.totalYears}`);
+
+    // Format 4: Jul'23 - Nov'24 (apostrophe 2-digit years)
+    const res4 = `
+EXPERIENCE
+Associate, Gamma LLC
+Jul'23 - Nov'24
+• Product operations
+`;
+    const exp4 = matcher.extractExperience(res4, { now: fixedRef });
+    assert.ok(exp4.totalYears >= 1.3 && exp4.totalYears <= 1.5, `Jul'23 - Nov'24 should be ~1.4 yrs, got ${exp4.totalYears}`);
+  });
+
+  test('Overlap deduplication and internship 0.5x weighting', () => {
+    const fixedRef = new Date(2026, 8, 19);
+
+    // Two overlapping full-time roles: Jan 2023 - Dec 2023 and Jun 2023 - Dec 2023
+    const resOverlap = `
+EXPERIENCE
+Role 1
+Jan 2023 - Dec 2023
+• Worked on platform
+Role 2
+Jun 2023 - Dec 2023
+• Consulted on platform
+`;
+    const expOverlap = matcher.extractExperience(resOverlap, { now: fixedRef });
+    assert.strictEqual(expOverlap.totalYears, 1.0, `Overlapping periods should deduplicate to 1.0 yr, got ${expOverlap.totalYears}`);
+
+    // Internship weighting: Jan 2023 - Dec 2023 (12 months at 0.5x = 6 months = 0.5 yr)
+    const resIntern = `
+EXPERIENCE
+Software Engineering Intern, Google
+Jan 2023 - Dec 2023
+• Built internal tooling
+`;
+    const expIntern = matcher.extractExperience(resIntern, { now: fixedRef });
+    assert.strictEqual(expIntern.totalYears, 0.5, `12 month internship with 0.5x weight should equal 0.5 yr, got ${expIntern.totalYears}`);
+
+    // Overlapping full-time and internship: full-time takes maximum weight (1.0)
+    const resBoth = `
+EXPERIENCE
+Product Intern, Startup
+Jan 2023 - Dec 2023
+• Growth experiments
+Full-time Product Manager, Startup
+Jul 2023 - Dec 2023
+• Core product
+`;
+    const expBoth = matcher.extractExperience(resBoth, { now: fixedRef });
+    assert.strictEqual(expBoth.totalYears, 0.8, `Overlapping internship and full-time should resolve to 0.8 yr, got ${expBoth.totalYears}`);
+  });
+
+  test('Relevant years vs total years and role family adjacency', () => {
+    const fixedRef = new Date(2026, 8, 19);
+
+    const resPm = `
+EXPERIENCE
+Product Manager, Fintech
+Jan 2022 - Dec 2023
+• Shipped core payments features
+Software Engineer, Fintech
+Jan 2020 - Dec 2021
+• Built backend microservices
+`;
+    const expForPm = matcher.extractExperience(resPm, { now: fixedRef, jdRoleFamily: 'product' });
+    assert.strictEqual(expForPm.totalYears, 4.0, `Total years should be 4.0, got ${expForPm.totalYears}`);
+    assert.strictEqual(expForPm.relevantYears, 3.0, `Relevant years for Product role should be 3.0, got ${expForPm.relevantYears}`);
+
+    const expForSales = matcher.extractExperience(resPm, { now: fixedRef, jdRoleFamily: 'sales' });
+    assert.strictEqual(expForSales.totalYears, 4.0);
+    assert.strictEqual(expForSales.relevantYears, 0.0, `Relevant years for Sales role should be 0.0, got ${expForSales.relevantYears}`);
+  });
+
+  test('Overqualified penalty and soft note (no red disqualifier, no bonus)', () => {
+    const seniorResume = `
+John Doe
+john@example.com
+EDUCATION
+B.Tech in Computer Science
+EXPERIENCE
+Staff Engineer, TechCorp
+Jan 2014 - Dec 2024
+• 10 years of software engineering leadership
+SKILLS
+Python, Java, Docker, Kubernetes, AWS, SQL
+`;
+    const juniorJd = `
+Software Engineer
+Requirements:
+• 1-3 years of experience in Python and SQL
+• B.Tech required
+`;
+    const evalResult = matcher.evaluate(seniorResume, juniorJd, { now: FIXED_DATE });
+    assert.ok(evalResult.disqualifiers.length === 0, 'Overqualified candidate should NOT receive red disqualifiers');
+    assert.ok(evalResult.score <= 98, 'Score within bounds');
+  });
+
+  test('College tier fallback: unknown institutions map to neutral (0 penalty, no disqualifier)', () => {
+    const unknownCollegeResume = `
+Jane Doe
+jane@example.com
+EDUCATION
+B.Tech in Computer Science, University of Melbourne
+EXPERIENCE
+Software Engineer, Canva
+Jan 2021 - Dec 2024
+• Python, React, PostgreSQL
+SKILLS
+Python, React, PostgreSQL
+`;
+    const tier1MandatoryJd = `
+Senior Software Engineer
+Requirements:
+• Tier 1 mandatory
+• 3+ years experience in Python and PostgreSQL
+`;
+    const result = matcher.evaluate(unknownCollegeResume, tier1MandatoryJd, { now: FIXED_DATE });
+    assert.ok(
+      !result.disqualifiers.includes('College not matching'),
+      'Unknown university should not receive red college disqualifier'
+    );
+    assert.strictEqual(result.candEdu.tier, 'unknown', 'University of Melbourne should evaluate to tier: unknown');
+
+    const tier3Resume = `
+Alex Smith
+alex@example.com
+EDUCATION
+B.Tech, Galgotias University
+EXPERIENCE
+Software Engineer
+Jan 2021 - Dec 2024
+SKILLS
+Python, PostgreSQL
+`;
+    const tier3Result = matcher.evaluate(tier3Resume, tier1MandatoryJd, { now: FIXED_DATE });
+    assert.ok(
+      tier3Result.disqualifiers.includes('College not matching'),
+      'Known Tier 3 college must receive red college disqualifier under mandatory Tier 1'
+    );
+  });
+
+  test('Location regional clustering & workplace types', () => {
+    const ncrCandidate = `
+Vikram Sharma
+Gurugram, India
+vikram@example.com
+EXPERIENCE
+Software Engineer
+Jan 2021 - Dec 2024
+SKILLS
+Python, SQL
+`;
+    const noidaOnsiteJd = `
+Software Engineer
+Location: Noida, India
+Workplace Type: On-site
+Requirements:
+• Python, SQL
+• 3+ years of experience
+`;
+    const resNcr = matcher.evaluate(ncrCandidate, noidaOnsiteJd, { now: FIXED_DATE });
+    assert.ok(
+      !resNcr.disqualifiers.includes('Location not matching'),
+      'Gurugram candidate should match Noida On-site role via NCR regional clustering'
+    );
+
+    const remoteJd = `
+Software Engineer
+Location: San Francisco, CA (Remote / WFH)
+Requirements:
+• Python, SQL
+• 3+ years of experience
+`;
+    const resRemote = matcher.evaluate(ncrCandidate, remoteJd, { now: FIXED_DATE });
+    assert.ok(
+      !resRemote.disqualifiers.includes('Location not matching'),
+      'Remote role should never disqualify candidate on location'
+    );
+
+    const bangaloreOnsiteJd = `
+Software Engineer
+Location: Bengaluru, India
+Workplace: In-office / On-site
+Requirements:
+• Python, SQL
+• 3+ years of experience
+`;
+    const resMismatch = matcher.evaluate(ncrCandidate, bangaloreOnsiteJd, { now: FIXED_DATE });
+    assert.ok(
+      resMismatch.disqualifiers.includes('Location not matching'),
+      'Gurugram candidate applying for Bengaluru on-site role must receive Location not matching disqualifier'
+    );
+  });
+
+  test('Generate behavior diff report vs part2-fixed (tests/diff-part3.md)', () => {
+    const diffPart3Path = path.join(ROOT, 'tests/diff-part3.md');
+    const cp = require('child_process');
+    const vm = require('vm');
+
+    const part2Code = cp.execSync('git show part2-fixed:extension/scripts/matcher.js', { encoding: 'utf8' });
+    const sandbox = {
+      module: { exports: {} },
+      exports: {},
+      require: require,
+      console: console,
+      process: process
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(part2Code, sandbox);
+    const part2Matcher = sandbox.module.exports;
+
+    const changedPairs = [];
+
+    expected.forEach(exp => {
+      const pairKey = `${exp.resumeId} x ${exp.jdId}`;
+      const resumeText = resumes[exp.resumeId];
+      const jdText = jds[exp.jdId];
+
+      const oldEval = part2Matcher.evaluate(resumeText, jdText, { now: FIXED_DATE });
+      const newEval = matcher.evaluate(resumeText, jdText, { now: FIXED_DATE });
+
+      const scoreDiff = newEval.score - oldEval.score;
+      const tierDiff = newEval.tier !== oldEval.tier;
+      const oldGaps = oldEval.disqualifiers.slice().sort().join(', ');
+      const newGaps = newEval.disqualifiers.slice().sort().join(', ');
+      const gapDiff = oldGaps !== newGaps;
+
+      if (scoreDiff !== 0 || tierDiff || gapDiff) {
+        changedPairs.push({
+          pair: pairKey,
+          oldScore: oldEval.score,
+          newScore: newEval.score,
+          delta: (scoreDiff > 0 ? '+' : '') + scoreDiff,
+          oldTier: oldEval.tier,
+          newTier: newEval.tier,
+          oldGaps: oldGaps || 'None',
+          newGaps: newGaps || 'None'
+        });
+      }
+    });
+
+    let diffMd = '# PrepInterview Copilot — Behavior Diff vs part2-fixed (Part 3)\n\n';
+    diffMd += `**Generated Date:** ${new Date().toISOString()}\n`;
+    diffMd += `**Base Tag:** \`part2-fixed\`\n`;
+    diffMd += `**Total Evaluation Pairs:** ${expected.length}\n`;
+    diffMd += `**Changed Pairs:** ${changedPairs.length} / ${expected.length} (${((changedPairs.length / expected.length) * 100).toFixed(1)}%)\n\n`;
+    diffMd += '## Summary of Changes in Part 3\n\n';
+    diffMd += 'Part 3 upgraded hard-requirement logic: multi-format calendar date parsing, internship 0.5x weighting, role family adjacency, overqualified soft penalty, single-source college tier lookup with unknown fallback, and regional location clustering.\n\n';
+    diffMd += '| Pair | Old Score | New Score | Delta | Old Tier | New Tier | Old Gaps | New Gaps |\n';
+    diffMd += '| :--- | :---: | :---: | :---: | :--- | :--- | :--- | :--- |\n';
+
+    changedPairs.forEach(cp => {
+      diffMd += `| ${cp.pair} | ${cp.oldScore} | ${cp.newScore} | ${cp.delta} | ${cp.oldTier} | ${cp.newTier} | ${cp.oldGaps} | ${cp.newGaps} |\n`;
+    });
+
+    fs.writeFileSync(diffPart3Path, diffMd, 'utf8');
+    assert.strictEqual(typeof changedPairs.length, 'number', 'Diff Part 3 generation completed successfully');
+  });
+});
+

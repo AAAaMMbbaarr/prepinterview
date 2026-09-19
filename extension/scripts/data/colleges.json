@@ -1,0 +1,438 @@
+{
+  "version": "2026-09-19",
+  "description": "Indian and Global College Tiers for PrepInterview Copilot",
+  "tiers": {
+    "tier1": [
+      {
+        "name": "IIT",
+        "aliases": [
+          "iit",
+          "iits",
+          "iitd",
+          "iitb",
+          "iitk",
+          "iitkgp",
+          "iitm",
+          "iitr",
+          "iith",
+          "iitg",
+          "iiti",
+          "iitgn",
+          "iitrpr",
+          "iitp",
+          "iitbbs",
+          "iitmandi",
+          "iitj",
+          "iittp",
+          "iitpkd",
+          "iitdhd",
+          "iitbhi",
+          "iitjm",
+          "iitbhu",
+          "iitism",
+          "indian institute of technology"
+        ]
+      },
+      {
+        "name": "BITS",
+        "aliases": [
+          "bits pilani",
+          "bits goa",
+          "bits hyderabad",
+          "birla institute of technology and science",
+          "bits"
+        ]
+      },
+      {
+        "name": "Top NITs",
+        "aliases": [
+          "nit trichy",
+          "nit surathkal",
+          "nit warangal",
+          "nit rourkela",
+          "nit calicut",
+          "vnit nagpur",
+          "mnit jaipur",
+          "mnnit allahabad",
+          "svnit surat",
+          "nitk",
+          "nitt",
+          "nitw",
+          "vnit",
+          "mnit",
+          "mnnit",
+          "svnit"
+        ]
+      },
+      {
+        "name": "Premier Engineering",
+        "aliases": [
+          "iiit hyderabad",
+          "iiit bangalore",
+          "iiit delhi",
+          "iiit allahabad",
+          "iiith",
+          "iiitb",
+          "iiitd",
+          "iiita",
+          "dtu",
+          "delhi technological university",
+          "delhi college of engineering",
+          "dce",
+          "nsut",
+          "nsit",
+          "netaji subhas",
+          "jadavpur university",
+          "coep",
+          "college of engineering pune",
+          "vjti",
+          "veermata jijabai",
+          "college of engineering guindy",
+          "ceg",
+          "psg tech",
+          "psg college of technology",
+          "ict mumbai",
+          "institute of chemical technology",
+          "iiest shibpur"
+        ]
+      },
+      {
+        "name": "IIM",
+        "aliases": [
+          "iim",
+          "iims",
+          "iima",
+          "iimb",
+          "iimc",
+          "iiml",
+          "iimk",
+          "iimi",
+          "indian institute of management"
+        ]
+      },
+      {
+        "name": "Top MBA",
+        "aliases": [
+          "isb",
+          "indian school of business",
+          "xlri",
+          "fms",
+          "faculty of management studies",
+          "spjimr",
+          "sp jain",
+          "mdi gurgaon",
+          "mdi",
+          "iift",
+          "jbims",
+          "tiss mumbai",
+          "tiss",
+          "sibm pune",
+          "nmims mumbai"
+        ]
+      },
+      {
+        "name": "Premier Commerce & Arts",
+        "aliases": [
+          "srcc",
+          "shri ram college of commerce",
+          "st stephen",
+          "lady shri ram",
+          "lsr",
+          "hindu college",
+          "miranda house",
+          "loyola college",
+          "st xavier",
+          "christ university"
+        ]
+      },
+      {
+        "name": "Top Global",
+        "aliases": [
+          "stanford",
+          "mit",
+          "harvard",
+          "uc berkeley",
+          "carnegie mellon",
+          "cmu",
+          "oxford",
+          "cambridge",
+          "princeton",
+          "columbia",
+          "caltech",
+          "yale",
+          "cornell",
+          "upenn",
+          "wharton",
+          "insead",
+          "london business school",
+          "lbs"
+        ]
+      }
+    ],
+    "tier2": [
+      {
+        "name": "Other NITs",
+        "aliases": [
+          "nit",
+          "nits",
+          "national institute of technology",
+          "manit",
+          "manit bhopal",
+          "nit silchar",
+          "nit kurukshetra",
+          "nit durgapur",
+          "nit hamirpur",
+          "nit meghalaya",
+          "nit patna",
+          "nit raipur"
+        ]
+      },
+      {
+        "name": "Other IIITs",
+        "aliases": [
+          "iiit",
+          "iiits",
+          "indian institute of information technology",
+          "iiit gwalior",
+          "iiit jabalpur",
+          "iiit kanchipuram",
+          "iiit vadodara"
+        ]
+      },
+      {
+        "name": "Established Technical Institutes",
+        "aliases": [
+          "thapar",
+          "tiet",
+          "vit",
+          "vellore institute of technology",
+          "vit vellore",
+          "manipal institute of technology",
+          "mit manipal",
+          "mahe",
+          "bit mesra",
+          "birla institute of technology mesra",
+          "rvce",
+          "rv college of engineering",
+          "bmsce",
+          "bms college of engineering",
+          "msrit",
+          "ramaiah institute",
+          "pes university",
+          "pesit",
+          "mit pune",
+          "mit world peace",
+          "ssn college",
+          "sastra university",
+          "amrita university",
+          "amrita school of engineering",
+          "srm university",
+          "srm institute",
+          "kiit",
+          "kalinga institute",
+          "shiv nadar",
+          "ashoka university",
+          "plaksha",
+          "heritage institute",
+          "techno india",
+          "walchand",
+          "spce",
+          "cummins college",
+          "pict pune",
+          "dayananda sagar",
+          "dsce",
+          "nirma university",
+          "pdeu"
+        ]
+      },
+      {
+        "name": "Tier 2 MBA",
+        "aliases": [
+          "imt ghaziabad",
+          "imi delhi",
+          "ximb",
+          "xim university",
+          "tapmi",
+          "fore school",
+          "gim goa",
+          "great lakes",
+          "glim",
+          "irma",
+          "somaiya",
+          "lbsim",
+          "bimtech",
+          "welingkar",
+          "weschool",
+          "liba",
+          "scmhrd",
+          "iim amritsar",
+          "iim bodh gaya",
+          "iim jammu",
+          "iim nagpur",
+          "iim sambalpur",
+          "iim sirmaur",
+          "iim visakhapatnam"
+        ]
+      }
+    ],
+    "tier3": [
+      {
+        "name": "Private & State Affiliated Tier 3",
+        "aliases": [
+          "galgotias university",
+          "galgotias college",
+          "galgotias",
+          "sharda university",
+          "sharda",
+          "amity university",
+          "amity",
+          "lovely professional university",
+          "lpu",
+          "chandigarh university",
+          "cu",
+          "parul university",
+          "parul",
+          "quantum university",
+          "gla university",
+          "graphic era",
+          "invertis",
+          "teerthanker mahaveer",
+          "geeta university",
+          "sage university"
+        ]
+      }
+    ]
+  },
+  "cities": [
+    {
+      "name": "Bengaluru",
+      "aliases": [
+        "bengaluru",
+        "bangalore"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Delhi NCR",
+      "aliases": [
+        "delhi",
+        "new delhi",
+        "ncr",
+        "gurugram",
+        "gurgaon",
+        "noida",
+        "greater noida",
+        "faridabad",
+        "ghaziabad"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Mumbai",
+      "aliases": [
+        "mumbai",
+        "bombay",
+        "navi mumbai",
+        "thane"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Hyderabad",
+      "aliases": [
+        "hyderabad",
+        "secunderabad"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Pune",
+      "aliases": [
+        "pune",
+        "pimpri-chinchwad"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Chennai",
+      "aliases": [
+        "chennai",
+        "madras"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "Kolkata",
+      "aliases": [
+        "kolkata",
+        "calcutta"
+      ],
+      "country": "India"
+    },
+    {
+      "name": "San Francisco Bay Area",
+      "aliases": [
+        "san francisco",
+        "bay area",
+        "san jose",
+        "sunnyvale",
+        "palo alto"
+      ],
+      "country": "US"
+    },
+    {
+      "name": "New York",
+      "aliases": [
+        "new york",
+        "nyc",
+        "manhattan",
+        "brooklyn"
+      ],
+      "country": "US"
+    },
+    {
+      "name": "Seattle",
+      "aliases": [
+        "seattle",
+        "redmond"
+      ],
+      "country": "US"
+    },
+    {
+      "name": "Austin",
+      "aliases": [
+        "austin"
+      ],
+      "country": "US"
+    },
+    {
+      "name": "Boston",
+      "aliases": [
+        "boston",
+        "cambridge"
+      ],
+      "country": "US"
+    },
+    {
+      "name": "London",
+      "aliases": [
+        "london"
+      ],
+      "country": "UK"
+    },
+    {
+      "name": "Singapore",
+      "aliases": [
+        "singapore"
+      ],
+      "country": "Singapore"
+    },
+    {
+      "name": "Dubai",
+      "aliases": [
+        "dubai"
+      ],
+      "country": "UAE"
+    }
+  ]
+}
