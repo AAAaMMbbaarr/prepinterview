@@ -315,12 +315,17 @@
 
   const ROLE_FAMILIES = {
     product: /\b(?:product\s+(?:manager|management|owner|intern|lead|head|vp|specialist)|\bpm\b|\bapm\b|\bgpm\b|associate\s+product\s+manager|group\s+product\s+manager|technical\s+product\s+manager|\btpm\b)\b/i,
-    growth: /\b(?:growth|growth\s+hacker|growth\s+lead|growth\s+marketing|user\s+acquisition|growth\s+specialist|growth\s+manager)\b/i,
+    growth: /\b(?:growth|growth\s+hacker|growth\s+lead|growth\s+specialist|growth\s+manager)\b/i,
     strategy_bizops: /\b(?:strategy|bizops|business\s+operations|chief\s+of\s+staff|founder(?:'s|\s+office)|strategic\s+initiatives|corporate\s+strategy)\b/i,
     data_analytics: /\b(?:data\s+analyst|data\s+scientist|analytics|business\s+analyst|bi\s+analyst|business\s+intelligence|data\s+engineer|machine\s+learning|ml\s+engineer|deep\s+learning|ai\s+engineer)\b/i,
-    engineering_swe: /\b(?:software\s+engineer(?:ing)?|software\s+developer|\bswe\b|\bsde\b|\bsde-?[123iIvV]+\b|frontend|back-?end|full-?stack|web\s+developer|tech\s+lead|engineering\s+lead|engineering\s+manager|\bem\b|architect)\b/i,
+    engineering_swe: /\b(?:software\s+engineer(?:ing)?|software\s+developer|\bswe\b|\bsde\b|\bsde-?[123iIvV]+\b|frontend|back-?end|full-?stack|web\s+developer|tech\s+lead|engineering\s+lead|engineering\s+manager|\bem\b|architect|devops|cloud\s+infrastructure)\b/i,
     sales: /\b(?:sales|account\s+executive|\bae\b|\bbdr\b|\bsdr\b|business\s+development|enterprise\s+sales|sales\s+manager|sales\s+director)\b/i,
-    operations: /\b(?:operations|operations\s+manager|program\s+manager|project\s+manager|customer\s+success|customer\s+support|supply\s+chain|logistics)\b/i
+    customer_success: /\b(?:customer\s+success|\bcsm\b|client\s+success|customer\s+support|account\s+management|client\s+servicing)\b/i,
+    hr_recruiting: /\b(?:hr|human\s+resources|recruiter|recruiting|talent\s+acquisition|people\s+ops|people\s+operations|hrbp)\b/i,
+    finance: /\b(?:finance|financial\s+analyst|investment\s+banking|accounting|accountant|fp&a|financial\s+controller|audit|auditor)\b/i,
+    marketing: /\b(?:marketing|brand\s+manager|content\s+marketing|digital\s+marketing|seo|sem|social\s+media|growth\s+marketing|performance\s+marketing|product\s+marketing|\bpmm\b)\b/i,
+    design: /\b(?:product\s+designer|ui[\/-]?ux|ux\s+designer|ui\s+designer|user\s+experience|interaction\s+designer|graphic\s+designer|visual\s+designer)\b/i,
+    operations: /\b(?:operations|operations\s+manager|program\s+manager|project\s+manager|supply\s+chain|logistics)\b/i
   };
 
   function detectRoleFamily(text) {
@@ -347,7 +352,8 @@
     const currentMaxKey = defaultCurrentYear * 12 + defaultCurrentMonth;
 
     let expSection = clean;
-    const expMatch = clean.match(/\b(?:experience|work experience|employment history|professional experience)\b/i);
+    const expMatch = clean.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:experience|work experience|employment history|professional experience)\b/i)
+      || clean.match(/\b(?:experience|work experience|employment history|professional experience)\b/i);
     if (expMatch) {
       const fromExp = clean.slice(expMatch.index + expMatch[0].length);
       const endMatch = fromExp.match(/\n\s*(?:##\s*|\*\*\s*)?(?:education|projects|technical skills|skills|certifications|publications|achievements)\b/i);
@@ -626,7 +632,32 @@
     };
   }
 
-  // --- 8. JD REQUIREMENTS EXTRACTION ---
+  // --- 8. GENERAL MANDATORY-COLLEGE DETECTOR ---
+  function isCollegeMandatory(text) {
+    if (!text) return false;
+    const lines = text.split(/\r?\n/);
+    for (const line of lines) {
+      const l = line.trim().toLowerCase();
+      if (!l) continue;
+      if (/\b(?:preferred|a\s+plus|bonus|nice\s+to\s+have|good\s+to\s+have|not\s+mandatory|not\s+required|not\s+strictly|optional)\b/i.test(l)) {
+        continue;
+      }
+      const hasCollege = /\b(?:tier\s*[- ]?1|premier\s+(?:engineering\s+|management\s+)?(?:colleges?|institutes?|institutions?|universit(?:y|ies))|top[- ]tier|iits?|iims?|bits(?:\s+pilani)?|nits?)\b/i.test(l);
+      if (!hasCollege) continue;
+
+      const hasMandatoryPrefix = /\b(?:strictly|only|exclusively|mandatory)\s+(?:candidates?\s+|applicants?\s+|graduates?\s+|alumni\s+|hiring\s+)*(?:from\s+)?(?:tier\s*[- ]?1|premier|top[- ]tier|iits?|iims?|bits|nits?)/i.test(l);
+      const hasMandatoryPostfix = /(?:tier\s*[- ]?1|premier|top[- ]tier|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|strictly|mandatory|required|exclusively)\b/i.test(l);
+      const hasMustBeFrom = /\b(?:must\s+be\s+from|must\s+have\s+graduated\s+from|graduates?\s+of)\s+[^.\n]*?(?:tier\s*[- ]?1|premier|top[- ]tier|iits?|iims?|bits|nits?)/i.test(l);
+      const hasDegreeRequired = /(?:tier\s*[- ]?1|premier|iits?|iims?|bits|nits?)\s+(?:degree|pedigree|background)\s+(?:is\s+)?(?:required|mandatory)/i.test(l);
+
+      if (hasMandatoryPrefix || hasMandatoryPostfix || hasMustBeFrom || hasDegreeRequired) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // --- 9. JD REQUIREMENTS EXTRACTION ---
   const NUMBER_WORDS = {
     zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
     six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -772,9 +803,7 @@
     const normJd = rawJd.toLowerCase();
 
     // Tier-1 Mandatory & Preferred checks
-    const tierMandatory = /\b(?:only|strictly)\s+(?:candidates\s+|applicants\s+)?(?:from\s+)?(?:iits?|iims?|bits|nits?|tier\s*[- ]?1|premier)\b/i.test(normJd)
-      || /\b(?:tier\s*[- ]?1|premier\s+institute|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|mandatory|required|must)\b/i.test(normJd)
-      || /\b(?:must\s+be|mandatory)\s*:\s*(?:tier\s*[- ]?1|iits?|premier)\b/i.test(normJd);
+    const tierMandatory = isCollegeMandatory(rawJd);
 
     const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
     const iitPreferredPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
@@ -937,7 +966,16 @@
           const relevantExp = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
 
           // "unknown" family never counts as zero (it does not trigger role-mismatch knockout)
-          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0 && yearsInUnknown === 0) {
+          // Rule: adjacency credit > 0 must prevent "Role profile not matching"
+          const adjMatrix = (config.experience && config.experience.roleAdjacency) || {};
+          const jdAdj = adjMatrix[jdFamily] || {};
+          const hasAdjacencyCredit = Object.entries(candidateFamilies).some(([fam, yrs]) => {
+            if (yrs <= 0) return false;
+            if (fam === jdFamily) return true;
+            return (jdAdj[fam] || 0) > 0;
+          });
+
+          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0 && yearsInUnknown === 0 && !hasAdjacencyCredit) {
             disqualifiers.push(config.disqualifierMessages.roleProfile);
             const expIdx = disqualifiers.indexOf(config.disqualifierMessages.workExperience);
             if (expIdx !== -1) {
@@ -1031,6 +1069,21 @@
       color = config.tiers.strongMatch.color;
     }
 
+    // Cap combined effect: a gap under 1.5 years cannot alone push an experienced candidate into Reach
+    if (candExp.totalYears >= 1.0) {
+      const expShortfall = (jdReq.minExp !== null && candExp.relevantYears < jdReq.minExp)
+        ? Math.round((jdReq.minExp - candExp.relevantYears) * 10) / 10
+        : 0;
+      if (expShortfall > 0 && expShortfall < 1.5) {
+        const nonExpDisqualifiers = disqualifiers.filter(d => !d.toLowerCase().includes('experience'));
+        if (nonExpDisqualifiers.length === 0 && tier === config.tiers.reachRole.name) {
+          tier = config.tiers.moderateMatch.name;
+          badge = config.tiers.moderateMatch.badge;
+          color = config.tiers.moderateMatch.color;
+        }
+      }
+    }
+
     return {
       status: 'ready',
       score: finalScore,
@@ -1077,6 +1130,7 @@
     extractCandidateLocation: extractCandidateLocation,
     extractCandidateEducation: extractCandidateEducation,
     extractEducation: extractCandidateEducation,
+    isCollegeMandatory: isCollegeMandatory,
     extractJdRequirements: extractJdRequirements,
     detectRoleFamily: detectRoleFamily,
     evaluate: evaluate,

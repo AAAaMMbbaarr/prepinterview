@@ -1112,7 +1112,47 @@ Requirements:
     );
   });
 
-  test('Generate behavior diff report vs part2-fixed (tests/diff-part3.md)', () => {
+  test('General mandatory-college detector: 8 positive sentences and 8 negative sentences', () => {
+    const positives = [
+      'Education: Strictly Tier-1 engineering colleges (IIT / BITS / NIT) or IIM graduates only.',
+      'Candidates must be from Tier-1 institutes (IIT/NIT/BITS).',
+      'Graduates of IIT or BITS only.',
+      'Tier 1 engineering degree is mandatory for this role.',
+      'Exclusively hiring from top-tier colleges.',
+      'IIT/IIM pedigree required.',
+      'Only graduates from premier engineering institutions will be considered.',
+      'Applicants must have graduated from Tier-1 universities.'
+    ];
+
+    const negatives = [
+      'Tier-1 engineering degree is preferred.',
+      'IIT/NIT graduate is a plus.',
+      'Tier 1 college not required.',
+      'Graduation from premier institutes preferred, but not mandatory.',
+      'Good to have: Tier-1 background.',
+      'BITS/IIT alumni is a bonus.',
+      'Tier 1 degree is nice to have.',
+      'Degree from top college is not strictly required.'
+    ];
+
+    positives.forEach((sentence, idx) => {
+      assert.strictEqual(
+        matcher.isCollegeMandatory(sentence),
+        true,
+        `Positive sentence #${idx + 1} should be detected as mandatory: "${sentence}"`
+      );
+    });
+
+    negatives.forEach((sentence, idx) => {
+      assert.strictEqual(
+        matcher.isCollegeMandatory(sentence),
+        false,
+        `Negative sentence #${idx + 1} should NOT be detected as mandatory: "${sentence}"`
+      );
+    });
+  });
+
+  test('Verify behavioral stability and output diff report vs part2-fixed', () => {
     const diffPart3Path = path.join(ROOT, 'tests/diff-part3.md');
     const cp = require('child_process');
     const vm = require('vm');
