@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const clearBtn = document.getElementById('clearBtn');
   const charCount = document.getElementById('charCount');
   const saveToast = document.getElementById('saveToast');
+  const relocationToggle = document.getElementById('relocationToggle');
 
   function updateWordCount() {
     const text = resumeInput.value.trim();
@@ -11,11 +12,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     charCount.textContent = `${words} words`;
   }
 
-  // Load saved resume
-  const stored = await chrome.storage.local.get(['resumeText']);
+  // Load saved preferences
+  const stored = await chrome.storage.local.get(['resumeText', 'openToRelocation']);
   if (stored.resumeText) {
     resumeInput.value = stored.resumeText;
     updateWordCount();
+  }
+  if (stored.openToRelocation !== undefined && relocationToggle) {
+    relocationToggle.checked = Boolean(stored.openToRelocation);
   }
 
   resumeInput.addEventListener('input', updateWordCount);
@@ -31,9 +35,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {}
   }
 
+  if (relocationToggle) {
+    relocationToggle.addEventListener('change', async () => {
+      await chrome.storage.local.set({ openToRelocation: relocationToggle.checked });
+      broadcastUpdate();
+    });
+  }
+
   saveBtn.addEventListener('click', async () => {
     const text = resumeInput.value.trim();
-    await chrome.storage.local.set({ resumeText: text });
+    const isRelocation = relocationToggle ? relocationToggle.checked : false;
+    await chrome.storage.local.set({ resumeText: text, openToRelocation: isRelocation });
     updateWordCount();
     broadcastUpdate();
     saveToast.classList.remove('hidden');

@@ -1086,6 +1086,7 @@
     }
 
     // FACTOR C: LOCATION
+    const openToRelocation = Boolean(context && context.openToRelocation);
     if (jdReq.workMode === 'Remote') {
       // Remote is neutral: 0 penalty, 0 bonus, no disqualifier
     } else if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
@@ -1101,6 +1102,9 @@
       if (isSameCity || isSameRegion) {
         bonuses += config.bonuses.locationMatch;
         breakdown.push({ label: 'Location Match Bonus', points: config.bonuses.locationMatch });
+      } else if (openToRelocation) {
+        notes.push('Open to relocation');
+        softGaps.push('Relocation needed');
       } else {
         if (jdReq.workMode === 'On-site') {
           penalties += config.penalties.locationMismatch;
@@ -1181,18 +1185,18 @@
     };
   }
 
-  function evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle) {
-    return evaluate(resumeText, jdText, {
+  function evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle, extraContext = {}) {
+    return evaluate(resumeText, jdText, Object.assign({
       locationMeta: locationMeta,
       jobTitle: jobTitle
-    });
+    }, extraContext));
   }
 
-  function calculateMatch(resumeText, jdText, locationMeta, jobTitle) {
-    return evaluate(resumeText, jdText, {
+  function calculateMatch(resumeText, jdText, locationMeta, jobTitle, extraContext = {}) {
+    return evaluate(resumeText, jdText, Object.assign({
       locationMeta: locationMeta,
       jobTitle: jobTitle
-    });
+    }, extraContext));
   }
 
   const api = {

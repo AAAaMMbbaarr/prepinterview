@@ -26,26 +26,37 @@
     <p class="helper-text">Paste your resume text below. It stays 100% private in your browser and is used to calculate Skill Match on LinkedIn jobs.</p>
     <textarea id="resumeInput" placeholder="Paste your plain-text resume here... (e.g. Experience, Skills, Education)"></textarea>
     
+    <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:8px 10px; background:#0d1117; border-radius:6px; border:1px solid #30363d;">
+      <div>
+        <div style="font-size:12px; font-weight:600; color:#f0f6fc;">✈️ Open to Relocation</div>
+        <div style="font-size:11px; color:#8b949e;">Waives on-site location mismatch penalty</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="relocationToggle">
+        <span class="slider round"></span>
+      </label>
+    </div>
+
     <div class="btn-row">
-      <button id="saveBtn" class="btn-primary">💾 Save Resume Locally</button>
+      <button id="saveBtn" class="btn-primary">💾 Save Preferences Locally</button>
       <button id="clearBtn" class="btn-secondary">Clear</button>
     </div>
-    <div id="saveToast" class="toast hidden">✅ Resume saved! Copilot active on LinkedIn.</div>
+    <div id="saveToast" class="toast hidden">✅ Preferences saved! Copilot active on LinkedIn.</div>
   </div>
 
   <div class="info-card">
-    <div class="info-title">⚡ How it works on LinkedIn</div>
+    <div class="info-title">⚡ Score Bands & Role Fit Tiers</div>
     <ul class="info-list">
-      <li><strong>🎯 Role Fit:</strong> Evaluates your skills, experience, location, and background against job requirements.</li>
-      <li><strong>🟢 80%+ Match:</strong> High probability of interview shortlist.</li>
-      <li><strong>🎯 Focus Areas:</strong> Identifies key topics and questions to prepare for.</li>
-      <li><strong>🎙️ 1-Click Prep:</strong> Launch a live spoken AI mock interview directly from any job posting.</li>
+      <li><strong>🟢 Strong Match (80–98%):</strong> Strong fit across skills, experience, and pedigree. Shortlist likely.</li>
+      <li><strong>🟢 Good Match (72–79%):</strong> Competitive profile; minor soft notes (e.g. hybrid relocation).</li>
+      <li><strong>🟡 Moderate Match (45–71%):</strong> Viable profile with one requirement gap to defend in interview.</li>
+      <li><strong>🔴 Reach Role (< 45%):</strong> Significant hurdles (low skill overlap or 2+ hard requirement gaps).</li>
     </ul>
   </div>
 
   <div class="footer">
     <a href="https://prepinterview.online" target="_blank" class="web-link">Open PrepInterview AI ↗</a>
-    <span class="version">v1.0.5</span>
+    <span class="version">v1.0.6</span>
   </div>
 
   <script src="popup.js"></script>

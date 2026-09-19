@@ -1332,5 +1332,23 @@ Requirements:
     fs.writeFileSync(diffPart3Path, diffMd, 'utf8');
     assert.strictEqual(typeof changedPairs.length, 'number', 'Diff Part 3 generation completed successfully');
   });
+
+  test('Relocation toggle hook (context.openToRelocation waives on-site location disqualifier and adds soft note)', () => {
+    const seniorResume = resumes['senior_tier1_iit'];
+    const jd12Text = jds['jd_12']; // On-site Mumbai
+
+    // 1. Without openToRelocation (default)
+    const defaultRes = matcher.evaluate(seniorResume, jd12Text, { now: FIXED_DATE });
+    assert.ok(defaultRes.disqualifiers.includes('Location not matching'), 'Default evaluation must emit Location not matching for on-site out-of-city role');
+    assert.ok(defaultRes.breakdown.some(b => b.label === 'On-site Location Mismatch Penalty'), 'Must apply On-site location mismatch penalty');
+
+    // 2. With openToRelocation: true
+    const relocRes = matcher.evaluate(seniorResume, jd12Text, { now: FIXED_DATE, openToRelocation: true });
+    assert.ok(!relocRes.disqualifiers.includes('Location not matching'), 'openToRelocation: true must waive Location not matching disqualifier');
+    assert.ok(!relocRes.breakdown.some(b => b.label === 'On-site Location Mismatch Penalty'), 'openToRelocation: true must not apply location mismatch penalty');
+    assert.ok(relocRes.notes.includes('Open to relocation'), 'Must add Open to relocation note');
+    assert.ok(relocRes.softGaps.includes('Relocation needed'), 'Must record Relocation needed in soft gaps');
+    assert.ok(relocRes.score > defaultRes.score, 'Score must be higher when location penalty is waived');
+  });
 });
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PrepInterview Copilot - LinkedIn Job Match & AI Mock Prep",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "See your real-time Resume Skill Match, Experience, Location & Education fit on LinkedIn Jobs and launch instant AI mock interview practice in 1 click.",
   "permissions": [
     "storage"

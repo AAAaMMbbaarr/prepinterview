@@ -43,23 +43,30 @@
     return Array.from(found);
   }
 
-  function calculateMatch(resumeText, jdText, locationMeta, jobTitle) {
+  function calculateMatch(resumeText, jdText, locationMeta, jobTitle, extraContext = {}) {
+    const ctx = Object.assign({ locationMeta, jobTitle }, extraContext);
     if (window.PrepInterview && window.PrepInterview.Matcher && typeof window.PrepInterview.Matcher.evaluate === 'function') {
-      return window.PrepInterview.Matcher.evaluate(resumeText, jdText, { locationMeta, jobTitle });
+      return window.PrepInterview.Matcher.evaluate(resumeText, jdText, ctx);
     }
     if (window.PrepInterviewMatcher && typeof window.PrepInterviewMatcher.calculateMatch === 'function') {
-      return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta, jobTitle);
+      return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta, jobTitle, ctx);
     }
 
     if (!resumeText || resumeText.trim().length < 20) {
       return {
         status: 'no_resume',
         score: 0,
+        preClampScore: 0,
+        breakdown: [],
         tier: 'Resume Needed',
         badge: '⚙️',
         color: '#8b949e',
         matchedSkills: [],
-        missingSkills: []
+        missingSkills: [],
+        hardGaps: [],
+        softGaps: [],
+        notes: [],
+        disqualifiers: []
       };
     }
 
@@ -89,17 +96,21 @@
       score = Math.min(68, Math.max(42, Math.round(ratio * 55 + 25)));
     }
 
-    score = Math.max(30, Math.min(95, score));
-    let tier = 'Skill Gap Detected';
+    score = Math.max(20, Math.min(98, score));
+    let tier = 'Reach Role (Critical Gaps)';
     let badge = '🔴';
     let color = '#f85149';
 
-    if (score >= 75) {
-      tier = 'Strong Skill Match';
+    if (score >= 80) {
+      tier = 'Strong Match';
       badge = '🟢';
       color = '#3fb950';
-    } else if (score >= 52) {
-      tier = 'Moderate Skill Match';
+    } else if (score >= 72) {
+      tier = 'Good Match';
+      badge = '🟢';
+      color = '#2ea043';
+    } else if (score >= 45) {
+      tier = 'Moderate Match (Gaps to Defend)';
       badge = '🟡';
       color = '#d29922';
     }
@@ -107,14 +118,20 @@
     return {
       status: 'ready',
       score: score,
+      preClampScore: score,
+      breakdown: [{ label: 'Skills Overlap Base', points: score }],
+      notes: [],
+      hardGaps: [],
+      softGaps: [],
       tier: tier,
       badge: badge,
       color: color,
       matchedSkills: matched.slice(0, 5),
       missingSkills: missing.slice(0, 4),
-      experience: { status: 'info', icon: 'ℹ️', headline: 'Experience', detail: 'Candidate background active' },
-      location: { status: 'info', icon: 'ℹ️', headline: 'Location', detail: 'Analysis active' },
-      education: { status: 'info', icon: 'ℹ️', headline: 'Education', detail: 'Degree evaluation active' }
+      disqualifiers: [],
+      skillScore: score,
+      totalJdSkills: jdSkills.length,
+      lowConfidence: jdSkills.length < 3
     };
   }
 
@@ -325,16 +342,18 @@
     }
 
     let resumeText = '';
+    let openToRelocation = false;
     try {
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const stored = await chrome.storage.local.get(['resumeText']);
+        const stored = await chrome.storage.local.get(['resumeText', 'openToRelocation']);
         resumeText = stored.resumeText || '';
+        openToRelocation = Boolean(stored.openToRelocation);
       }
     } catch (e) {
       console.warn('[PrepInterview Copilot] Storage notice:', e);
     }
 
-    const resumeFingerprint = resumeText ? (resumeText.length + '_' + resumeText.slice(0, 40).replace(/\s+/g, '')) : 'none';
+    const resumeFingerprint = (resumeText ? (resumeText.length + '_' + resumeText.slice(0, 40).replace(/\s+/g, '')) : 'none') + (openToRelocation ? '_reloc' : '');
 
     if (existing && existing.dataset.jobId === jobId && existing.dataset.resumeFingerprint === resumeFingerprint) {
       return;
@@ -347,7 +366,7 @@
     console.log('[PrepInterview Copilot] Anchored in Job Pane:', title, 'at', company, '(JD Length:', desc.length, 'chars)');
 
     const locationMeta = getJobLocation(pane);
-    const match = calculateMatch(resumeText, desc, locationMeta, title);
+    const match = calculateMatch(resumeText, desc, locationMeta, title, { openToRelocation });
 
     const card = document.createElement('div');
     card.id = 'prepinterview-copilot-card';
@@ -380,19 +399,107 @@
 
       const gapPills = match.missingSkills.length > 0 
         ? match.missingSkills.map(s => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${s}</span>`).join('')
-        : (match.score >= 75
+        : (match.score >= 80
             ? '<span style="font-size:11px;color:#3fb950;">No critical skill gaps detected</span>'
             : '<span class="prepinterview-pill prepinterview-pill-gap">⚠️ Functional domain alignment required</span>');
 
-      const disqLabel = '⚠️ Requirement Gaps';
-      const disqPills = (match.disqualifiers && match.disqualifiers.length > 0)
+      // 1. Hard Gaps (Red Pills)
+      const hardGapsList = (Array.isArray(match.hardGaps) && match.hardGaps.length > 0)
+        ? match.hardGaps
+        : (Array.isArray(match.disqualifiers) ? match.disqualifiers : []);
+
+      const hardGapsHtml = hardGapsList.length > 0
         ? `
-          <div class="prepinterview-label" style="color:#ff7b72; margin-top:8px;">${disqLabel} (${match.disqualifiers.length})</div>
+          <div class="prepinterview-label" style="color:#ff7b72; margin-top:10px;">⛔ Hard Requirement Gaps (${hardGapsList.length})</div>
           <div class="prepinterview-pills-row">
-            ${match.disqualifiers.map(d => `<span class="prepinterview-pill prepinterview-pill-gap">⚠️ ${d}</span>`).join('')}
+            ${hardGapsList.map(g => `<span class="prepinterview-pill prepinterview-pill-hard">⛔ ${g}</span>`).join('')}
+          </div>
+        `
+        : `
+          <div class="prepinterview-line-green" style="margin-top:8px;">✓ No hard disqualifying gaps detected</div>
+        `;
+
+      // 2. Soft Gaps & Notes (Amber Lines)
+      const amberItems = [];
+      if (Array.isArray(match.softGaps)) {
+        match.softGaps.forEach(g => { if (!amberItems.includes(g)) amberItems.push(g); });
+      }
+      if (Array.isArray(match.notes)) {
+        match.notes.forEach(n => { if (!amberItems.includes(n)) amberItems.push(n); });
+      }
+
+      const amberLinesHtml = amberItems.length > 0
+        ? `
+          <div class="prepinterview-label" style="color:#d29922; margin-top:10px;">⚠️ Soft Notes & Profile Considerations (${amberItems.length})</div>
+          <div class="prepinterview-amber-block" style="margin: 6px 0 10px 0;">
+            ${amberItems.map(item => `<div class="prepinterview-line-amber">🔸 ${item}</div>`).join('')}
           </div>
         `
         : '';
+
+      // 3. Low Confidence Notice
+      const lowConfidenceHtml = match.lowConfidence
+        ? `
+          <div class="prepinterview-line-amber" style="margin: 8px 0; font-size:11px;">
+            ⚠️ <strong>Low Extraction Confidence:</strong> Fewer than 3 structured skills found in JD (${match.totalJdSkills || 0} detected). Fallback keyword matching was applied.
+          </div>
+        `
+        : '';
+
+      // 4. "How this score was built" Section
+      const breakdownItems = Array.isArray(match.breakdown) ? match.breakdown : [];
+      let breakdownRowsHtml = `
+        <div class="prepinterview-breakdown-row" style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #21262d; font-size:11px;">
+          <span style="color:#c9d1d9;">Base Skills Match</span>
+          <span style="font-weight:700; color:#58a6ff;">+${match.skillScore !== undefined ? match.skillScore : 50} pts</span>
+        </div>
+      `;
+
+      breakdownItems.forEach(item => {
+        const isPositive = item.points > 0;
+        const color = isPositive ? '#3fb950' : (item.points === 0 ? '#8b949e' : '#ff7b72');
+        const sign = isPositive ? '+' : '';
+        breakdownRowsHtml += `
+          <div class="prepinterview-breakdown-row" style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #21262d; font-size:11px;">
+            <span style="color:#8b949e;">${item.label}</span>
+            <span style="font-weight:600; color:${color};">${sign}${item.points} pts</span>
+          </div>
+        `;
+      });
+
+      const preClampDisplay = (match.preClampScore !== undefined && match.preClampScore !== match.score)
+        ? `<div style="font-size:10px; color:#8b949e; text-align:right; margin-top:6px;">Pre-clamp: ${match.preClampScore} pts → Clamped [20–98]: <strong>${match.score}%</strong></div>`
+        : '';
+
+      const howBuiltHtml = `
+        <div class="prepinterview-how-built-card" style="background:#161b22; border:1px solid #30363d; border-radius:8px; padding:10px 12px; margin-top:12px;">
+          <div class="prepinterview-label" style="color:#58a6ff; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>📊 How this score was built</span>
+            <span style="color:#f0f6fc; font-weight:700;">${match.score}% (${match.tier})</span>
+          </div>
+          ${lowConfidenceHtml}
+          <div class="prepinterview-breakdown-list">
+            ${breakdownRowsHtml}
+          </div>
+          ${preClampDisplay}
+        </div>
+      `;
+
+      // 5. Relocation Toggle in Card
+      const relocationToggleHtml = `
+        <div class="prepinterview-relocation-row" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:8px 10px; background:#161b22; border-radius:6px; border:1px solid #30363d;">
+          <div>
+            <div style="font-size:11px; font-weight:600; color:#f0f6fc;">✈️ Open to Relocation</div>
+            <div style="font-size:10px; color:#8b949e;">Waives on-site location mismatch disqualifier</div>
+          </div>
+          <label class="switch" style="position:relative; display:inline-block; width:34px; height:18px; margin:0; flex-shrink:0;">
+            <input type="checkbox" id="prepinterview-card-relocation-toggle" ${openToRelocation ? 'checked' : ''} style="opacity:0; width:0; height:0;">
+            <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:${openToRelocation ? '#238636' : '#30363d'}; transition:.2s; border-radius:18px;">
+              <span style="position:absolute; height:14px; width:14px; left:${openToRelocation ? '17px' : '3px'}; bottom:2px; background-color:white; transition:.2s; border-radius:50%;"></span>
+            </span>
+          </label>
+        </div>
+      `;
 
       card.innerHTML = `
         <div class="prepinterview-header" id="prepinterview-toggle-header">
@@ -408,12 +515,15 @@
         <div class="prepinterview-details prepinterview-collapsed" id="prepinterview-details-panel">
           <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px; flex-wrap:wrap; gap:6px;">
             <span style="color:#8b949e;">Evaluated against <strong>${title}</strong> ${company ? 'at <strong>' + company + '</strong>' : ''}</span>
-            <span style="color:#58a6ff; font-weight:600;">✨ Skills · Experience · Location · Education</span>
+            <span style="color:#58a6ff; font-weight:600;">✨ Multi-Factor Match Evaluation</span>
           </div>
-          
-          ${disqPills}
 
-          <div class="prepinterview-label" style="margin-top:6px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
+          ${hardGapsHtml}
+          ${amberLinesHtml}
+          ${relocationToggleHtml}
+          ${howBuiltHtml}
+
+          <div class="prepinterview-label" style="margin-top:12px;">🟢 Matched Strengths (${match.matchedSkills.length})</div>
           <div class="prepinterview-pills-row">
             ${matchPills}
           </div>
@@ -437,7 +547,22 @@
         toggleHeader.addEventListener('click', (e) => {
           e.stopPropagation();
           const isHidden = detailsPanel.classList.toggle('prepinterview-collapsed');
-          toggleBtn.textContent = isHidden ? 'View Full Breakdown ▾' : 'Hide Breakdown ▴';
+          toggleBtn.textContent = isHidden ? 'View Match Insights ▾' : 'Hide Match Insights ▴';
+        });
+      }
+
+      const relToggle = card.querySelector('#prepinterview-card-relocation-toggle');
+      if (relToggle) {
+        relToggle.addEventListener('change', async (e) => {
+          e.stopPropagation();
+          const val = e.target.checked;
+          try {
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+              await chrome.storage.local.set({ openToRelocation: val });
+            }
+          } catch (err) {}
+          card.remove();
+          runInjection();
         });
       }
     }
@@ -501,8 +626,8 @@
   // Listen for resume changes in local storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'local' && changes.resumeText) {
-        console.log('[PrepInterview Copilot] Resume updated in storage, refreshing card...');
+      if (areaName === 'local' && (changes.resumeText || changes.openToRelocation)) {
+        console.log('[PrepInterview Copilot] Settings updated in storage, refreshing card...');
         const existing = document.getElementById('prepinterview-copilot-card');
         if (existing) existing.remove();
         runInjection();

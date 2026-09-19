@@ -228,3 +228,43 @@
   transform: scale(1.04) !important;
   border-color: #58a6ff !important;
 }
+
+/* Hard Gaps & Soft Lines */
+.prepinterview-pill-hard {
+  background: #f8514922 !important;
+  color: #ff7b72 !important;
+  border: 1px solid #f8514966 !important;
+}
+
+.prepinterview-line-amber {
+  background: rgba(210, 153, 34, 0.12) !important;
+  color: #d29922 !important;
+  border-left: 3px solid #d29922 !important;
+  padding: 6px 10px !important;
+  border-radius: 4px !important;
+  margin: 4px 0 !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+
+.prepinterview-line-green {
+  background: rgba(46, 160, 67, 0.12) !important;
+  color: #3fb950 !important;
+  border-left: 3px solid #3fb950 !important;
+  padding: 6px 10px !important;
+  border-radius: 4px !important;
+  margin: 4px 0 !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+
+.prepinterview-breakdown-row {
+  transition: background 0.15s ease;
+}
+
+.prepinterview-breakdown-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
