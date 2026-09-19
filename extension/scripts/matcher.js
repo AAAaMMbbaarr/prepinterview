@@ -569,8 +569,24 @@
   function extractCandidateEducation(text, config) {
     if (!text) return { degree: 'Not specified', tier: 'unknown', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
 
-    const norm = normalizeWhitespace(text).toLowerCase().replace(/\s+/g, ' ');
+    // 1. Prefer isolating the Education section
+    const eduMatch = text.match(/\n?\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:education|academic background|academics|qualifications)\b/i);
+    let eduText = '';
 
+    if (eduMatch) {
+      const fromEdu = text.slice(eduMatch.index + eduMatch[0].length);
+      const endMatch = fromEdu.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:experience|work experience|employment history|projects|technical skills|skills|certifications|publications|achievements)\b/i);
+      eduText = endMatch ? fromEdu.slice(0, endMatch.index) : fromEdu;
+    } else {
+      // 2. Fallback for heading-less resume: scan full resume excluding experience bullet lines
+      const lines = text.split(/\r?\n/);
+      const nonExpLines = lines.filter(l => !/^\s*(?:[•\-*]|[0-9]+\.)\s+(?:built|developed|led|managed|engineered|designed|shipped|created|spearheaded|architected|implemented|drove|worked|authored|analyzed|conducted|monitored)/i.test(l));
+      eduText = nonExpLines.join('\n');
+    }
+
+    const norm = normalizeWhitespace(eduText).toLowerCase().replace(/\s+/g, ' ');
+
+    // Best degree across text
     let degree = 'Bachelor\'s';
     if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(norm)) {
       degree = 'PhD';
@@ -592,6 +608,7 @@
       degree = 'Graduate';
     }
 
+    // Best tier across detected institutions in Education section
     const detectedTier = (CollegesData && CollegesData.detectCollegeTier) ? CollegesData.detectCollegeTier(norm) : 'unknown';
     const tier = detectedTier || 'unknown';
     const isTier1 = (tier === 'Tier 1');
@@ -632,18 +649,30 @@
     // Blurb filter: remove marketing/company blurbs
     const filteredJd = rawJd.replace(/\b(?:over|with|founded|celebrating|more than)\s+\d+\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|history|innovation|leadership|excellence|serving)\b/gi, ' ');
 
+    // Prefer Requirements section for experience extraction
+    let expSearchText = filteredJd;
+    const reqMatch = filteredJd.match(/\n?\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:requirements|qualifications|what you(?:'ll)? need|what we(?:'re)? looking for|minimum requirements)\b/i);
+    if (reqMatch) {
+      const fromReq = filteredJd.slice(reqMatch.index + reqMatch[0].length);
+      const endReq = fromReq.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:responsibilities|benefits|about us|perks|compensation)\b/i);
+      const reqSection = endReq ? fromReq.slice(0, endReq.index) : fromReq;
+      if (/\b(?:experience|exp|years?|yrs?)\b/i.test(reqSection)) {
+        expSearchText = reqSection;
+      }
+    }
+
     let minExp = null;
     let maxExp = null;
 
     // Check for fresher / entry level phrases first
-    const isFresher = /\b(?:fresher|freshers|entry[- ]level|new\s+grad|new\s+graduate|no\s+prior\s+experience|no\s+experience\s+required)\b/i.test(filteredJd);
+    const isFresher = /\b(?:fresher|freshers|entry[- ]level|new\s+grad|new\s+graduate|no\s+prior\s+experience|no\s+experience\s+required)\b/i.test(expSearchText);
     if (isFresher) {
       minExp = 0;
     }
 
     if (minExp === null) {
       const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
-      const expMatch = filteredJd.match(expRegex);
+      const expMatch = expSearchText.match(expRegex);
       if (expMatch && expMatch[1]) {
         minExp = parseFloat(expMatch[1]);
         if (expMatch[2]) maxExp = parseFloat(expMatch[2]);
@@ -651,7 +680,7 @@
     }
 
     if (minExp === null) {
-      const altMatch = filteredJd.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
+      const altMatch = expSearchText.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
       if (altMatch && altMatch[1]) {
         minExp = parseFloat(altMatch[1]);
         if (altMatch[2]) maxExp = parseFloat(altMatch[2]);
@@ -659,7 +688,7 @@
     }
 
     if (minExp === null) {
-      const rangeMatch = filteredJd.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
+      const rangeMatch = expSearchText.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
       if (rangeMatch && rangeMatch[1]) {
         minExp = parseFloat(rangeMatch[1]);
         maxExp = parseFloat(rangeMatch[2]);
@@ -668,7 +697,7 @@
 
     if (minExp === null) {
       const words = 'zero|one|two|three|four|five|six|seven|eight|nine|ten';
-      const wordMatch = filteredJd.match(new RegExp('(?:minimum(?:\\s+of)?|at\\s+least)?\\s*(' + words + ')\\s*(?:-|to)?\\s*(' + words + ')?\\s*(?:years?|yrs?)\\s+(?:of)?\\s*(?:[a-zA-Z\\s]{0,35}?)?(?:experience|exp)', 'i'));
+      const wordMatch = expSearchText.match(new RegExp('(?:minimum(?:\\s+of)?|at\\s+least)?\\s*(' + words + ')\\s*(?:-|to)?\\s*(' + words + ')?\\s*(?:years?|yrs?)\\s+(?:of)?\\s*(?:[a-zA-Z\\s]{0,35}?)?(?:experience|exp)', 'i'));
       if (wordMatch && wordMatch[1]) {
         minExp = parseNumberWord(wordMatch[1]);
         if (wordMatch[2]) maxExp = parseNumberWord(wordMatch[2]);
@@ -676,7 +705,7 @@
     }
 
     if (minExp === null) {
-      const anyExpMatch = filteredJd.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
+      const anyExpMatch = expSearchText.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
       if (anyExpMatch) {
         minExp = parseFloat(anyExpMatch[1]);
       } else {
@@ -693,27 +722,62 @@
       workMode = 'On-site';
     }
 
-    let jobCity = null;
-    const cityMatch = combined.match(/\b(bengaluru|bangalore|delhi|new delhi|ncr|gurugram|gurgaon|noida|greater noida|faridabad|ghaziabad|mumbai|navi mumbai|thane|hyderabad|pune|chennai|kolkata|ahmedabad|jaipur|chandigarh|kochi|indore|san francisco|new york|seattle|austin|boston|london|singapore|dubai)\b/i);
-    if (cityMatch) {
-      const c = cityMatch[1].toLowerCase();
-      if (c === 'bangalore' || c === 'bengaluru') jobCity = 'Bengaluru';
-      else if (c === 'gurgaon' || c === 'gurugram' || c === 'noida' || c === 'delhi' || c === 'new delhi' || c === 'ncr' || c === 'greater noida' || c === 'faridabad' || c === 'ghaziabad') jobCity = 'Delhi NCR';
-      else if (c === 'mumbai' || c === 'navi mumbai' || c === 'thane') jobCity = 'Mumbai';
-      else if (c === 'pune') jobCity = 'Pune';
-      else if (c === 'hyderabad') jobCity = 'Hyderabad';
-      else if (c === 'chennai') jobCity = 'Chennai';
-      else if (c === 'kolkata') jobCity = 'Kolkata';
-      else jobCity = cityMatch[1];
+    // Extract all listed locations (multi-location support)
+    const allKnownCities = [
+      { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru' },
+      { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida|greater noida|faridabad|ghaziabad)\b/i, name: 'Delhi NCR' },
+      { regex: /\b(mumbai|navi mumbai|thane)\b/i, name: 'Mumbai' },
+      { regex: /\b(hyderabad|secunderabad)\b/i, name: 'Hyderabad' },
+      { regex: /\b(pune|pimpri-chinchwad)\b/i, name: 'Pune' },
+      { regex: /\b(chennai|madras)\b/i, name: 'Chennai' },
+      { regex: /\b(kolkata|calcutta)\b/i, name: 'Kolkata' },
+      { regex: /\b(ahmedabad|gandhinagar)\b/i, name: 'Ahmedabad' },
+      { regex: /\b(jaipur)\b/i, name: 'Jaipur' },
+      { regex: /\b(chandigarh|mohali|panchkula)\b/i, name: 'Chandigarh' },
+      { regex: /\b(kochi|cochin)\b/i, name: 'Kochi' },
+      { regex: /\b(indore)\b/i, name: 'Indore' },
+      { regex: /\b(san francisco|bay area|san jose|sunnyvale|palo alto)\b/i, name: 'San Francisco Bay Area' },
+      { regex: /\b(new york|nyc)\b/i, name: 'New York' },
+      { regex: /\b(seattle)\b/i, name: 'Seattle' },
+      { regex: /\b(london)\b/i, name: 'London' },
+      { regex: /\b(singapore)\b/i, name: 'Singapore' },
+      { regex: /\b(dubai)\b/i, name: 'Dubai' }
+    ];
+
+    const jobCities = [];
+    const jobRegions = [];
+
+    // locationMeta first
+    if (rawLoc) {
+      for (const item of allKnownCities) {
+        if (item.regex.test(rawLoc)) {
+          if (!jobCities.includes(item.name)) jobCities.push(item.name);
+          const r = getCityRegion(item.name, config);
+          if (r && !jobRegions.includes(r)) jobRegions.push(r);
+        }
+      }
     }
 
-    const normJd = rawJd.toLowerCase();
-    const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
-    const tierMandatoryPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:mandatory|required|must have|only)\b/i;
-    const iitPreferredPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
-    const iitMandatoryPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:mandatory|required|only)\b/i;
+    // Then search JD text for any additional locations
+    for (const item of allKnownCities) {
+      if (item.regex.test(filteredJd)) {
+        if (!jobCities.includes(item.name)) jobCities.push(item.name);
+        const r = getCityRegion(item.name, config);
+        if (r && !jobRegions.includes(r)) jobRegions.push(r);
+      }
+    }
 
-    const tierMandatory = tierMandatoryPattern.test(normJd) || iitMandatoryPattern.test(normJd);
+    let jobCity = jobCities.length > 0 ? jobCities[0] : null;
+
+    const normJd = rawJd.toLowerCase();
+
+    // Tier-1 Mandatory & Preferred checks
+    const tierMandatory = /\b(?:only|strictly)\s+(?:candidates\s+|applicants\s+)?(?:from\s+)?(?:iits?|iims?|bits|nits?|tier\s*[- ]?1|premier)\b/i.test(normJd)
+      || /\b(?:tier\s*[- ]?1|premier\s+institute|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|mandatory|required|must)\b/i.test(normJd)
+      || /\b(?:must\s+be|mandatory)\s*:\s*(?:tier\s*[- ]?1|iits?|premier)\b/i.test(normJd);
+
+    const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campus)\s+)?(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
+    const iitPreferredPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
     const tierPreferred = !tierMandatory && (tierPreferredPattern.test(normJd) || iitPreferredPattern.test(normJd));
 
     const phdReq = /\b(?:ph\.?d|doctorate)\s+(?:is\s+)?(?:mandatory|required|must have)\b/i.test(normJd);
@@ -731,6 +795,8 @@
       maxExp: maxExp,
       workMode: workMode,
       jobCity: jobCity,
+      jobCities: jobCities,
+      jobRegions: jobRegions,
       region: getCityRegion(jobCity, config),
       tierMandatory: tierMandatory,
       tierPreferred: tierPreferred,
@@ -867,9 +933,11 @@
             .reduce((acc, [, yrs]) => acc + yrs, 0);
 
           const yearsInJdFamily = candidateFamilies[jdFamily] || 0;
+          const yearsInUnknown = candidateFamilies['unknown'] || 0;
           const relevantExp = (candExp.relevantYears !== undefined) ? candExp.relevantYears : candExp.years;
 
-          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0) {
+          // "unknown" family never counts as zero (it does not trigger role-mismatch knockout)
+          if (yearsInOtherFamilies >= 1.0 && yearsInJdFamily === 0 && relevantExp === 0 && yearsInUnknown === 0) {
             disqualifiers.push(config.disqualifierMessages.roleProfile);
             const expIdx = disqualifiers.indexOf(config.disqualifierMessages.workExperience);
             if (expIdx !== -1) {
@@ -921,13 +989,16 @@
 
     // FACTOR C: LOCATION
     if (jdReq.workMode === 'Remote') {
-      bonuses += config.bonuses.locationMatch;
+      // Remote is neutral: 0 penalty, 0 bonus, no disqualifier
     } else if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
       const candRegion = candLoc.region || getCityRegion(candLoc.city, config);
-      const jdRegion = jdReq.region || getCityRegion(jdReq.jobCity, config);
 
-      const isSameCity = jdReq.jobCity && (candLoc.city.toLowerCase() === jdReq.jobCity.toLowerCase());
-      const isSameRegion = candRegion && jdRegion && (candRegion === jdRegion);
+      // Support multi-location matching: match if candidate matches ANY listed job city or region
+      const listedCities = jdReq.jobCities || (jdReq.jobCity ? [jdReq.jobCity] : []);
+      const listedRegions = jdReq.jobRegions || (jdReq.region ? [jdReq.region] : []);
+
+      const isSameCity = listedCities.some(jc => jc.toLowerCase() === candLoc.city.toLowerCase());
+      const isSameRegion = candRegion && listedRegions.includes(candRegion);
 
       if (isSameCity || isSameRegion) {
         bonuses += config.bonuses.locationMatch;
@@ -971,6 +1042,7 @@
       disqualifiers: disqualifiers,
       candExp: candExp,
       candEdu: candEdu,
+      jdReq: jdReq,
       totalJdSkills: jdSkillCount,
       confidence: confidence,
       lowConfidence: lowConfidence,
@@ -1004,6 +1076,7 @@
     extractExperience: extractExperience,
     extractCandidateLocation: extractCandidateLocation,
     extractCandidateEducation: extractCandidateEducation,
+    extractEducation: extractCandidateEducation,
     extractJdRequirements: extractJdRequirements,
     detectRoleFamily: detectRoleFamily,
     evaluate: evaluate,
