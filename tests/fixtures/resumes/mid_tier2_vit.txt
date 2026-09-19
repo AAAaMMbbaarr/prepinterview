@@ -1,0 +1,28 @@
+PRIYA SUNDARAM
+Bengaluru, India | priya.sundaram@example.com | linkedin.com/in/priyasundaram-pm
+
+SUMMARY
+Growth Product Manager with 1.8 years of experience in high-growth consumer-tech startups. Skilled in user research, A/B testing, PRD authoring, funnel optimization, and data-driven product strategy using SQL, Mixpanel, and Jira.
+
+EDUCATION
+Vellore Institute of Technology (VIT), Vellore
+Bachelor of Technology (B.Tech) in Information Technology | 2020 - 2024
+
+EXPERIENCE
+KwikCommerce | Bengaluru, India
+Associate Product Manager | May 2025 - Present
+• Leading checkout and retention funnels; reduced cart abandonment by 14% via 8 iterative A/B testing cycles.
+• Authored 12+ comprehensive PRD specifications, user stories, and wireframing for core checkout flows.
+• Partnered closely with engineering and design teams using Agile, Scrum, and Jira sprints to ship bi-weekly releases.
+• Analyzed user behavior, retention cohorts, and drop-offs using SQL, Amplitude, and Mixpanel.
+
+NextGen Mobility | Bengaluru, India
+Product & Growth Analyst | Aug 2024 - Apr 2025
+• Spearheaded user onboarding experiments, driving a +9% conversion rate lift across new user cohorts.
+• Conducted 30+ qualitative user research interviews to inform product roadmap and feature prioritization.
+• Monitored North Star metric and daily business health dashboards in SQL, Google Analytics, and Tableau.
+
+SKILLS
+Product: Product Management, Product Strategy, PRD, User Stories, Wireframing, Roadmap, Feature Prioritization, Agile, Scrum, Jira
+Analytics & Growth: SQL, A/B Testing, Mixpanel, Amplitude, Google Analytics, Funnel Analysis, Retention, Conversion Rate, Growth
+Technical: Python, REST API, Git, AI Tools

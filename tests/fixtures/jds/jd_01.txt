@@ -1,0 +1,18 @@
+Job Title: Growth Product Manager
+Company: UrbanClap / Urban Company
+Location: Bengaluru, India (Hybrid)
+
+About the Role:
+We are seeking a Growth Product Manager to own customer acquisition and onboarding funnels. You will work closely with marketing, design, and engineering to scale our marketplace.
+
+Key Responsibilities:
+• Lead growth experiments, A/B testing, and conversion rate optimization across the user journey.
+• Own PRD creation, user stories, wireframing, and product roadmap for the onboarding team.
+• Leverage SQL, Mixpanel, and Google Analytics to uncover funnel drop-offs and retention levers.
+• Work in fast-paced Agile / Scrum sprints with engineering and design.
+
+Requirements:
+• 2-4 years of experience in product management or growth product roles.
+• Strong analytical thinking with hands-on proficiency in SQL, A/B testing, and funnel analysis.
+• Bachelor's degree in engineering or related technical field.
+• Experience in consumer tech or marketplace startups is strongly preferred.

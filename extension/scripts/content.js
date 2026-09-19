@@ -44,6 +44,9 @@
   }
 
   function calculateMatch(resumeText, jdText, locationMeta, jobTitle) {
+    if (window.PrepInterview && window.PrepInterview.Matcher && typeof window.PrepInterview.Matcher.evaluate === 'function') {
+      return window.PrepInterview.Matcher.evaluate(resumeText, jdText, { locationMeta, jobTitle });
+    }
     if (window.PrepInterviewMatcher && typeof window.PrepInterviewMatcher.calculateMatch === 'function') {
       return window.PrepInterviewMatcher.calculateMatch(resumeText, jdText, locationMeta, jobTitle);
     }

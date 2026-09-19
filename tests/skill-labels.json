@@ -1,0 +1,241 @@
+[
+  {
+    "jdId": "jd_01",
+    "role": "Growth Product Manager",
+    "requiredSkills": [
+      "Product Management",
+      "SQL",
+      "A/B Testing",
+      "Funnel Analysis"
+    ],
+    "allMentionedSkills": [
+      "Product Management",
+      "Growth Strategy",
+      "Onboarding",
+      "A/B Testing",
+      "Conversion Rate Optimization",
+      "PRD",
+      "User Stories",
+      "Wireframing",
+      "Roadmap",
+      "SQL",
+      "Mixpanel",
+      "Google Analytics",
+      "Funnel Analysis",
+      "Retention",
+      "Agile",
+      "Scrum"
+    ]
+  },
+  {
+    "jdId": "jd_02",
+    "role": "Associate Product Manager",
+    "requiredSkills": [
+      "Product Management",
+      "SQL",
+      "Jira",
+      "Wireframing"
+    ],
+    "allMentionedSkills": [
+      "Product Management",
+      "SQL",
+      "Agile",
+      "Jira",
+      "PRD",
+      "User Stories",
+      "Tableau",
+      "Wireframing",
+      "Cohort Analysis"
+    ]
+  },
+  {
+    "jdId": "jd_03",
+    "role": "Senior Product Manager - Platform & Payments",
+    "requiredSkills": [
+      "Product Management",
+      "REST API",
+      "Microservices",
+      "System Design"
+    ],
+    "allMentionedSkills": [
+      "Product Strategy",
+      "Roadmap",
+      "System Design",
+      "Microservices",
+      "Distributed Systems",
+      "Business Case",
+      "Unit Economics",
+      "P&L Management",
+      "Vendor Management",
+      "REST API",
+      "Product Management"
+    ]
+  },
+  {
+    "jdId": "jd_04",
+    "role": "Founder's Office - Strategy & Operations",
+    "requiredSkills": [
+      "Founder's Office",
+      "BizOps",
+      "SQL",
+      "Python",
+      "Financial Modeling"
+    ],
+    "allMentionedSkills": [
+      "Founder's Office",
+      "Zero-to-One",
+      "Market Sizing",
+      "Competitive Analysis",
+      "Financial Modeling",
+      "BizOps",
+      "Retention",
+      "Generative AI",
+      "SQL",
+      "Python"
+    ]
+  },
+  {
+    "jdId": "jd_05",
+    "role": "Junior Software Engineer (Python / Backend)",
+    "requiredSkills": [
+      "Python",
+      "SQL",
+      "Data Structures",
+      "Git"
+    ],
+    "allMentionedSkills": [
+      "REST API",
+      "Microservices",
+      "Python",
+      "Flask",
+      "Django",
+      "Data Structures",
+      "PostgreSQL",
+      "Redis",
+      "CI/CD",
+      "Agile",
+      "Git",
+      "SQL"
+    ]
+  },
+  {
+    "jdId": "jd_06",
+    "role": "Senior Backend Engineer (Distributed Systems)",
+    "requiredSkills": [
+      "Go",
+      "Python",
+      "Node.js",
+      "Java",
+      "Distributed Systems",
+      "System Design",
+      "Microservices"
+    ],
+    "allMentionedSkills": [
+      "Microservices",
+      "REST API",
+      "Distributed Systems",
+      "AWS",
+      "Apache Kafka",
+      "Docker",
+      "Kubernetes",
+      "PostgreSQL",
+      "Redis",
+      "Roadmap",
+      "Go",
+      "Python",
+      "Node.js",
+      "Java",
+      "System Design"
+    ]
+  },
+  {
+    "jdId": "jd_07",
+    "role": "Data Analyst - Product & Marketing",
+    "requiredSkills": [
+      "SQL",
+      "Python",
+      "A/B Testing",
+      "Cohort Analysis",
+      "Business Intelligence"
+    ],
+    "allMentionedSkills": [
+      "SQL",
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Tableau",
+      "PowerBI",
+      "Product Management",
+      "A/B Testing",
+      "Statistical Analysis",
+      "Lifecycle Marketing",
+      "Business Intelligence",
+      "Cohort Analysis",
+      "Funnel Analysis"
+    ]
+  },
+  {
+    "jdId": "jd_08",
+    "role": "Product Manager - B2B SaaS",
+    "requiredSkills": [
+      "Product Management",
+      "B2B SaaS Product",
+      "Product Strategy",
+      "PRD"
+    ],
+    "allMentionedSkills": [
+      "Product Strategy",
+      "Roadmap",
+      "PRD",
+      "Customer Discovery",
+      "Go-to-Market",
+      "Pricing Strategy",
+      "Product Marketing",
+      "Enterprise Sales",
+      "Product Management",
+      "B2B SaaS Product"
+    ]
+  },
+  {
+    "jdId": "jd_10",
+    "role": "Applied Machine Learning Engineer",
+    "requiredSkills": [
+      "Machine Learning",
+      "Deep Learning",
+      "Python",
+      "PyTorch",
+      "Scikit-Learn",
+      "Git"
+    ],
+    "allMentionedSkills": [
+      "Deep Learning",
+      "PyTorch",
+      "TensorFlow",
+      "Python",
+      "Natural Language Processing",
+      "Generative AI",
+      "Transformer Architecture",
+      "Machine Learning",
+      "Scikit-Learn",
+      "Git"
+    ]
+  },
+  {
+    "jdId": "jd_31",
+    "role": "Software Engineer 1 (Full Stack / Python)",
+    "requiredSkills": [
+      "Data Structures",
+      "Python"
+    ],
+    "allMentionedSkills": [
+      "Python",
+      "JavaScript",
+      "React",
+      "REST API",
+      "PostgreSQL",
+      "Docker",
+      "Agile",
+      "Data Structures"
+    ]
+  }
+]

@@ -1,0 +1,16 @@
+Software Engineer 1 (Full Stack / Python)
+HackerRank
+Remote (India)
+
+About HackerRank:
+We help tech companies evaluate and hire the best developers globally.
+
+Responsibilities:
+• Develop interactive coding assessment environments in Python, JavaScript, and React.
+• Maintain REST APIs, PostgreSQL tables, and Docker evaluation sandboxes.
+• Collaborate in Agile sprints and participate in pair programming.
+
+Requirements:
+• 0-1 years of experience or fresh graduates with strong coding portfolio.
+• Solid fundamentals in data structures, algorithms, and Python.
+• Remote work setup anywhere in India.

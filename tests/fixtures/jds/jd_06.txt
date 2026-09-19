@@ -1,0 +1,18 @@
+Senior Backend Engineer (Distributed Systems)
+Postman
+Remote (Work from anywhere in India)
+
+About Postman:
+Postman is the leading API platform used by over 30 million developers worldwide.
+
+Responsibilities:
+• Architect, build, and maintain highly scalable microservices powering the Postman API platform.
+• Ensure low latency and high availability across distributed systems deployed on AWS.
+• Work with Kafka, Docker, Kubernetes, PostgreSQL, and Redis to handle millions of requests/sec.
+• Mentor junior engineers and collaborate with product managers on technical roadmaps.
+
+Requirements:
+• At least 4-6 years of software development experience building cloud-scale applications.
+• Deep proficiency in Go, Python, Node.js, or Java.
+• Strong expertise in distributed systems, system design, microservices, and databases.
+• Work from home / Remote setup.

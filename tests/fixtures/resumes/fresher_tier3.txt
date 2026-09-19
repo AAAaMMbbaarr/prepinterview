@@ -1,0 +1,26 @@
+AMIT SHARMA
+Greater Noida, Delhi NCR, India | amit.sharma@example.com | linkedin.com/in/amitsharma-dev
+
+SUMMARY
+Enthusiastic Software Engineering graduate from Galgotias University with strong foundation in data structures, algorithms, Python, and SQL. Hands-on experience building machine learning prototypes and backend APIs during university projects and internships.
+
+EDUCATION
+Galgotias University, Greater Noida, Uttar Pradesh
+Bachelor of Technology (B.Tech) in Computer Science and Engineering | 2022 - 2026
+
+EXPERIENCE
+TechSpire Solutions | Delhi NCR, India
+Software Engineering Intern | Mar 2026 - Jul 2026
+• Built backend REST APIs using Python, Flask, and PostgreSQL for an internal analytics dashboard.
+• Utilized Git for version control and collaborated in an Agile development workflow.
+• Analyzed query performance and optimized complex SQL queries for faster data retrieval.
+• Trained baseline machine learning models using Scikit-learn and Pandas for user classification.
+
+PROJECTS
+• Predictive Student Performance: Developed supervised machine learning pipeline using Python, Pandas, and NumPy to predict exam outcomes.
+• Task Tracker API: Engineered REST API microservice in Python and SQLite with JWT authentication and Docker deployment.
+
+SKILLS
+Programming Languages: Python, SQL, C++, JavaScript
+Technologies & Frameworks: Flask, Pandas, NumPy, Scikit-learn, Git, PostgreSQL, Docker
+Core Concepts: Data Structures, Algorithms, REST API, Agile

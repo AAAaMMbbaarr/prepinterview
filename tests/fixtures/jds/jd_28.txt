@@ -1,0 +1,17 @@
+Senior Software Engineer - Core Backend
+MakeMyTrip · Gurugram, Haryana, India (Hybrid)
+280 applicants · 5 days ago · Full-time
+See how you compare to 280 applicants. Top skills: Python, Java, Microservices, Redis, Docker.
+
+About MakeMyTrip:
+India's one-stop-travel-shop for flights, hotels, and holiday packages.
+
+Role:
+• Build high-traffic booking engines handling peak festival surges.
+• Optimize REST APIs, database queries, and Redis caching.
+• Deploy microservices with Docker, Kubernetes, and AWS.
+
+Requirements:
+• 3-5 years of experience in backend development.
+• Strong command over Python, Java, system design, and algorithms.
+• B.Tech / M.Tech in CS or IT.

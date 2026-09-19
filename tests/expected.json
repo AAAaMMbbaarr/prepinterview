@@ -1,0 +1,1197 @@
+[
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_01",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_02",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_03",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_04",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_05",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_06",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_07",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_08",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_09",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_10",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_11",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_12",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching",
+      "Degree not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_13",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_14",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_15",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_16",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_17",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_18",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_19",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_20",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_21",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_22",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_23",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Degree not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_24",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_25",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_26",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_27",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_28",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_29",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_30",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_31",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_32",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_33",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_34",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_35",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_36",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching",
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_37",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_38",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_39",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_40",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_01",
+    "expectedTiers": [
+      "Good Match",
+      "Strong Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_02",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_03",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_04",
+    "expectedTiers": [
+      "Good Match",
+      "Strong Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_05",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_06",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_07",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_08",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_09",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_10",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_11",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_12",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching",
+      "Degree not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_13",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_14",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_15",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_16",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_17",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_18",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_19",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching",
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_20",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_21",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_22",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_23",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Degree not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_24",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_25",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_26",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_27",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_28",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_29",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_30",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_31",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_32",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_33",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_34",
+    "expectedTiers": [
+      "Good Match",
+      "Strong Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_35",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_36",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": [
+      "College not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_37",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_38",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_39",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_40",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_01",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_02",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_03",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_04",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_05",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_06",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_07",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_08",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_09",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_10",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_11",
+    "expectedTiers": [
+      "Good Match",
+      "Strong Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_12",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Good Match"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_13",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_14",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_15",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_16",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_17",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_18",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_19",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_20",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_21",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_22",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_23",
+    "expectedTiers": [
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Degree not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_24",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_25",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_26",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_27",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_28",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_29",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_30",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_31",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_32",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Location not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_33",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_34",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_35",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_36",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_37",
+    "expectedTiers": [
+      "Good Match",
+      "Moderate Match (Gaps to Defend)"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_38",
+    "expectedTiers": [
+      "Moderate Match (Gaps to Defend)",
+      "Reach Role (Critical Gaps)"
+    ],
+    "expectedGaps": [
+      "Work experience not matching"
+    ]
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_39",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_40",
+    "expectedTiers": [
+      "Strong Match",
+      "Good Match"
+    ],
+    "expectedGaps": []
+  }
+]

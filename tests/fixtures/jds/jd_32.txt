@@ -1,0 +1,16 @@
+Product Manager - Lending & Credit
+CRED
+Mumbai, Maharashtra, India (On-site)
+
+About the Role:
+Own digital lending products, underwriting funnels, and repayment UX for high-net-worth users.
+
+Responsibilities:
+• Define product strategy, user stories, and PRDs for credit line extensions.
+• Coordinate with bank partners, risk models, and engineering.
+• Track funnel drop-offs, conversion rates, and loan default indicators with SQL.
+
+Requirements:
+• 2 to 4 years of experience in fintech or consumer product management.
+• Must be based in Mumbai office (on-site role).
+• B.Tech or equivalent degree.

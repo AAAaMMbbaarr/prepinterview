@@ -1,28 +1,70 @@
-// PrepInterview Copilot - Client-Side Multi-Factor Match Engine (Skills, Experience, Location, Education)
+// PrepInterview Copilot - Upgraded Multi-Factor Match Engine (v1.0.6)
+// Pure evaluate(resumeText, jdText, context) with Section-Weighted Skills, Evidence Strength & Fallback
 (function() {
-  const TAXONOMY = [
-    // Tech & Engineering
-    "python", "javascript", "typescript", "java", "c++", "c#", "golang", "go", "ruby", "php", "rust", "swift", "kotlin",
-    "react", "react.js", "next.js", "vue", "angular", "node", "node.js", "express", "fastapi", "django", "flask", "spring boot",
-    "aws", "amazon web services", "azure", "gcp", "google cloud", "docker", "kubernetes", "k8s", "terraform", "ci/cd", "github actions",
-    "postgresql", "postgres", "mysql", "mongodb", "redis", "elasticsearch", "kafka", "rabbitmq", "dynamodb", "graphql", "rest api", "restful",
-    "microservices", "system design", "distributed systems", "data structures", "algorithms", "scalability", "linux", "git",
-    "machine learning", "deep learning", "nlp", "llm", "genai", "pytorch", "tensorflow", "computer vision", "pandas", "numpy", "scikit-learn",
-    // Product, Strategy & Startup
-    "founder office", "founders office", "chief of staff", "strategy", "execution", "startups", "high-growth", "operations", "scaling", "generalist", "cross-functional", "bizops", "business operations",
-    "product management", "product manager", "product strategy", "product sense", "prd", "roadmap", "user research", "wireframing", "agile", "scrum", "jira",
-    "a/b testing", "user stories", "retention", "churn", "funnel analysis", "north star metric", "sql", "tableau", "powerbi", "amplitude", "mixpanel",
-    "google analytics", "customer discovery", "mvp", "feature prioritization", "stakeholder management", "program manager", "program management",
-    "growth", "growth product", "onboarding", "lifecycle marketing", "conversion rate", "independent projects", "ai tools", "analytical thinking", "problem solving",
-    // Business, MBA & Strategy
-    "market sizing", "go-to-market", "gtm", "financial modeling", "dcf", "unit economics", "p&l", "profit and loss", "vendor management",
-    "roi", "business case", "valuation", "competitive analysis", "due diligence", "consulting frameworks", "swot", "m&a",
-    // Marketing & Sales
-    "seo", "sem", "ppc", "performance marketing", "cac", "ltv", "hubspot", "salesforce", "lead generation", "cold outreach",
-    "enterprise sales", "content strategy", "email marketing", "social media", "brand strategy", "copywriting", "growth hacking",
-    // Operations & HR
-    "talent acquisition", "recruiting", "employee relations", "performance management", "onboarding", "compensation", "compliance", "payroll"
-  ];
+  'use strict';
+
+  // Fallback resolution for Node environment or script load order
+  let Config = null;
+  let SkillsAPI = null;
+  let CollegesData = null;
+
+  if (typeof require !== 'undefined') {
+    try { Config = require('./scoring-config.js'); } catch (e) {}
+    try { SkillsAPI = require('./data/skills.js'); } catch (e) {}
+    try { CollegesData = require('./data/colleges.js'); } catch (e) {}
+  }
+
+  if (typeof window !== 'undefined' && window.PrepInterview) {
+    Config = Config || window.PrepInterview.Config;
+    SkillsAPI = SkillsAPI || window.PrepInterview.Skills;
+    CollegesData = CollegesData || window.PrepInterview.Colleges;
+  }
+
+  const DEFAULT_CONFIG = Config || {
+    bounds: { min: 20, max: 98 },
+    skillWeights: { required: 2.0, niceToHave: 1.0, unlabeled: 1.5 },
+    evidenceStrength: { experienceBullet: 1.0, skillsListOnly: 0.8, default: 1.0 },
+    confidenceThresholds: { highCount: 6, mediumCount: 3 },
+    penalties: {
+      experienceGapLarge: 35,
+      experienceGapMedium: 22,
+      experienceGapSmall: 12,
+      collegeTierMandatoryTier2: 15,
+      collegeTierMandatoryTier3: 30,
+      collegeTierPreferredTier3: 8,
+      degreePhdMandatory: 25,
+      degreeMbaMandatory: 20,
+      locationMismatch: 18
+    },
+    bonuses: {
+      experienceMeetsRequirement: 4,
+      collegeTierMandatoryTier1: 6,
+      collegeTierPreferredTier1: 6,
+      collegeTierPreferredTier2: 2,
+      degreeMbaPreferred: 3,
+      locationMatch: 4
+    },
+    thresholds: {
+      reachRoleMaxDisqualifiers: 2,
+      reachRoleScoreCutoff: 45,
+      moderateRoleScoreCutoff: 72,
+      strongMatchScoreCutoff: 80,
+      domainPivotThreshold: 50
+    },
+    disqualifierMessages: {
+      workExperience: 'Work experience not matching',
+      college: 'College not matching',
+      degree: 'Degree not matching',
+      location: 'Location not matching',
+      roleProfile: 'Role profile not matching'
+    },
+    tiers: {
+      reachRole: { name: 'Reach Role (Critical Gaps)', badge: '🔴', color: '#f85149' },
+      moderateMatch: { name: 'Moderate Match (Gaps to Defend)', badge: '🟡', color: '#d29922' },
+      goodMatch: { name: 'Good Match', badge: '🟢', color: '#2ea043' },
+      strongMatch: { name: 'Strong Match', badge: '🟢', color: '#3fb950' }
+    }
+  };
 
   function normalizeWhitespace(text) {
     if (!text) return '';
@@ -36,17 +78,232 @@
     return normalizeWhitespace(str).toLowerCase().replace(/'/g, '').replace(/[^a-z0-9+#./\s-]/g, ' ');
   }
 
-  function extractSkills(text) {
-    const norm = ' ' + normalize(text) + ' ';
-    const found = new Set();
-    
-    for (const skill of TAXONOMY) {
-      const pattern = new RegExp('(\\s|^)' + skill.replace(/[-/\^$*+?.()|[\]{}]/g, '\\$&') + '(\\s|$)', 'i');
-      if (pattern.test(norm)) {
-        found.add(skill);
+  // --- 1. SKILL EXTRACTION WITH GUARDS & IMPLICATIONS ---
+  function extractSkillsFromText(text) {
+    const found = new Map();
+    if (!text || !SkillsAPI || !SkillsAPI.COMPILED_SKILLS) return found;
+
+    for (const item of SkillsAPI.COMPILED_SKILLS) {
+      let isMatched = false;
+      if (item.guarded && SkillsAPI.GUARDED_MATCHERS && SkillsAPI.GUARDED_MATCHERS[item.guarded]) {
+        isMatched = SkillsAPI.GUARDED_MATCHERS[item.guarded].match(text);
+      } else {
+        for (const p of item.patterns) {
+          if (p.test(text)) {
+            isMatched = true;
+            break;
+          }
+        }
+      }
+
+      if (isMatched) {
+        found.set(item.canonical, item);
+        if (item.implies && item.implies.length > 0) {
+          for (const imp of item.implies) {
+            const impItem = SkillsAPI.COMPILED_SKILLS.find(s => s.canonical.toLowerCase() === imp.toLowerCase());
+            if (impItem) {
+              found.set(impItem.canonical, impItem);
+            }
+          }
+        }
       }
     }
-    return Array.from(found);
+
+    return found;
+  }
+
+  function extractSkills(text) {
+    const map = extractSkillsFromText(text);
+    return Array.from(map.keys());
+  }
+
+  // --- 2. JD SECTION DETECTION & SKILL WEIGHTING ---
+  function isLineHeading(line) {
+    if (line.length > 80) return null;
+    const trimmed = line.trim();
+
+    // Compensation / benefits headings
+    if (/^(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:benefits|perks|compensation|what we offer|rewards)\b/i.test(trimmed)) {
+      return { type: 'unlabeled' };
+    }
+
+    // Nice-to-have headings
+    if (/^(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:preferred qualifications|good to have|nice to have|preferred skills|bonus points|preferred requirements|desirable skills|what is nice to have)\b/i.test(trimmed)) {
+      return { type: 'niceToHave' };
+    }
+
+    // Required headings
+    if (/^(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:requirements|qualifications|what you(?:'ll)? need|what we(?:'re)? looking for|minimum requirements|minimum qualifications|who you are|must have|key requirements|candidate profile)\b/i.test(trimmed)) {
+      return { type: 'required' };
+    }
+
+    // Explicit Unlabeled headings (Responsibilities, What you'll do, Overview)
+    if (/^(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:responsibilities|what you(?:'ll)? do|key responsibilities|role overview|the role|about the role|job description|about us|company overview)\b/i.test(trimmed)) {
+      return { type: 'unlabeled' };
+    }
+
+    return null;
+  }
+
+  function parseJdSections(jdText) {
+    const lines = (jdText || '').split(/\r?\n/);
+    const sections = [];
+    let currentSection = 'unlabeled';
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      const heading = isLineHeading(line);
+      if (heading) {
+        currentSection = heading.type;
+        continue;
+      }
+
+      let lineType = currentSection;
+      const isCompensation = /\b(?:annual\s+bonus|performance\s+bonus|sign-on\s+bonus|retention\s+bonus|bonus\s+pool|salary\s+plus|benefits\s+plus|compensation\s+plus|plus\s+equity|plus\s+benefits)\b/i.test(line);
+      if (!isCompensation && /\b(?:preferred|good to have|nice to have|plus|bonus|desirable)\b/i.test(line)) {
+        lineType = 'niceToHave';
+      }
+
+      sections.push({ line, type: lineType });
+    }
+
+    return sections;
+  }
+
+  function extractJdSkillsWithWeights(jdText, config) {
+    const sections = parseJdSections(jdText);
+    const jdSkillsMap = new Map(); // canonical -> { weight, skillItem, section }
+
+    const weightMap = {
+      required: (config.skillWeights && config.skillWeights.required) || 2.0,
+      niceToHave: (config.skillWeights && config.skillWeights.niceToHave) || 1.0,
+      unlabeled: (config.skillWeights && config.skillWeights.unlabeled) || 1.5
+    };
+
+    for (const sec of sections) {
+      const skillsOnLine = extractSkillsFromText(sec.line);
+      const lineWeight = weightMap[sec.type] || 1.5;
+
+      for (const [canonical, skillItem] of skillsOnLine.entries()) {
+        if (jdSkillsMap.has(canonical)) {
+          const existing = jdSkillsMap.get(canonical);
+          if (lineWeight > existing.weight) {
+            existing.weight = lineWeight;
+            existing.section = sec.type;
+          }
+        } else {
+          jdSkillsMap.set(canonical, {
+            weight: lineWeight,
+            skillItem: skillItem,
+            section: sec.type
+          });
+        }
+      }
+    }
+
+    const fullTextSkills = extractSkillsFromText(jdText);
+    for (const [canonical, skillItem] of fullTextSkills.entries()) {
+      if (!jdSkillsMap.has(canonical)) {
+        jdSkillsMap.set(canonical, {
+          weight: (config.skillWeights && config.skillWeights.unlabeled) || 1.5,
+          skillItem: skillItem,
+          section: 'unlabeled'
+        });
+      }
+    }
+
+    return jdSkillsMap;
+  }
+
+  // --- 3. RESUME SECTION SEGMENTATION & EVIDENCE STRENGTH ---
+  function segmentResume(resumeText) {
+    const clean = normalizeWhitespace(resumeText);
+    const expMatch = clean.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:experience|work experience|employment history|professional experience)\b/i);
+    const skillsMatch = clean.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:technical skills|skills|technologies|competencies|core skills|tools & technologies)\b/i);
+
+    if (!expMatch || !skillsMatch) {
+      return {
+        hasReliableSections: false,
+        experienceText: clean,
+        skillsText: clean
+      };
+    }
+
+    let expText = '';
+    let skillsText = '';
+
+    if (expMatch.index < skillsMatch.index) {
+      expText = clean.slice(expMatch.index, skillsMatch.index);
+      skillsText = clean.slice(skillsMatch.index);
+    } else {
+      skillsText = clean.slice(skillsMatch.index, expMatch.index);
+      expText = clean.slice(expMatch.index);
+    }
+
+    return {
+      hasReliableSections: true,
+      experienceText: expText,
+      skillsText: skillsText
+    };
+  }
+
+  function extractCandidateSkillsWithEvidence(resumeText, config) {
+    const segmentation = segmentResume(resumeText);
+    const allCandidateSkills = extractSkillsFromText(resumeText);
+    const candidateMap = new Map();
+
+    const evConfig = config.evidenceStrength || { experienceBullet: 1.0, skillsListOnly: 0.8, default: 1.0 };
+
+    if (!segmentation.hasReliableSections) {
+      for (const canonical of allCandidateSkills.keys()) {
+        candidateMap.set(canonical, evConfig.default);
+      }
+      return candidateMap;
+    }
+
+    const expSkills = extractSkillsFromText(segmentation.experienceText);
+    const listSkills = extractSkillsFromText(segmentation.skillsText);
+
+    for (const canonical of allCandidateSkills.keys()) {
+      const inExp = expSkills.has(canonical);
+      const inList = listSkills.has(canonical);
+
+      if (inExp && inList) {
+        candidateMap.set(canonical, Math.max(evConfig.experienceBullet, evConfig.skillsListOnly));
+      } else if (inExp) {
+        candidateMap.set(canonical, evConfig.experienceBullet);
+      } else if (inList) {
+        candidateMap.set(canonical, evConfig.skillsListOnly);
+      } else {
+        candidateMap.set(canonical, evConfig.default);
+      }
+    }
+
+    return candidateMap;
+  }
+
+  // --- 4. FALLBACK PHRASE EXTRACTION FOR LOW CONFIDENCE ---
+  const GENERIC_STOPWORDS = new Set([
+    'experience', 'years', 'working', 'skills', 'ability', 'candidate', 'apply', 'degree',
+    'responsibilities', 'requirements', 'looking', 'about', 'company', 'team', 'work', 'role',
+    'strong', 'good', 'proven', 'excellent', 'must', 'have', 'with', 'hands-on', 'knowledge',
+    'proficiency', 'familiarity', 'background', 'understanding', 'expertise', 'preferred'
+  ]);
+
+  function extractFallbackPhrases(text) {
+    const phrases = new Set();
+    const pattern = /(?:experience (?:with|in)|knowledge of|proficiency in|hands-on (?:with|in)|skills? in|familiarity with|background in|understanding of|expertise in)\s+([a-zA-Z0-9+#./\s-]{3,40}?)(?:[;,.\n]|\band\b|\bwith\b)/gi;
+    let match;
+    while ((match = pattern.exec(text || '')) !== null) {
+      const phrase = match[1].trim().toLowerCase();
+      const words = phrase.split(/\s+/).filter(w => !GENERIC_STOPWORDS.has(w));
+      if (words.length > 0) {
+        phrases.add(words.join(' '));
+      }
+    }
+    return Array.from(phrases);
   }
 
   const MONTH_MAP = {
@@ -56,15 +313,14 @@
     july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
   };
 
-  // --- EXPERIENCE EXTRACTION ---
-  function extractExperience(text) {
+  // --- 5. EXPERIENCE EXTRACTION ---
+  function extractExperience(text, context) {
     if (!text || text.trim().length < 10) {
       return { years: 0, label: 'Not specified' };
     }
 
     const clean = normalizeWhitespace(text);
 
-    // 1. Direct explicit mention e.g. "1.3 years of experience", "4+ years exp"
     const explicitRegex = /(?:over|more than|around|approx(?:imately)?|\+)?\s*(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp|background|track record)/i;
     const explicitMatch = clean.slice(0, 1500).match(explicitRegex);
     if (explicitMatch && explicitMatch[1]) {
@@ -74,7 +330,10 @@
       }
     }
 
-    // 2. Isolate Experience section to avoid counting university duration (e.g. 2021-2025)
+    const refDate = (context && context.now) ? new Date(context.now) : new Date(2026, 8, 19);
+    const defaultCurrentYear = !isNaN(refDate.getTime()) ? refDate.getFullYear() : 2026;
+    const defaultCurrentMonth = !isNaN(refDate.getTime()) ? refDate.getMonth() : 8;
+
     let expSection = clean;
     const expMatch = clean.match(/\b(?:experience|work experience|employment history|professional experience)\b/i);
     if (expMatch) {
@@ -85,7 +344,6 @@
 
     const monthNames = 'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?';
     
-    // Date intervals e.g. "Aug 2025 - Jun 2026", "May 2025 - Aug 2025", "Aug 2025 - Present"
     const rangeRegex = new RegExp(
       `\\b(${monthNames})?\\s*([12]\\d{3})\\s*(?:-|to)\\s*(?:(${monthNames})?\\s*([12]\\d{3})|(present|current|now|till date))\\b`,
       'gi'
@@ -98,10 +356,10 @@
       const startYear = parseInt(match[2], 10);
       const isPresent = Boolean(match[5]);
       const endMonthStr = match[3] ? match[3].toLowerCase() : (isPresent ? 'sep' : 'dec');
-      const endYear = match[4] ? parseInt(match[4], 10) : 2026;
+      const endYear = match[4] ? parseInt(match[4], 10) : defaultCurrentYear;
 
       const startMonth = MONTH_MAP[startMonthStr] !== undefined ? MONTH_MAP[startMonthStr] : 0;
-      const endMonth = MONTH_MAP[endMonthStr] !== undefined ? MONTH_MAP[endMonthStr] : 11;
+      const endMonth = MONTH_MAP[endMonthStr] !== undefined ? MONTH_MAP[endMonthStr] : (isPresent ? defaultCurrentMonth : 11);
 
       const startTotalMonths = startYear * 12 + startMonth;
       const endTotalMonths = endYear * 12 + endMonth;
@@ -111,7 +369,6 @@
       }
     }
 
-    // Also check for single standalone date in role header e.g. "Jul 2026" (current role)
     const singleDateRegex = new RegExp(`\\b(${monthNames})\\s*([12]\\d{3})\\b`, 'gi');
     let sMatch;
     while ((sMatch = singleDateRegex.exec(expSection)) !== null) {
@@ -121,7 +378,7 @@
       const totalM = yr * 12 + m;
       const alreadyCovered = intervals.some(inv => totalM >= inv.start && totalM <= inv.end);
       if (!alreadyCovered) {
-        const nowTotalM = 2026 * 12 + 8; // Sep 2026
+        const nowTotalM = defaultCurrentYear * 12 + defaultCurrentMonth;
         intervals.push({ start: totalM, end: Math.max(totalM + 1, nowTotalM) });
       }
     }
@@ -130,7 +387,6 @@
       return { years: 0, label: 'Not detected' };
     }
 
-    // Merge overlapping intervals
     intervals.sort((a, b) => a.start - b.start);
     const merged = [intervals[0]];
     for (let i = 1; i < intervals.length; i++) {
@@ -153,7 +409,7 @@
     };
   }
 
-  // --- LOCATION EXTRACTION ---
+  // --- 6. LOCATION EXTRACTION ---
   function extractCandidateLocation(text) {
     if (!text) return { city: 'Not specified', isRemote: false, label: 'Not specified' };
 
@@ -162,7 +418,7 @@
     const headerBlock = (splitIndex > 50 ? norm.slice(0, splitIndex) : norm.slice(0, 450));
     const cleanHeader = headerBlock.replace(/\b(iit|iim|nit|university|institute|college)\s+[a-z]+/gi, '');
 
-    const cityMap = [
+    const cityMap = (CollegesData && CollegesData.CITY_MAP) ? CollegesData.CITY_MAP : [
       { regex: /\b(bengaluru|bangalore)\b/i, name: 'Bengaluru', country: 'India' },
       { regex: /\b(delhi|new delhi|ncr|gurugram|gurgaon|noida)\b/i, name: 'Delhi NCR', country: 'India' },
       { regex: /\b(mumbai|bombay)\b/i, name: 'Mumbai', country: 'India' },
@@ -204,13 +460,12 @@
     };
   }
 
-  // --- EDUCATION & PEDIGREE EXTRACTION ---
+  // --- 7. EDUCATION & PEDIGREE EXTRACTION ---
   function extractCandidateEducation(text) {
     if (!text) return { degree: 'Not specified', tier: 'Tier 3', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
 
     const norm = normalizeWhitespace(text).toLowerCase().replace(/\s+/g, ' ');
 
-    // 1. Degree Detection
     let degree = 'Bachelor\'s';
     if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(norm)) {
       degree = 'PhD';
@@ -232,37 +487,28 @@
       degree = 'Graduate';
     }
 
-    // 2. Comprehensive Indian College Tier Classification (Tier 1, Tier 2, Tier 3)
     let tier = 'Tier 3';
     let isTier1 = false;
     let isTier2 = false;
     let tierName = '';
 
-    // Clean string for acronym checking (e.g. i.i.t. -> iit)
     const dotClean = norm.replace(/\./g, '');
 
-    // --- TIER 1 INSTITUTES ---
-    // A. IITs (All 23 campuses + abbreviations + punctuated I.I.T. + hyphens)
     const isIit = /\b(iit\b|iits\b|iitd\b|iitb\b|iitk\b|iitkgp\b|iitm\b|iitr\b|iith\b|iitg\b|iiti\b|iitgn\b|iitrpr\b|iitp\b|iitbbs\b|iitmandi\b|iitj\b|iittp\b|iitpkd\b|iitdhd\b|iitbhi\b|iitjm\b|iitbhu\b|iitism\b|indian\s+institute\s+of\s+technology)\b/i.test(norm)
       || /\b(iit\b|iits\b)/i.test(dotClean)
       || /\b(iit\s*[- ]*(?:bombay|delhi|madras|kanpur|kharagpur|roorkee|guwahati|hyderabad|indore|gandhinagar|ropar|patna|bhubaneswar|mandi|jodhpur|tirupati|palakkad|dharwad|bhilai|jammu|goa|bhu|varanasi|ism|dhanbad))\b/i.test(dotClean);
 
-    // B. BITS Pilani (All Campuses: Pilani, Goa, Hyderabad)
     const isBits = /\b(bits\s+pilani|bits\s+goa|bits\s+hyderabad|birla\s+institute\s+of\s+technology\s+and\s+science|\bbits\b)/i.test(norm);
 
-    // C. Top Tier-1 NITs
     const isTier1Nit = /\b(nit\s*[- ]*(?:trichy|tiruchirappalli|surathkal|warangal|rourkela|calicut|nagpur|vnit|jaipur|mnit|allahabad|mnnit|surat|svnit))\b/i.test(norm)
       || /\b(nitk\b|nitt\b|nitw\b|vnit\b|mnit\b|mnnit\b|svnit\b)/i.test(norm);
 
-    // D. Premier Tech Institutes (IIIT Hyderabad/Bangalore/Delhi/Allahabad, DTU, NSUT, Jadavpur, etc.)
     const isPremierEng = /\b(iiit\s*[- ]*(?:hyderabad|bangalore|delhi|allahabad)|iiith\b|iiitb\b|iiitd\b|iiita\b|dtu\b|delhi\s+technological\s+university|delhi\s+college\s+of\s+engineering|\bdce\b|nsut\b|netaji\s+subhas|\bnsit\b|jadavpur\s+university|coep\b|college\s+of\s+engineering\s+pune|vjti\b|veermata\s+jijabai|college\s+of\s+engineering\s+guindy|\bceg\b|psg\s+college\s+of\s+technology|psg\s+tech|institute\s+of\s+chemical\s+technology|\bict\s+mumbai\b|iiest\s+shibpur)\b/i.test(norm);
 
-    // E. Premier IIMs & MBA Institutes
     const isTier1Mba = /\b(iim\b|iims\b|iima\b|iimb\b|iimc\b|iiml\b|iimk\b|iimi\b|indian\s+institute\s+of\s+management)\b/i.test(norm)
       || /\b(iim\b|iims\b)/i.test(dotClean)
       || /\b(isb\b|indian\s+school\s+of\s+business|xlri\b|fms\b|faculty\s+of\s+management\s+studies|spjimr\b|sp\s+jain|mdi\s+gurgaon|\bmdi\b|iift\b|jbims\b|tiss\s+mumbai|\btiss\b|sibm\s+pune|nmims\s+mumbai)\b/i.test(norm);
 
-    // F. Premier Commerce/Arts & Global Elite
     const isOtherTier1 = /\b(srcc\b|shri\s+ram\s+college\s+of\s+commerce|st\.?\s*stephen|lady\s+shri\s+ram|\blsr\b|hindu\s+college|miranda\s+house|loyola\s+college|st\.?\s*xavier|christ\s+university)\b/i.test(norm)
       || /\b(stanford|mit\b|harvard|uc\s*berkeley|carnegie\s*mellon|cmu\b|oxford|cambridge|princeton|columbia|caltech|yale|cornell|upenn|wharton|insead|london\s+business\s+school|\blbs\b)\b/i.test(norm);
 
@@ -291,8 +537,6 @@
       isTier1 = true;
       tierName = 'Tier-1 (Premier)';
     } else {
-      // --- TIER 2 INSTITUTES ---
-      // Mid/New NITs, Mid IIITs, Reputed Tech Universities (VIT, Manipal, Thapar, RVCE, etc.)
       const isTier2Nit = /\b(nit\b|nits\b|national\s+institute\s+of\s+technology|manit\b)\b/i.test(norm)
         || /\b(nit\b|nits\b)/i.test(dotClean);
 
@@ -319,7 +563,6 @@
         isTier2 = true;
         tierName = 'Tier-2 (Respected B-School)';
       } else {
-        // --- TIER 3 / REGIONAL / STATE AFFILIATED ---
         tier = 'Tier 3';
         tierName = 'State / Private University';
       }
@@ -337,13 +580,12 @@
     };
   }
 
-  // --- JD REQUIREMENTS EXTRACTION ---
+  // --- 8. JD REQUIREMENTS EXTRACTION ---
   function extractJdRequirements(jdText, locationMeta) {
     const rawJd = normalizeWhitespace(jdText || '');
     const rawLoc = normalizeWhitespace(locationMeta || '');
     const combined = (rawLoc + '\n' + rawJd);
 
-    // 1. Experience Required
     let minExp = null;
     let maxExp = null;
     const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
@@ -370,7 +612,6 @@
       }
     }
 
-    // 2. Work Mode & Location
     let workMode = 'Flexible';
     if (/\b(remote|work from home|wfh|anywhere)\b/i.test(combined)) {
       workMode = 'Remote';
@@ -394,10 +635,8 @@
       else jobCity = cityMatch[1];
     }
 
-    // 3. Education & Degree requirement in JD
     const normJd = rawJd.toLowerCase();
 
-    // 3. Education / Tier requirement in JD
     const tierPreferredPattern = /\b(?:tier\s*[- ]?1|top\s*[- ]?tier|premier)\s+(?:engineering\s+|b-?school\s+|management\s+)?(?:colleges?|institutes?|universities|graduates?|alumni|campuses)\b/i.test(normJd)
       || /\b(?:colleges?|institutes?|universities)\s*:\s*(?:tier\s*[- ]?1|premier|top\s*[- ]?tier)\b/i.test(normJd)
       || /\b(?:iits?|iims?|bits(?:\s+pilani)?|nits?)(?:[\s\/,|]+(?:and|or)?[\s\/,|]*(?:iits?|iims?|bits(?:\s+pilani)?|nits?))*\s+(?:graduates?|alumni|only|freshers?)\s+(?:preferred|required|mandatory)\b/i.test(normJd)
@@ -405,24 +644,17 @@
       || /\b(?:degree\s+from\s+)?(?:a\s+)?tier\s*[- ]?1\s+(?:college|institute|engineering)\b/i.test(normJd)
       || /\bfrom\s+(?:premier|tier\s*[- ]?1)\s+(?:institutes?|colleges?|b-?schools?)\b/i.test(normJd);
 
-    // Is it strictly mandatory? (e.g. "Only Tier-1", "Tier-1 colleges only", "Strictly IIT", "Mandatory: Tier-1")
     const isStrictTier1 = /\b(?:only|strictly)\s+(?:candidates\s+|applicants\s+)?(?:from\s+)?(?:iits?|iims?|bits|nits?|tier\s*[- ]?1|premier)\b/i.test(normJd)
       || /\b(?:tier\s*[- ]?1|premier\s+institute|iits?|iims?|bits|nits?)[^.\n]*?\b(?:only|mandatory|required|must)\b/i.test(normJd)
       || /\b(?:must\s+be|mandatory)\s*:\s*(?:tier\s*[- ]?1|iits?|premier)\b/i.test(normJd);
 
-    const tierPreferred = tierPreferredPattern;
-    const tierMandatory = isStrictTier1;
-
-    // Check if PhD is strictly mandatory
     const isPhdMandatory = /\b(ph\.?d\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:a\s+)?ph\.?d|doctorate\s+required)\b/i.test(normJd);
 
-    // Check if MBA is merely preferred or an alternative (e.g. "B.Tech/MBA", "B.Tech or MBA", "MBA preferred", "MBA is preferred")
     const isMbaAlternativeOrPreferred = /\b(?:b\.?tech|b\.?e\.?|bachelors?)\s*[\/|\bor\b]\s*mba\b/i.test(normJd)
       || /\bmba\s*[\/|\bor\b]\s*(?:b\.?tech|b\.?e\.?|bachelors?)\b/i.test(normJd)
       || /\bmba\s+(?:is\s+)?(?:preferred|desirable|plus|optional|advantage)\b/i.test(normJd)
       || /\b(?:preferred|desirable)\s*:\s*mba\b/i.test(normJd);
 
-    // Check for strict mandatory MBA requirement (e.g. "MBA required", "Must have an MBA", "Mandatory: MBA")
     const isStrictMba = !isMbaAlternativeOrPreferred && /\b(mba\s+(?:is\s+)?(?:mandatory|required|must)|must\s+(?:have|hold|possess)\s+(?:an\s+)?mba|mandatory\s*:\s*mba|degree\s+required\s*:\s*mba|minimum\s+qualification\s*:\s*mba)\b/i.test(normJd);
 
     let degreeReq = 'Bachelor\'s';
@@ -445,16 +677,20 @@
       maxExp: maxExp,
       workMode: workMode,
       jobCity: jobCity,
-      tierPreferred: tierPreferred,
-      tierMandatory: tierMandatory,
+      tierPreferred: tierPreferredPattern,
+      tierMandatory: isStrictTier1,
       degreeReq: degreeReq,
       degreeMandatory: degreeMandatory,
       mbaPreferred: mbaPreferred
     };
   }
 
-  // --- MULTI-FACTOR EVALUATION WITH DISQUALIFIER KNOCKOUTS ---
-  function evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle) {
+  // --- 9. PURE EVALUATION FUNCTION ---
+  function evaluate(resumeText, jdText, context = {}) {
+    const config = context.config || DEFAULT_CONFIG;
+    const locationMeta = context.locationMeta || '';
+    const jobTitle = context.jobTitle || '';
+
     if (!resumeText || resumeText.trim().length < 20) {
       return {
         status: 'no_resume',
@@ -469,43 +705,63 @@
       };
     }
 
-    // 1. Core Skill Score (0 to 100)
-    const jdSkills = extractSkills(jdText);
-    const resumeSkills = extractSkills(resumeText);
+    const jdSkillsMap = extractJdSkillsWithWeights(jdText, config);
+    const candSkillsMap = extractCandidateSkillsWithEvidence(resumeText, config);
+
     const matched = [];
     const missing = [];
+    let weightedMatched = 0;
+    let weightedTotal = 0;
 
-    for (const skill of jdSkills) {
-      if (resumeSkills.includes(skill)) {
-        matched.push(skill);
+    for (const [canonical, entry] of jdSkillsMap.entries()) {
+      weightedTotal += entry.weight;
+      if (candSkillsMap.has(canonical)) {
+        matched.push(canonical);
+        const evidence = candSkillsMap.get(canonical);
+        weightedMatched += (entry.weight * evidence);
       } else {
-        missing.push(skill);
+        missing.push(canonical);
       }
     }
 
-    let skillScore = 50;
-    if (jdSkills.length > 0) {
-      skillScore = Math.round((matched.length / jdSkills.length) * 100);
+    // Determine confidence
+    const jdSkillCount = jdSkillsMap.size;
+    let confidence = 'high';
+    let lowConfidence = false;
+
+    if (jdSkillCount >= config.confidenceThresholds.highCount) {
+      confidence = 'high';
+    } else if (jdSkillCount >= config.confidenceThresholds.mediumCount) {
+      confidence = 'medium';
     } else {
-      const jdTokens = new Set(normalize(jdText).split(/\s+/).filter(w => w.length > 4));
-      const resTokens = new Set(normalize(resumeText).split(/\s+/).filter(w => w.length > 4));
-      let common = 0;
-      jdTokens.forEach(t => { if (resTokens.has(t)) common++; });
-      const ratio = common / Math.max(1, jdTokens.size);
-      skillScore = Math.min(88, Math.max(35, Math.round(ratio * 90 + 20)));
+      confidence = 'low';
+      lowConfidence = true;
     }
 
-    // Fallback domain extraction if JD had 0 taxonomy skills
-    if (missing.length === 0 && matched.length === 0) {
-      const stopWords = new Set(['years', 'experience', 'looking', 'skills', 'about', 'their', 'which', 'where', 'these', 'those', 'working', 'ability', 'degree', 'responsibilities', 'requirements', 'candidate', 'apply', 'team', 'work', 'role', 'company', 'india', 'must', 'have', 'with']);
-      const jdWords = normalize(jdText).split(/\s+/).filter(w => w.length >= 4 && !stopWords.has(w));
-      const freq = {};
-      jdWords.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-      const topWords = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 5);
-      missing.push(...topWords);
+    let skillScore = 50;
+    if (weightedTotal > 0) {
+      skillScore = Math.round((weightedMatched / weightedTotal) * 100);
+    } else {
+      // Improved fallback phrase extraction
+      const jdPhrases = extractFallbackPhrases(jdText);
+      const resPhrases = extractFallbackPhrases(resumeText);
+      if (jdPhrases.length > 0) {
+        let phraseMatches = 0;
+        jdPhrases.forEach(p => {
+          if (resPhrases.some(rp => rp.includes(p) || p.includes(rp))) {
+            phraseMatches++;
+            matched.push(p);
+          } else {
+            missing.push(p);
+          }
+        });
+        skillScore = Math.round((phraseMatches / jdPhrases.length) * 100);
+      } else {
+        skillScore = 50;
+      }
     }
 
-    const candExp = extractExperience(resumeText);
+    const candExp = extractExperience(resumeText, context);
     const jdReq = extractJdRequirements(jdText, locationMeta);
     const candEdu = extractCandidateEducation(resumeText);
     const candLoc = extractCandidateLocation(resumeText);
@@ -514,103 +770,92 @@
     let bonuses = 0;
     const disqualifiers = [];
 
-    // --- FACTOR A: WORK EXPERIENCE (Only active if specified in JD) ---
+    // FACTOR A: WORK EXPERIENCE
     if (jdReq.minExp !== null && jdReq.minExp > 0) {
       if (candExp.years < jdReq.minExp) {
         const gap = Math.round((jdReq.minExp - candExp.years) * 10) / 10;
         if (gap >= 2) {
-          penalties += 35;
+          penalties += config.penalties.experienceGapLarge;
         } else if (gap >= 1) {
-          penalties += 22;
+          penalties += config.penalties.experienceGapMedium;
         } else {
-          penalties += 12;
+          penalties += config.penalties.experienceGapSmall;
         }
-        disqualifiers.push(`Work experience not matching`);
+        disqualifiers.push(config.disqualifierMessages.workExperience);
       } else {
-        bonuses += 4; // Meets or exceeds stated experience requirement
+        bonuses += config.bonuses.experienceMeetsRequirement;
       }
     }
 
-    // --- FACTOR B: COLLEGE TIER & PEDIGREE (Only active if specified in JD) ---
+    // FACTOR B: COLLEGE TIER & PEDIGREE
     if (jdReq.tierMandatory) {
-      // JD STRICTLY MANDATES TIER-1 (e.g. "Only Tier-1 colleges", "Strictly IIT/NIT only")
       if (candEdu.tier === 'Tier 1') {
-        bonuses += 6; // Meets strict Tier-1 mandate
+        bonuses += config.bonuses.collegeTierMandatoryTier1;
       } else if (candEdu.tier === 'Tier 2') {
-        penalties += 15;
-        disqualifiers.push(`College not matching`);
+        penalties += config.penalties.collegeTierMandatoryTier2;
+        disqualifiers.push(config.disqualifierMessages.college);
       } else {
-        penalties += 30;
-        disqualifiers.push(`College not matching`);
+        penalties += config.penalties.collegeTierMandatoryTier3;
+        disqualifiers.push(config.disqualifierMessages.college);
       }
     } else if (jdReq.tierPreferred) {
-      // JD PREFERS TIER-1 (e.g. "IIT/NIT strongly preferred", "Top-tier college preferred")
       if (candEdu.tier === 'Tier 1') {
-        bonuses += 6; // Tier-1 candidate gets strong boost
+        bonuses += config.bonuses.collegeTierPreferredTier1;
       } else if (candEdu.tier === 'Tier 2') {
-        bonuses += 2; // Tier-2 candidate meets high bar, NO disqualifier
+        bonuses += config.bonuses.collegeTierPreferredTier2;
       } else {
-        // Tier 3 candidate for preferred role: minor preference penalty, NO disqualifier!
-        penalties += 8;
+        penalties += config.penalties.collegeTierPreferredTier3;
       }
     }
 
-    // Degree level check (Only penalize if strictly mandatory, never for preferences or alternatives!)
+    // Degree check
     if (jdReq.degreeMandatory) {
       if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
-        penalties += 25;
-        disqualifiers.push(`Degree not matching`);
+        penalties += config.penalties.degreePhdMandatory;
+        disqualifiers.push(config.disqualifierMessages.degree);
       } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
-        penalties += 20;
-        disqualifiers.push(`Degree not matching`);
+        penalties += config.penalties.degreeMbaMandatory;
+        disqualifiers.push(config.disqualifierMessages.degree);
       }
     } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
-      bonuses += 3; // Modest bonus if candidate has MBA when preferred
+      bonuses += config.bonuses.degreeMbaPreferred;
     }
 
-    // --- FACTOR C: LOCATION & WORK MODE (Only active if On-site in a specific city) ---
+    // FACTOR C: LOCATION
     if (jdReq.workMode === 'On-site' && jdReq.jobCity) {
       if (candLoc.city && candLoc.city !== 'Not specified' && !candLoc.isRemote) {
         if (candLoc.city.toLowerCase() !== jdReq.jobCity.toLowerCase()) {
-          penalties += 18;
-          disqualifiers.push(`Location not matching`);
+          penalties += config.penalties.locationMismatch;
+          disqualifiers.push(config.disqualifierMessages.location);
         } else {
-          bonuses += 4; // Local candidate for on-site role
+          bonuses += config.bonuses.locationMatch;
         }
       }
     }
 
-    // If NOTHING was specified in JD (no minExp, no tierPreferred, flexible location):
-    // penalties = 0, bonuses = 0, so score is 100% evaluated on skills!
     let finalScore = Math.round(skillScore - penalties + bonuses);
-    finalScore = Math.max(20, Math.min(98, finalScore));
+    finalScore = Math.max(config.bounds.min, Math.min(config.bounds.max, finalScore));
 
-    // If score is low (<50) and no hard criteria deficits exist, explain why (Domain Pivot)
-    if (finalScore < 50 && disqualifiers.length === 0) {
-      disqualifiers.push(`Role profile not matching`);
+    if (config.flags && config.flags.enableRoleProfileDisqualifier && finalScore < config.thresholds.domainPivotThreshold && disqualifiers.length === 0) {
+      disqualifiers.push(config.disqualifierMessages.roleProfile);
     }
 
-    // Determine honest recruiting tier
-    let tier = 'Competitive Match';
-    let badge = '🟡';
-    let color = '#d29922';
+    let tier = config.tiers.goodMatch.name;
+    let badge = config.tiers.goodMatch.badge;
+    let color = config.tiers.goodMatch.color;
 
-    if (disqualifiers.length >= 2 || finalScore < 45) {
-      tier = 'Reach Role (Critical Gaps)';
-      badge = '🔴';
-      color = '#f85149';
-    } else if (disqualifiers.length === 1 || (finalScore >= 45 && finalScore < 72)) {
-      tier = 'Moderate Match (Gaps to Defend)';
-      badge = '🟡';
-      color = '#d29922';
-    } else if (finalScore >= 80) {
-      tier = 'Strong Match';
-      badge = '🟢';
-      color = '#3fb950';
-    } else {
-      tier = 'Good Match';
-      badge = '🟢';
-      color = '#2ea043';
+    if (disqualifiers.length >= config.thresholds.reachRoleMaxDisqualifiers || finalScore < config.thresholds.reachRoleScoreCutoff) {
+      tier = config.tiers.reachRole.name;
+      badge = config.tiers.reachRole.badge;
+      color = config.tiers.reachRole.color;
+    } else if (disqualifiers.length === 1 || (finalScore >= config.thresholds.reachRoleScoreCutoff && finalScore < config.thresholds.moderateRoleScoreCutoff)) {
+      tier = config.tiers.moderateMatch.name;
+      badge = config.tiers.moderateMatch.badge;
+      color = config.tiers.moderateMatch.color;
+    } else if (finalScore >= config.thresholds.strongMatchScoreCutoff) {
+      tier = config.tiers.strongMatch.name;
+      badge = config.tiers.strongMatch.badge;
+      color = config.tiers.strongMatch.color;
     }
 
     return {
@@ -624,27 +869,48 @@
       disqualifiers: disqualifiers,
       candExp: candExp,
       candEdu: candEdu,
-      totalJdSkills: jdSkills.length
+      totalJdSkills: jdSkillCount,
+      confidence: confidence,
+      lowConfidence: lowConfidence,
+      skillScore: skillScore,
+      weightedMatched: weightedMatched,
+      weightedTotal: weightedTotal
     };
   }
 
+  function evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle) {
+    return evaluate(resumeText, jdText, {
+      locationMeta: locationMeta,
+      jobTitle: jobTitle
+    });
+  }
+
   function calculateMatch(resumeText, jdText, locationMeta, jobTitle) {
-    return evaluateMultiFactor(resumeText, jdText, locationMeta, jobTitle);
+    return evaluate(resumeText, jdText, {
+      locationMeta: locationMeta,
+      jobTitle: jobTitle
+    });
   }
 
   const api = {
-    TAXONOMY: TAXONOMY,
-    normalize: normalize,
     extractSkills: extractSkills,
+    extractSkillsFromText: extractSkillsFromText,
+    extractJdSkillsWithWeights: extractJdSkillsWithWeights,
+    extractCandidateSkillsWithEvidence: extractCandidateSkillsWithEvidence,
+    parseJdSections: parseJdSections,
+    segmentResume: segmentResume,
     extractExperience: extractExperience,
     extractCandidateLocation: extractCandidateLocation,
     extractCandidateEducation: extractCandidateEducation,
     extractJdRequirements: extractJdRequirements,
+    evaluate: evaluate,
     evaluateMultiFactor: evaluateMultiFactor,
     calculateMatch: calculateMatch
   };
 
   if (typeof window !== 'undefined') {
+    window.PrepInterview = window.PrepInterview || {};
+    window.PrepInterview.Matcher = api;
     window.PrepInterviewMatcher = api;
   }
   if (typeof module !== 'undefined' && module.exports) {

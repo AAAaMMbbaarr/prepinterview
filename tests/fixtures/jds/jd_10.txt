@@ -1,0 +1,17 @@
+Applied Machine Learning Engineer
+Google / DeepMind Partner Lab
+Bengaluru, Karnataka, India (Hybrid)
+
+About the Team:
+Our team develops state-of-the-art machine learning models for language and multimodal understanding.
+
+Role:
+• Train and deploy large-scale deep learning models using PyTorch, TensorFlow, and Python.
+• Work with NLP, GenAI, and transformer architectures in distributed GPU environments.
+• Collaborate with research scientists on state-of-the-art algorithms and paper implementations.
+
+Requirements:
+• 2-4 years of industry or research experience in machine learning and deep learning.
+• Advanced degree: M.Tech or PhD preferred in Computer Science or Artificial Intelligence.
+• Strong publications or production deployment track record.
+• Fluency in Python, PyTorch, Scikit-learn, and Git.

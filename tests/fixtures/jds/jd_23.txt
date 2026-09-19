@@ -1,0 +1,16 @@
+Research Data Scientist
+Fractal Analytics
+Bengaluru, Karnataka, India (Hybrid)
+
+About Fractal:
+Fractal is a global leader in artificial intelligence and analytics for Fortune 500 enterprises.
+
+Responsibilities:
+• Research, design, and implement advanced machine learning and deep learning algorithms.
+• Publish research findings and file enterprise patents in NLP and computer vision.
+• Deploy scalable models using Python, PyTorch, and cloud containers.
+
+Requirements:
+• Minimum 2-4 years of industry research experience.
+• Education: PhD is mandatory (Doctorate in Computer Science, Statistics, or related discipline).
+• Deep technical proficiency in Python, algorithms, and predictive modeling.

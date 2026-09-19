@@ -1,0 +1,16 @@
+Associate Product Manager - Driver Marketplace
+Uber
+Gurugram, Haryana, India (Hybrid)
+
+About the Job:
+Design matching algorithms, driver incentives, and pricing models for rides in South Asia.
+
+Responsibilities:
+• Author PRDs for driver onboarding, verification, and dispatch efficiency.
+• Run A/B testing on pricing models and track driver retention.
+• Collaborate with operations teams across 20+ Indian cities.
+
+Requirements:
+• 1-3 years of product management or analytical experience.
+• Degree from Tier-1 engineering colleges (IIT/BITS/NIT) preferred.
+• High analytical acumen with SQL and Python.

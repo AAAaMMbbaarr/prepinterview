@@ -1,0 +1,4 @@
+{
+  "_comment": "Hand-labeled skill ground truth for user-provided JDs. Format: { \"jd_id\": [\"Canonical Skill 1\", \"Canonical Skill 2\"] }",
+  "jds": {}
+}

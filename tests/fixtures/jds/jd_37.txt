@@ -1,0 +1,17 @@
+Junior Data Analyst
+Dunzo · Bengaluru, Karnataka, India (On-site)
+Over 400 applicants · Posted 3 days ago
+See how you compare to 400 applicants. Top skills: SQL, Python, Excel, Tableau.
+
+About the Role:
+Dunzo is looking for a data enthusiast to join our merchant analytics team.
+
+Responsibilities:
+• Write daily SQL queries to track merchant fulfillment and delivery times.
+• Create reports in Tableau and Google Sheets for city ops heads.
+• Identify inventory stockout trends and suggest ordering optimizations.
+
+Requirements:
+• 0-1 years of experience; freshers with strong SQL & Python invited.
+• Degree in Engineering or Science.
+• On-site in Bengaluru.

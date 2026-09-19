@@ -1,0 +1,18 @@
+Data Analyst - Product & Marketing
+BookMyShow
+Mumbai, Maharashtra, India (On-site)
+
+About the Role:
+We are seeking an energetic Data Analyst to evaluate customer journeys, campaign performance, and product features across our entertainment ticketing platform.
+
+Responsibilities:
+• Extract, transform, and analyze large datasets using SQL and Python (Pandas, NumPy).
+• Build and maintain automated executive dashboards in Tableau or PowerBI.
+• Partner with product management on A/B testing design, sample sizing, and statistical significance.
+• Identify user churn patterns and recommend lifecycle marketing initiatives.
+
+Requirements:
+• 1-3 years of work experience in data analytics, business intelligence, or product analytics.
+• Expert proficiency in SQL and Python.
+• Strong understanding of A/B testing, cohort analysis, and funnel metrics.
+• Degree in Engineering, Mathematics, Statistics, or related discipline.

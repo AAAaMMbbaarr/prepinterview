@@ -1,0 +1,33 @@
+ROHAN VERMA
+Bengaluru, India | rohan.verma@example.com | linkedin.com/in/rohanverma-iitb
+
+SUMMARY
+Senior Product Manager with 5+ years of experience leading cross-functional teams across B2B SaaS, distributed systems, and fintech infrastructure. Proven record driving multi-million dollar P&L growth, product strategy, and GTM execution. Dual degree from IIT Bombay and MBA from IIM Ahmedabad.
+
+EDUCATION
+Indian Institute of Management Ahmedabad (IIM Ahmedabad)
+Master of Business Administration (MBA) | 2019 - 2021
+
+Indian Institute of Technology Bombay (IIT Bombay)
+Bachelor of Technology (B.Tech) in Computer Science and Engineering | 2015 - 2019
+
+EXPERIENCE
+FinFlow Technologies | Bengaluru, India
+Senior Product Manager | Jul 2023 - Present
+• Own end-to-end B2B SaaS payment platform processing $200M+ in annualized volume.
+• Architected enterprise microservices platform roadmap with engineering leadership, ensuring 99.99% scalability and high-availability distributed systems.
+• Championed product strategy, GTM, customer discovery, and enterprise sales enablement for Tier-1 banking clients.
+• Managed full P&L, unit economics, ROI, and pricing strategy, delivering 42% YoY ARR growth.
+• Mentored a team of 4 APMs and collaborated with 25+ engineers across Agile sprints.
+
+CloudScale Systems | Bengaluru, India
+Product Manager | Jun 2021 - Jun 2023
+• Led core cloud infrastructure and developer platform product management.
+• Directed roadmap, PRD authoring, and system design reviews for API gateway and Kafka event streaming integrations.
+• Executed competitive analysis, market sizing, and pricing models for enterprise tier expansion.
+• Utilized SQL, PostgreSQL, Python, and Tableau to track customer churn, retention, and LTV.
+
+SKILLS
+Leadership & Product: Product Management, Product Strategy, Roadmap, PRD, Product Sense, Stakeholder Management, Cross-functional, Enterprise Sales
+Strategy & Business: GTM, P&L, Unit Economics, Market Sizing, ROI, Business Case, Competitive Analysis
+Tech & Architecture: System Design, Microservices, Distributed Systems, Cloud, REST API, Kafka, Docker, Kubernetes, PostgreSQL, SQL, Python

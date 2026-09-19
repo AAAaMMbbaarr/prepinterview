@@ -1,0 +1,17 @@
+Associate Product Manager
+Zepto
+Mumbai, Maharashtra, India (On-site)
+
+About Zepto:
+Zepto is India's fastest growing 10-minute grocery delivery app.
+
+What you will do:
+• Own rider app workflows, delivery partner onboarding, and dispatch funnels.
+• Run A/B testing on driver incentives to reduce churn and increase delivery speed.
+• Write detailed PRDs, wireframing specs, and user stories.
+• Use SQL and Mixpanel daily to track KPIs.
+
+Requirements:
+• 1 to 3 years experience in APM, product operations, or analytics roles.
+• On-site work from Mumbai headquarters.
+• Bachelor's degree from a recognized university.

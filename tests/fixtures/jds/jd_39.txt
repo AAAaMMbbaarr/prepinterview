@@ -1,0 +1,16 @@
+Associate Product Manager - B2B SaaS
+Wingify (VWO)
+Gurugram, Delhi NCR, India (Hybrid)
+
+About Wingify:
+Wingify makes VWO, the market-leading A/B testing and conversion optimization platform.
+
+Responsibilities:
+• Own integrations and developer tools on the VWO testing platform.
+• Author PRDs, manage backlog in Jira, and conduct customer discovery sessions.
+• Monitor product health, churn, and A/B testing adoption metrics using SQL.
+
+Requirements:
+• 2-3 years experience in product management, preferably in B2B SaaS.
+• Familiarity with web technologies, REST APIs, and A/B testing frameworks.
+• Bachelor's degree in engineering.

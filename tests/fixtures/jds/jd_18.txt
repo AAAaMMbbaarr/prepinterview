@@ -1,0 +1,16 @@
+Product Analyst
+Spinny
+Gurugram, Haryana, India (On-site)
+
+About Spinny:
+Spinny is India's most trusted platform for buying and selling certified used cars.
+
+Key Tasks:
+• Partner with APMs and PMs to track feature adoption, funnel conversion, and bounce rates.
+• Build executive dashboards in Google Analytics, Mixpanel, and Tableau.
+• Write advanced SQL queries to analyze multi-touch attribution.
+
+Requirements:
+• 0-2 years of analytics experience. Freshers with strong SQL & Python skills welcome.
+• Bachelor's degree in engineering, commerce, or statistics.
+• On-site presence in Gurgaon office required.

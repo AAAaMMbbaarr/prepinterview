@@ -1,0 +1,16 @@
+Principal Architect / Tech Lead
+InMobi
+Bengaluru, Karnataka, India (On-site)
+
+About InMobi:
+InMobi powers intelligent advertising solutions reaching over 2 billion devices globally.
+
+Role:
+• Define system design, distributed systems architecture, and scalability standards.
+• Modernize big-data event pipelines processing billions of ad events daily.
+• Guide engineering teams on Docker, Kubernetes, microservices, and AWS infrastructure.
+
+Requirements:
+• 7+ years of hardcore backend and architecture experience.
+• Tier-1 college only (IIT / BITS Pilani alumni required).
+• Mastery over distributed systems, algorithms, concurrency, and high-performance databases.

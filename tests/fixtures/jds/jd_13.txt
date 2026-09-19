@@ -1,0 +1,14 @@
+Software Development Engineer II - Backend
+Swiggy · Bengaluru, Karnataka, India (Remote)
+342 applicants · Posted 1 day ago · Full-time · Mid-Senior level
+See how you compare to 342 applicants. Master's degree (32%), Top schools: NIT, VIT, BITS.
+Skills: Java, Python, Microservices, Kafka, Redis.
+
+Role:
+We are looking for an experienced backend engineer to scale our restaurant dispatch engines.
+
+Requirements:
+• 2-5 years of hands-on experience in backend engineering.
+• Proficient in Python, Java, or Go.
+• Experience with microservices, Redis, Kafka, PostgreSQL, and AWS.
+• Work mode: Remote / anywhere in India.

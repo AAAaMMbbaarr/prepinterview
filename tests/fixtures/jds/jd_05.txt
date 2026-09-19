@@ -1,0 +1,21 @@
+Junior Software Engineer (Python / Backend)
+Paytm
+Noida, Uttar Pradesh, India (On-site)
+
+About Paytm:
+Paytm is India's payment super app offering comprehensive payment and financial services.
+
+Job Description:
+We are hiring fresh engineering graduates for our core backend engineering team.
+
+Responsibilities:
+• Design and build RESTful APIs and microservices in Python and Flask/Django.
+• Write clean, testable code and adhere to data structures and algorithms best practices.
+• Manage PostgreSQL and Redis database schemas, queries, and migrations.
+• Participate in code reviews, CI/CD pipeline automation, and Agile sprints using Git.
+
+Requirements:
+• 0-1 years of experience or fresh graduates with strong project portfolio.
+• Strong command over Python, SQL, data structures, algorithms, and Git.
+• B.Tech / B.E. in Computer Science, IT, or related technical disciplines.
+• Passion for building scalable web applications.

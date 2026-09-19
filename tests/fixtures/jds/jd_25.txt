@@ -1,0 +1,17 @@
+Junior Backend Developer (Python / Go)
+Persistent Systems
+Pune, Maharashtra, India (On-site)
+
+About Persistent:
+Persistent is a trusted global digital engineering and enterprise modernization partner.
+
+Job Details:
+• Develop backend microservices and REST APIs using Python, Go, and PostgreSQL.
+• Implement automated tests, Git workflows, and CI/CD pipelines.
+• Collaborate with architects to optimize database query performance and caching.
+
+Requirements:
+• 0-2 years of backend software development experience.
+• Strong foundations in data structures, algorithms, SQL, and Git.
+• B.Tech / B.E. in Computer Science or related degree.
+• Pune office location.

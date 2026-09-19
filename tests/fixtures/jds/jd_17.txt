@@ -1,0 +1,17 @@
+Full Stack Engineer (React + Node / Python)
+Groww
+Bengaluru, Karnataka, India (Hybrid)
+
+About Groww:
+Groww is a fast-growing financial services platform making investing simple for millions.
+
+Responsibilities:
+• Develop intuitive user interfaces in React.js and Next.js.
+• Build scalable backend REST APIs using Node.js or Python.
+• Integrate relational databases (PostgreSQL) and caching systems (Redis).
+• Write unit tests and maintain CI/CD pipelines on AWS.
+
+Requirements:
+• 1-3 years of software engineering experience.
+• Hands-on expertise in React, JavaScript, Node.js, Python, and SQL.
+• B.Tech in Computer Science or related degree.

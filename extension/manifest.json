@@ -27,6 +27,11 @@
         "*://*.linkedin.com/*"
       ],
       "js": [
+        "scripts/data/skills.js",
+        "scripts/data/taxonomy.js",
+        "scripts/data/colleges.js",
+        "scripts/data/selectors.js",
+        "scripts/scoring-config.js",
         "scripts/matcher.js",
         "scripts/content.js"
       ],

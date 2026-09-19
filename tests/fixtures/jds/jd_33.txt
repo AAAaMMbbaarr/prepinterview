@@ -1,0 +1,16 @@
+Cloud Infrastructure & DevOps Engineer
+Chargebee
+Remote, India
+
+About Chargebee:
+Chargebee powers subscription billing and revenue management for global SaaS companies.
+
+Responsibilities:
+• Manage AWS cloud infrastructure, Kubernetes clusters, and Terraform configurations.
+• Maintain robust CI/CD pipelines, Docker containers, and monitoring tools.
+• Ensure 99.99% availability, scalability, and disaster recovery.
+
+Requirements:
+• 3-5 years of experience in DevOps or Site Reliability Engineering.
+• Expertise in AWS, Docker, Kubernetes, Terraform, Linux, and CI/CD.
+• Fully remote position.

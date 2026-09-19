@@ -1,0 +1,9 @@
+{
+  "name": "prepinterview-copilot",
+  "version": "1.0.5",
+  "description": "PrepInterview Copilot Chrome Extension",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/runner.test.js"
+  }
+}

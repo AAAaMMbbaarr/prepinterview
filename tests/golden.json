@@ -1,0 +1,2544 @@
+[
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_01",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "agile",
+      "sql"
+    ],
+    "missingSkills": [
+      "startups",
+      "product management",
+      "product manager",
+      "prd",
+      "roadmap"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_02",
+    "score": 21,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "agile",
+      "sql"
+    ],
+    "missingSkills": [
+      "operations",
+      "cross-functional",
+      "product management",
+      "product manager",
+      "wireframing"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_03",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "College not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "microservices",
+      "system design",
+      "strategy",
+      "high-growth",
+      "cross-functional"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_04",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "strategy",
+      "execution",
+      "operations",
+      "scaling"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_05",
+    "score": 64,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "postgresql",
+      "data structures",
+      "algorithms",
+      "agile",
+      "sql"
+    ],
+    "missingSkills": [
+      "ci/cd",
+      "redis",
+      "restful",
+      "microservices"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_06",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "docker",
+      "postgresql"
+    ],
+    "missingSkills": [
+      "go",
+      "node.js",
+      "kubernetes",
+      "redis",
+      "kafka"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_07",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "pandas",
+      "numpy",
+      "sql"
+    ],
+    "missingSkills": [
+      "product management",
+      "a/b testing",
+      "churn",
+      "tableau",
+      "lifecycle marketing"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_08",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "strategy",
+      "cross-functional",
+      "product management",
+      "product manager",
+      "product strategy"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_09",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "strategy",
+      "high-growth",
+      "product management",
+      "product manager"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_10",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "algorithms",
+      "machine learning",
+      "scikit-learn"
+    ],
+    "missingSkills": [
+      "deep learning",
+      "nlp",
+      "genai",
+      "pytorch",
+      "tensorflow"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_11",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "high-growth",
+      "operations",
+      "bizops",
+      "onboarding"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_12",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "College not matching",
+      "Degree not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "agile"
+    ],
+    "missingSkills": [
+      "execution",
+      "cross-functional",
+      "product management",
+      "product manager",
+      "roadmap"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_13",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "postgresql"
+    ],
+    "missingSkills": [
+      "java",
+      "redis",
+      "kafka",
+      "microservices"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_14",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "strategy",
+      "operations",
+      "business operations",
+      "product management",
+      "market sizing"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_15",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "startups",
+      "product management",
+      "product manager",
+      "jira",
+      "user stories"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_16",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "College not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "product manager",
+      "a/b testing",
+      "retention",
+      "funnel analysis",
+      "growth"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_17",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "javascript",
+      "postgresql"
+    ],
+    "missingSkills": [
+      "react",
+      "react.js",
+      "node",
+      "node.js",
+      "ci/cd"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_18",
+    "score": 54,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "sql"
+    ],
+    "missingSkills": [
+      "mixpanel",
+      "google analytics"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_19",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "College not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "docker",
+      "algorithms"
+    ],
+    "missingSkills": [
+      "aws",
+      "kubernetes",
+      "microservices",
+      "system design",
+      "distributed systems"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_20",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "founder office",
+      "founders office",
+      "strategy",
+      "execution",
+      "startups"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_21",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "product management",
+      "product manager",
+      "roadmap",
+      "customer discovery",
+      "salesforce"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_22",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "operations",
+      "product manager",
+      "wireframing",
+      "a/b testing",
+      "churn"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_23",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Degree not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "algorithms",
+      "machine learning"
+    ],
+    "missingSkills": [
+      "deep learning",
+      "nlp",
+      "pytorch"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_24",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "google analytics",
+      "growth",
+      "lifecycle marketing",
+      "conversion rate",
+      "performance marketing"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_25",
+    "score": 45,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "data structures",
+      "algorithms",
+      "git",
+      "sql"
+    ],
+    "missingSkills": [
+      "go",
+      "ci/cd",
+      "microservices"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_26",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "product sense"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_27",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "bizops",
+      "churn",
+      "tableau",
+      "competitive analysis",
+      "salesforce"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_28",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "docker"
+    ],
+    "missingSkills": [
+      "java",
+      "kubernetes",
+      "redis",
+      "microservices",
+      "system design"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_29",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "product manager",
+      "wireframing",
+      "retention",
+      "mixpanel",
+      "growth"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_30",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "founders office",
+      "chief of staff",
+      "strategy",
+      "generalist",
+      "cross-functional"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_31",
+    "score": 98,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "javascript",
+      "docker",
+      "postgresql",
+      "data structures",
+      "algorithms"
+    ],
+    "missingSkills": [],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_32",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "strategy",
+      "product manager",
+      "product strategy",
+      "user stories"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_33",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "docker"
+    ],
+    "missingSkills": [
+      "aws",
+      "kubernetes",
+      "terraform",
+      "ci/cd",
+      "scalability"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_34",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "algorithms",
+      "sql"
+    ],
+    "missingSkills": [
+      "operations",
+      "product management",
+      "product manager",
+      "a/b testing",
+      "onboarding"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_35",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "agile"
+    ],
+    "missingSkills": [
+      "execution",
+      "generalist",
+      "product management",
+      "prd",
+      "wireframing"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_36",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "College not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "scaling",
+      "problem solving"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_37",
+    "score": 49,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "sql"
+    ],
+    "missingSkills": [
+      "tableau"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_38",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "azure",
+      "microservices",
+      "system design",
+      "distributed systems",
+      "scalability"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_39",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "product management",
+      "product manager",
+      "jira",
+      "a/b testing",
+      "churn"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "fresher_tier3",
+    "jdId": "jd_40",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "prd"
+    ],
+    "candExpYears": 0,
+    "candEduTier": "Tier 3"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_01",
+    "score": 77,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "prd",
+      "roadmap",
+      "wireframing",
+      "agile"
+    ],
+    "missingSkills": [
+      "startups",
+      "analytical thinking"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_02",
+    "score": 49,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "wireframing",
+      "agile",
+      "jira",
+      "user stories"
+    ],
+    "missingSkills": [
+      "operations",
+      "cross-functional",
+      "analytical thinking",
+      "problem solving"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_03",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "College not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "high-growth",
+      "product management",
+      "product manager",
+      "product strategy",
+      "roadmap"
+    ],
+    "missingSkills": [
+      "microservices",
+      "system design",
+      "cross-functional",
+      "unit economics",
+      "vendor management"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_04",
+    "score": 39,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "strategy",
+      "retention",
+      "sql",
+      "ai tools"
+    ],
+    "missingSkills": [
+      "founders office",
+      "execution",
+      "operations",
+      "scaling",
+      "generalist"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_05",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "agile",
+      "sql"
+    ],
+    "missingSkills": [
+      "ci/cd",
+      "postgresql",
+      "redis",
+      "restful",
+      "microservices"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_06",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "go",
+      "node.js",
+      "docker",
+      "kubernetes",
+      "postgresql"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_07",
+    "score": 30,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "product management",
+      "a/b testing",
+      "sql"
+    ],
+    "missingSkills": [
+      "pandas",
+      "numpy",
+      "churn",
+      "tableau",
+      "lifecycle marketing"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_08",
+    "score": 41,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "roadmap"
+    ],
+    "missingSkills": [
+      "cross-functional",
+      "customer discovery",
+      "gtm"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_09",
+    "score": 96,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "high-growth",
+      "product management",
+      "product manager",
+      "user research",
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_10",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "machine learning",
+      "deep learning",
+      "nlp",
+      "genai"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_11",
+    "score": 64,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "high-growth",
+      "sql",
+      "onboarding"
+    ],
+    "missingSkills": [
+      "operations",
+      "bizops"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_12",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "College not matching",
+      "Degree not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "roadmap",
+      "agile"
+    ],
+    "missingSkills": [
+      "execution",
+      "cross-functional",
+      "compliance"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_13",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "java",
+      "postgresql",
+      "redis",
+      "kafka",
+      "microservices"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_14",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product management"
+    ],
+    "missingSkills": [
+      "operations",
+      "business operations",
+      "market sizing",
+      "gtm",
+      "financial modeling"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_15",
+    "score": 83,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "jira",
+      "user stories",
+      "ai tools"
+    ],
+    "missingSkills": [
+      "startups"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_16",
+    "score": 50,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "College not matching"
+    ],
+    "matchedSkills": [
+      "product manager",
+      "a/b testing",
+      "retention",
+      "funnel analysis",
+      "sql",
+      "growth"
+    ],
+    "missingSkills": [],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_17",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "javascript",
+      "react",
+      "react.js",
+      "node",
+      "node.js"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_18",
+    "score": 82,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "sql",
+      "mixpanel",
+      "google analytics"
+    ],
+    "missingSkills": [],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_19",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "College not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "aws",
+      "docker",
+      "kubernetes",
+      "microservices",
+      "system design"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_20",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "sql"
+    ],
+    "missingSkills": [
+      "founder office",
+      "founders office",
+      "execution",
+      "startups",
+      "operations"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_21",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "roadmap"
+    ],
+    "missingSkills": [
+      "customer discovery",
+      "salesforce",
+      "enterprise sales",
+      "payroll"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_22",
+    "score": 61,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "product manager",
+      "wireframing",
+      "a/b testing",
+      "sql",
+      "mixpanel",
+      "onboarding"
+    ],
+    "missingSkills": [
+      "operations",
+      "churn"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_23",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Degree not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "machine learning",
+      "deep learning",
+      "nlp",
+      "pytorch"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_24",
+    "score": 32,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "sql",
+      "google analytics",
+      "growth",
+      "conversion rate"
+    ],
+    "missingSkills": [
+      "lifecycle marketing",
+      "performance marketing",
+      "cac",
+      "ltv",
+      "growth hacking"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_25",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "git",
+      "sql"
+    ],
+    "missingSkills": [
+      "go",
+      "ci/cd",
+      "microservices",
+      "data structures",
+      "algorithms"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_26",
+    "score": 47,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "roadmap",
+      "sql"
+    ],
+    "missingSkills": [
+      "product sense",
+      "unit economics"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_27",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "bizops",
+      "churn",
+      "tableau",
+      "competitive analysis",
+      "salesforce"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_28",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "java",
+      "docker",
+      "kubernetes",
+      "redis",
+      "microservices"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_29",
+    "score": 92,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product manager",
+      "wireframing",
+      "retention",
+      "sql",
+      "mixpanel",
+      "growth"
+    ],
+    "missingSkills": [
+      "social media"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_30",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product strategy"
+    ],
+    "missingSkills": [
+      "founders office",
+      "chief of staff",
+      "generalist",
+      "cross-functional",
+      "unit economics"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_31",
+    "score": 29,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "agile"
+    ],
+    "missingSkills": [
+      "javascript",
+      "docker",
+      "postgresql",
+      "data structures",
+      "algorithms"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_32",
+    "score": 70,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching",
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product manager",
+      "product strategy",
+      "user stories"
+    ],
+    "missingSkills": [],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_33",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [],
+    "missingSkills": [
+      "aws",
+      "docker",
+      "kubernetes",
+      "terraform",
+      "ci/cd"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_34",
+    "score": 77,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "a/b testing",
+      "sql",
+      "onboarding"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "operations"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_35",
+    "score": 75,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "prd",
+      "wireframing",
+      "agile",
+      "jira",
+      "user stories"
+    ],
+    "missingSkills": [
+      "execution",
+      "generalist"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_36",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "College not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "scaling",
+      "problem solving"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_37",
+    "score": 71,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "sql"
+    ],
+    "missingSkills": [
+      "tableau"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_38",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "strategy"
+    ],
+    "missingSkills": [
+      "azure",
+      "microservices",
+      "system design",
+      "distributed systems",
+      "scalability"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_39",
+    "score": 55,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Work experience not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "jira",
+      "a/b testing"
+    ],
+    "missingSkills": [
+      "churn",
+      "customer discovery"
+    ],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "mid_tier2_vit",
+    "jdId": "jd_40",
+    "score": 98,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "prd",
+      "a/b testing"
+    ],
+    "missingSkills": [],
+    "candExpYears": 1.8,
+    "candEduTier": "Tier 2"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_01",
+    "score": 46,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "prd",
+      "roadmap",
+      "agile",
+      "retention"
+    ],
+    "missingSkills": [
+      "startups",
+      "wireframing",
+      "scrum",
+      "a/b testing",
+      "user stories"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_02",
+    "score": 32,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "cross-functional",
+      "product management",
+      "product manager",
+      "agile",
+      "retention",
+      "sql"
+    ],
+    "missingSkills": [
+      "operations",
+      "wireframing",
+      "jira",
+      "user stories",
+      "analytical thinking"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_03",
+    "score": 87,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "microservices",
+      "system design",
+      "strategy",
+      "cross-functional",
+      "product management",
+      "product manager"
+    ],
+    "missingSkills": [
+      "high-growth",
+      "vendor management",
+      "compliance"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_04",
+    "score": 52,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "strategy",
+      "cross-functional",
+      "retention",
+      "sql",
+      "market sizing"
+    ],
+    "missingSkills": [
+      "founders office",
+      "execution",
+      "operations",
+      "scaling",
+      "generalist"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_05",
+    "score": 32,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "postgresql",
+      "microservices",
+      "agile",
+      "sql"
+    ],
+    "missingSkills": [
+      "ci/cd",
+      "redis",
+      "restful",
+      "data structures",
+      "algorithms"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_06",
+    "score": 77,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "docker",
+      "kubernetes",
+      "postgresql",
+      "kafka",
+      "microservices"
+    ],
+    "missingSkills": [
+      "go",
+      "node.js",
+      "redis"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_07",
+    "score": 42,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "product management",
+      "churn",
+      "sql",
+      "tableau"
+    ],
+    "missingSkills": [
+      "pandas",
+      "numpy",
+      "a/b testing",
+      "lifecycle marketing"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_08",
+    "score": 98,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "cross-functional",
+      "product management",
+      "product manager",
+      "product strategy",
+      "roadmap"
+    ],
+    "missingSkills": [],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_09",
+    "score": 71,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "high-growth",
+      "user research"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_10",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "machine learning",
+      "deep learning",
+      "nlp",
+      "genai"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_11",
+    "score": 24,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "high-growth",
+      "operations",
+      "bizops",
+      "onboarding"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_12",
+    "score": 59,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "cross-functional",
+      "product management",
+      "product manager",
+      "roadmap",
+      "agile"
+    ],
+    "missingSkills": [
+      "execution",
+      "compliance"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_13",
+    "score": 71,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "postgresql",
+      "kafka",
+      "microservices"
+    ],
+    "missingSkills": [
+      "java",
+      "redis"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_14",
+    "score": 74,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "market sizing",
+      "gtm",
+      "unit economics",
+      "enterprise sales"
+    ],
+    "missingSkills": [
+      "operations",
+      "business operations",
+      "financial modeling"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_15",
+    "score": 33,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "product manager"
+    ],
+    "missingSkills": [
+      "startups",
+      "jira",
+      "user stories",
+      "ai tools"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_16",
+    "score": 67,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product manager",
+      "retention",
+      "sql",
+      "growth"
+    ],
+    "missingSkills": [
+      "a/b testing",
+      "funnel analysis",
+      "growth product"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_17",
+    "score": 26,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "postgresql"
+    ],
+    "missingSkills": [
+      "javascript",
+      "react",
+      "react.js",
+      "node",
+      "node.js"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_18",
+    "score": 32,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "sql"
+    ],
+    "missingSkills": [
+      "mixpanel",
+      "google analytics"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_19",
+    "score": 85,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "docker",
+      "kubernetes",
+      "microservices",
+      "system design",
+      "distributed systems",
+      "scalability"
+    ],
+    "missingSkills": [
+      "aws",
+      "algorithms"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_20",
+    "score": 32,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "cross-functional",
+      "sql",
+      "market sizing",
+      "gtm"
+    ],
+    "missingSkills": [
+      "founder office",
+      "founders office",
+      "execution",
+      "startups",
+      "operations"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_21",
+    "score": 75,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "roadmap",
+      "customer discovery",
+      "enterprise sales"
+    ],
+    "missingSkills": [
+      "salesforce",
+      "payroll"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_22",
+    "score": 24,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "product manager",
+      "churn",
+      "sql"
+    ],
+    "missingSkills": [
+      "operations",
+      "wireframing",
+      "a/b testing",
+      "mixpanel",
+      "onboarding"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_23",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Degree not matching"
+    ],
+    "matchedSkills": [
+      "python"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "machine learning",
+      "deep learning",
+      "nlp",
+      "pytorch"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_24",
+    "score": 26,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "sql",
+      "growth"
+    ],
+    "missingSkills": [
+      "google analytics",
+      "lifecycle marketing",
+      "conversion rate",
+      "performance marketing",
+      "cac"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_25",
+    "score": 20,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "python",
+      "microservices",
+      "sql"
+    ],
+    "missingSkills": [
+      "go",
+      "ci/cd",
+      "data structures",
+      "algorithms",
+      "git"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_26",
+    "score": 98,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "product sense",
+      "roadmap"
+    ],
+    "missingSkills": [
+      "amplitude"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_27",
+    "score": 53,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "churn",
+      "sql",
+      "tableau",
+      "competitive analysis"
+    ],
+    "missingSkills": [
+      "bizops",
+      "salesforce"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_28",
+    "score": 75,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "docker",
+      "kubernetes",
+      "microservices",
+      "system design"
+    ],
+    "missingSkills": [
+      "java",
+      "redis"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_29",
+    "score": 54,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product manager",
+      "retention",
+      "sql",
+      "growth"
+    ],
+    "missingSkills": [
+      "wireframing",
+      "mixpanel",
+      "onboarding",
+      "social media"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_30",
+    "score": 70,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "cross-functional",
+      "product strategy",
+      "unit economics",
+      "enterprise sales"
+    ],
+    "missingSkills": [
+      "founders office",
+      "chief of staff",
+      "generalist"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_31",
+    "score": 57,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "docker",
+      "postgresql",
+      "agile"
+    ],
+    "missingSkills": [
+      "javascript",
+      "data structures",
+      "algorithms"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_32",
+    "score": 61,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Location not matching"
+    ],
+    "matchedSkills": [
+      "strategy",
+      "product manager",
+      "product strategy"
+    ],
+    "missingSkills": [
+      "user stories"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_33",
+    "score": 47,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "docker",
+      "kubernetes",
+      "scalability"
+    ],
+    "missingSkills": [
+      "aws",
+      "terraform",
+      "ci/cd",
+      "linux"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_34",
+    "score": 53,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "sql"
+    ],
+    "missingSkills": [
+      "algorithms",
+      "operations",
+      "a/b testing",
+      "onboarding"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_35",
+    "score": 38,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "product management",
+      "prd",
+      "agile"
+    ],
+    "missingSkills": [
+      "execution",
+      "generalist",
+      "wireframing",
+      "jira",
+      "user stories"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_36",
+    "score": 39,
+    "tier": "Reach Role (Critical Gaps)",
+    "disqualifiers": [
+      "Role profile not matching"
+    ],
+    "matchedSkills": [
+      "sql"
+    ],
+    "missingSkills": [
+      "founders office",
+      "scaling",
+      "problem solving"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_37",
+    "score": 98,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "python",
+      "sql",
+      "tableau"
+    ],
+    "missingSkills": [],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_38",
+    "score": 83,
+    "tier": "Strong Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "microservices",
+      "system design",
+      "distributed systems",
+      "scalability",
+      "strategy"
+    ],
+    "missingSkills": [
+      "azure"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_39",
+    "score": 71,
+    "tier": "Moderate Match (Gaps to Defend)",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "product management",
+      "product manager",
+      "churn",
+      "customer discovery"
+    ],
+    "missingSkills": [
+      "jira",
+      "a/b testing"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  },
+  {
+    "resumeId": "senior_tier1_iit",
+    "jdId": "jd_40",
+    "score": 75,
+    "tier": "Good Match",
+    "disqualifiers": [],
+    "matchedSkills": [
+      "strategy",
+      "product management",
+      "product manager",
+      "product strategy",
+      "prd",
+      "growth"
+    ],
+    "missingSkills": [
+      "a/b testing",
+      "funnel analysis"
+    ],
+    "candExpYears": 5,
+    "candEduTier": "Tier 1"
+  }
+]

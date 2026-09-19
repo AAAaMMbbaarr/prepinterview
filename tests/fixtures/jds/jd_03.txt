@@ -1,0 +1,18 @@
+Senior Product Manager - Platform & Payments
+PhonePe
+Bengaluru, Karnataka, India (Hybrid)
+
+About PhonePe:
+PhonePe is India's leading digital payments and financial services platform.
+
+Responsibilities:
+• Drive product strategy and platform roadmap for high-throughput payment processing engines.
+• Partner with engineering architects on system design, microservices, and distributed systems.
+• Own business case, unit economics, P&L, and vendor management for banking partner integrations.
+• Manage stakeholder relationships across compliance, risk, and executive leadership.
+
+Requirements:
+• Minimum 5 years of professional experience in product management with enterprise/fintech systems.
+• Education: Strictly Tier-1 engineering colleges (IIT / BITS / NIT) or IIM graduates only.
+• Deep technical depth in APIs, microservices, and high-scale architecture.
+• Proven track record managing cross-functional teams in high-growth environments.

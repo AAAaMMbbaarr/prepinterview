@@ -1,0 +1,18 @@
+Product Operations Specialist
+Blinkit
+Gurugram, Delhi NCR, India (Hybrid)
+
+About Blinkit:
+Blinkit is India's leading quick-commerce platform delivering groceries in 10 minutes.
+
+Responsibilities:
+• Bridge communication between city warehouse operations and central product engineering.
+• Investigate edge-case delivery anomalies, analyze error logs, and quantify operational bottlenecks.
+• Track operational SLAs, onboarding turnaround times, and unit economics.
+• Create SOPs and feature requests to automate repetitive warehouse tasks.
+
+Requirements:
+• 1-3 years of experience in product operations, bizops, or tech operations.
+• Strong command of SQL, Excel, and problem-solving methodologies.
+• Comfortable working in fast-paced high-growth startup environment.
+• Bachelor's degree in any field.

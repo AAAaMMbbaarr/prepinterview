@@ -1,0 +1,16 @@
+Enterprise Cloud Architect
+Microsoft
+Hyderabad, Telangana, India (Hybrid)
+
+About the Role:
+Lead enterprise architecture strategy for Azure cloud data platforms across APAC.
+
+Responsibilities:
+• Architect distributed systems, microservices, and hybrid cloud solutions.
+• Advise enterprise clients on system design, scalability, and security best practices.
+• Partner with global engineering teams to drive product improvements.
+
+Requirements:
+• 8+ years of software architecture and cloud engineering experience.
+• Master of Technology (M.Tech) or MS preferred.
+• Deep expertise in distributed systems, microservices, cloud, and Kubernetes.
