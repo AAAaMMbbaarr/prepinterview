@@ -37,7 +37,7 @@
   const TIER2_REGEXES = [
     new RegExp('\\b(national institute of technology|nit kurukshetra|nit meghalaya|manit bhopal|nit durgapur|nit hamirpur|nit silchar|nit raipur|nit patna|manit|nits|nit)\\b', 'i'),
     new RegExp('\\b(indian institute of information technology|iiit kanchipuram|iiit jabalpur|iiit vadodara|iiit gwalior|iiits|iiit)\\b', 'i'),
-    new RegExp('\\b(birla institute of technology mesra|vellore institute of technology|manipal institute of technology|amrita school of engineering|bms college of engineering|rv college of engineering|heritage institute|ramaiah institute|sastra university|amrita university|kalinga institute|ashoka university|nirma university|mit world peace|cummins college|dayananda sagar|pes university|srm university|srm institute|techno india|vit vellore|mit manipal|ssn college|shiv nadar|bit mesra|pict pune|mit pune|walchand|plaksha|thapar|bmsce|msrit|pesit|tiet|mahe|rvce|kiit|spce|dsce|pdeu|vit)\\b', 'i'),
+    new RegExp('\\b(birla institute of technology mesra|vellore institute of technology|manipal institute of technology|amrita school of engineering|bms college of engineering|rv college of engineering|heritage institute|ramaiah institute|sastra university|amrita university|kalinga institute|ashoka university|nirma university|mit world peace|cummins college|dayananda sagar|pes university|srm university|srm institute|techno india|vit vellore|vit chennai|vit bhopal|vit ap|vit-vellore|vit-chennai|vit-bhopal|vit-ap|mit manipal|ssn college|shiv nadar|bit mesra|pict pune|mit pune|walchand|plaksha|thapar|bmsce|msrit|pesit|tiet|mahe|rvce|kiit|spce|dsce|pdeu|vit)\\b', 'i'),
     new RegExp('\\b(iim visakhapatnam|xim university|imt ghaziabad|iim bodh gaya|iim sambalpur|iim amritsar|fore school|great lakes|iim sirmaur|iim nagpur|imi delhi|welingkar|iim jammu|weschool|gim goa|somaiya|bimtech|scmhrd|tapmi|lbsim|ximb|glim|irma|liba)\\b', 'i')
   ];
 
@@ -45,17 +45,64 @@
     new RegExp('\\b(lovely professional university|chandigarh university|galgotias university|teerthanker mahaveer|quantum university|galgotias college|sharda university|amity university|parul university|geeta university|sage university|gla university|graphic era|galgotias|invertis|sharda|amity|parul|lpu|cu)\\b', 'i')
   ];
 
+  const GUARDS = [
+    /\b(?:university of\s+)?british\s+columbia\b/gi,
+    /\boxford\s+brookes(?:\s+university)?\b/gi,
+    /\bcambridge\s+institute(?:\s+of\s+technology)?\b/gi
+  ];
+
   function detectCollegeTier(text) {
     if (!text || typeof text !== 'string') return 'unknown';
-    for (const r of TIER1_REGEXES) {
-      if (r.test(text)) return 'Tier 1';
+
+    // Mask guarded exclusions so they never match sub-tokens
+    let clean = text;
+    for (const g of GUARDS) {
+      clean = clean.replace(g, match => ' '.repeat(match.length));
     }
-    for (const r of TIER2_REGEXES) {
-      if (r.test(text)) return 'Tier 2';
+
+    const allMatches = [];
+
+    function collectMatches(regexList, tierName) {
+      for (const r of regexList) {
+        const flags = r.flags.includes('g') ? r.flags : r.flags + 'g';
+        const gr = new RegExp(r.source, flags);
+        let m;
+        while ((m = gr.exec(clean)) !== null) {
+          allMatches.push({
+            text: m[0],
+            length: m[0].length,
+            start: m.index,
+            end: m.index + m[0].length,
+            tier: tierName
+          });
+        }
+      }
     }
-    for (const r of TIER3_REGEXES) {
-      if (r.test(text)) return 'Tier 3';
-    }
+
+    collectMatches(TIER1_REGEXES, 'Tier 1');
+    collectMatches(TIER2_REGEXES, 'Tier 2');
+    collectMatches(TIER3_REGEXES, 'Tier 3');
+
+    if (allMatches.length === 0) return 'unknown';
+
+    // Filter out matches that are strictly a substring of a longer match across ANY tier
+    // e.g. "mit" (len 3, [0, 3]) inside "mit manipal" (len 11, [0, 11]) is superseded by Tier 2 "mit manipal".
+    const validMatches = allMatches.filter(m => {
+      return !allMatches.some(other =>
+        other !== m &&
+        other.length > m.length &&
+        other.start <= m.start &&
+        other.end >= m.end
+      );
+    });
+
+    if (validMatches.length === 0) return 'unknown';
+
+    // Among valid surviving distinct matches, highest tier wins:
+    if (validMatches.some(m => m.tier === 'Tier 1')) return 'Tier 1';
+    if (validMatches.some(m => m.tier === 'Tier 2')) return 'Tier 2';
+    if (validMatches.some(m => m.tier === 'Tier 3')) return 'Tier 3';
+
     return 'unknown';
   }
 

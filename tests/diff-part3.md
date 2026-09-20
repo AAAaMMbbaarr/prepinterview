@@ -1,6 +1,6 @@
 # PrepInterview Copilot — Behavior Diff vs part2-fixed (Part 3)
 
-**Generated Date:** 2026-09-19T12:05:01.636Z
+**Generated Date:** 2026-09-20T03:59:48.237Z
 **Base Tag:** `part2-fixed`
 **Total Evaluation Pairs:** 120
 **Changed Pairs:** 87 / 120 (72.5%)
@@ -83,7 +83,7 @@ Part 3 upgraded hard-requirement logic: multi-format calendar date parsing, inte
 | senior_tier1_iit x jd_23 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Degree not matching | Degree not matching, Role profile not matching |
 | senior_tier1_iit x jd_24 | 20 | 25 | +5 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | None | None |
 | senior_tier1_iit x jd_25 | 32 | 35 | +3 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_26 | 20 | 73 | +53 | Reach Role (Critical Gaps) | Good Match | None | None |
+| senior_tier1_iit x jd_26 | 20 | 76 | +56 | Reach Role (Critical Gaps) | Good Match | None | None |
 | senior_tier1_iit x jd_27 | 36 | 50 | +14 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
 | senior_tier1_iit x jd_28 | 20 | 27 | +7 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | None | Role profile not matching |
 | senior_tier1_iit x jd_29 | 20 | 45 | +25 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) | None | None |

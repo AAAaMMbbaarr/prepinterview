@@ -407,6 +407,7 @@ Requirements:
     }
     const elapsed = Date.now() - start;
     assert.ok(elapsed < 600, `Full evaluation pass must complete within 300ms per pass (10 passes took ${elapsed}ms, avg ${(elapsed / 10).toFixed(2)}ms per evaluation)`);
+    assert.ok(elapsed < 1500, `Full evaluation pass must complete within 300ms per pass (10 passes took ${elapsed}ms, avg ${(elapsed / 10).toFixed(2)}ms per evaluation)`);
   });
 });
 
@@ -844,6 +845,16 @@ Jul'23 - Nov'24
 `;
     const exp4 = matcher.extractExperience(res4, { now: fixedRef });
     assert.ok(exp4.totalYears >= 1.3 && exp4.totalYears <= 1.5, `Jul'23 - Nov'24 should be ~1.4 yrs, got ${exp4.totalYears}`);
+
+    // Format 5: False-positive guard against metric ranges (e.g. 10-15%, $20-30k)
+    const res5 = `
+EXPERIENCE
+Growth Manager, Delta Co
+Aug 2024 – Jun 2025
+• Improved candidate fill rate by 10-15% and saved 20-30 hours per week.
+`;
+    const exp5 = matcher.extractExperience(res5, { now: fixedRef });
+    assert.ok(exp5.totalYears >= 0.8 && exp5.totalYears <= 1.0, `Should only parse Aug 2024 – Jun 2025 (~0.9 yr), ignoring 10-15%, got ${exp5.totalYears}`);
   });
 
   test('Overlap deduplication and internship 0.5x weighting', () => {
@@ -1351,4 +1362,1716 @@ Requirements:
     assert.ok(relocRes.score > defaultRes.score, 'Score must be higher when location penalty is waived');
   });
 });
+
+// ============================================================================
+// SUITE 6: UI POLISH, PURE CARD RENDERER, ACCESSIBILITY & SANITIZATION
+// ============================================================================
+describe('PrepInterview Copilot — UI Polish, Pure Card Renderer & Sanitization', () => {
+  const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+
+  test('UI-1: Pure Card Renderer Execution (Zero DOM/Chrome Globals in Node)', () => {
+    assert.strictEqual(typeof cardRenderer.renderCopilotCard, 'function', 'renderCopilotCard must be exported');
+    const mockMatch = {
+      score: 75,
+      tier: 'Good Match',
+      skillScore: 70,
+      matchedSkills: ['Python', 'SQL'],
+      missingSkills: ['Kubernetes'],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: [{ label: 'Meets the minimum experience', points: 4 }]
+    };
+    const html = cardRenderer.renderCopilotCard(mockMatch, { title: 'Senior Engineer', company: 'Acme Corp' });
+    assert.strictEqual(typeof html, 'string');
+    assert.ok(html.includes('75%'));
+    assert.ok(html.includes('Good Match'));
+  });
+
+  test('UI-2: XSS Inertness — Scripts and Image Payloads in JD or Title are Safely Escaped', () => {
+    const maliciousTitle = '<img src=x onerror=alert(1)> Senior Engineer';
+    const maliciousCompany = 'Acme <div class="evil"><script>alert(2)</script></div>';
+    const mockMatch = {
+      score: 40,
+      tier: 'Reach Role (Critical Gaps)',
+      skillScore: 30,
+      matchedSkills: ['<script>evil()</script>'],
+      missingSkills: ['"><img src=x>'],
+      hardGaps: ['Experience shortfall >= 1 year <script>alert(3)</script>'],
+      softGaps: [],
+      notes: ['<b onmouseover=evil()>Note</b>'],
+      breakdown: []
+    };
+
+    const html = cardRenderer.renderCopilotCard(mockMatch, { title: maliciousTitle, company: maliciousCompany });
+
+    // Raw tags must NEVER be unescaped
+    assert.ok(!html.includes('<img src=x onerror=alert(1)>'), 'Raw <img> tag must not exist');
+    assert.ok(!html.includes('<script>'), 'Raw <script> tag must not exist');
+    assert.ok(!html.includes('</script>'), 'Raw </script> tag must not exist');
+    assert.ok(!html.includes('<b onmouseover=evil()>'), 'Raw inline event handler must not exist');
+
+    // Escaped entities must be present
+    assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'Escaped <img> must be present');
+    assert.ok(html.includes('&lt;script&gt;alert(2)&lt;/script&gt;'), 'Escaped script must be present');
+  });
+
+  test('UI-3: Banned Phrases — No Hiring-Outcome Claims Anywhere in Card Copy', () => {
+    const bannedPatterns = [/shortlist/i, /probability/i, /guarantee/i, /shortlist likely/i];
+    const tiersToTest = [
+      { score: 92, tier: 'Strong Match' },
+      { score: 76, tier: 'Good Match' },
+      { score: 55, tier: 'Moderate Match (Gaps to Defend)' },
+      { score: 32, tier: 'Reach Role (Critical Gaps)' }
+    ];
+
+    tiersToTest.forEach(t => {
+      const match = {
+        score: t.score,
+        tier: t.tier,
+        skillScore: t.score,
+        matchedSkills: ['Python'],
+        missingSkills: ['Go'],
+        hardGaps: t.score < 45 ? ['Experience shortfall >= 1 year'] : [],
+        softGaps: [],
+        notes: [],
+        breakdown: []
+      };
+      const html = cardRenderer.renderCopilotCard(match, { title: 'Product Manager', company: 'Stripe' });
+
+      bannedPatterns.forEach(pattern => {
+        assert.ok(!pattern.test(html), `Card HTML for tier "${t.tier}" must not contain banned word matching ${pattern}`);
+      });
+    });
+  });
+
+  test('UI-4: Tier Display Names & Breakdown Header Clean Formatting (No Double Parenthesis)', () => {
+    assert.strictEqual(cardRenderer.getTierDisplayName('Strong Match'), 'Strong Match');
+    assert.strictEqual(cardRenderer.getTierDisplayName('Good Match'), 'Good Match');
+    assert.strictEqual(cardRenderer.getTierDisplayName('Moderate Match (Gaps to Defend)'), 'Moderate Match');
+    assert.strictEqual(cardRenderer.getTierDisplayName('Reach Role (Critical Gaps)'), 'Reach Role');
+
+    const reachMatch = {
+      score: 25,
+      tier: 'Reach Role (Critical Gaps)',
+      skillScore: 25,
+      matchedSkills: [],
+      missingSkills: ['SQL'],
+      hardGaps: ['Experience shortfall >= 1 year'],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+    const html = cardRenderer.renderCopilotCard(reachMatch, { title: 'Analyst' });
+
+    assert.ok(html.includes('25% (Reach Role)'), 'Breakdown header must show "25% (Reach Role)" without double parenthesis');
+    assert.ok(!html.includes('((', 'Card HTML must never contain double parentheses'));
+    assert.ok(!html.includes('(Critical Gaps)'), 'Display card must remove (Critical Gaps)');
+    assert.ok(!html.includes('(Gaps to Defend)'), 'Display card must remove (Gaps to Defend)');
+  });
+
+  test('UI-5: Single Source of Truth for Band Copy & Footer Disclaimer', () => {
+    const bands = scoringConfig.scoreBands;
+    assert.ok(bands, 'scoringConfig.scoreBands must exist');
+    assert.strictEqual(bands.strong.description, 'Your resume covers the core requirements in this posting.');
+    assert.strictEqual(bands.good.description, 'Your resume covers most of the requirements.');
+    assert.strictEqual(bands.moderate.description, 'Partial overlap with the requirements; see the gaps below.');
+    assert.strictEqual(bands.reach.description, "Low overlap, or several requirements aren't met.");
+    assert.strictEqual(bands.footer, 'Estimate based on the job text, not a hiring prediction.');
+
+    const cardHtml = cardRenderer.renderCopilotCard({ score: 85, tier: 'Strong Match', matchedSkills: [], missingSkills: [], hardGaps: [], softGaps: [], notes: [], breakdown: [] });
+    assert.ok(cardHtml.includes(bands.strong.description));
+    assert.ok(cardHtml.includes(bands.footer));
+  });
+
+  test('UI-6: Plain Reason Sentence Under Header', () => {
+    const match1 = {
+      score: 60,
+      tier: 'Moderate Match',
+      totalJdSkills: 5,
+      matchedSkills: ['Python'],
+      missingSkills: ['Docker', 'AWS', 'SQL', 'Kubernetes'],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+    const sentence1 = cardRenderer.formatPlainReason(match1);
+    assert.strictEqual(sentence1, '1 of 5 skills in this posting found in your resume.');
+
+    const match2 = {
+      score: 30,
+      tier: 'Reach Role',
+      totalJdSkills: 8,
+      matchedSkills: ['Java', 'Git'],
+      missingSkills: ['Spring'],
+      hardGaps: ['Experience shortfall >= 1 year', 'Degree not matching'],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+    const sentence2 = cardRenderer.formatPlainReason(match2);
+    assert.strictEqual(sentence2, '2 of 8 skills in this posting found in your resume. 2 requirements not met.');
+  });
+
+  test('UI-7: Four-Chip Factor Row in Expanded Panel', () => {
+    const match = {
+      score: 55,
+      tier: 'Moderate Match',
+      skillScore: 60,
+      matchedSkills: ['SQL'],
+      missingSkills: ['Tableau'],
+      hardGaps: ['Experience shortfall >= 1 year'],
+      softGaps: ['Relocation needed'],
+      notes: [],
+      breakdown: [],
+      education: { status: 'met', candidate: { degree: "Bachelor's", tier: 'Tier 1' }, required: { level: "Bachelor's", mandatory: true } }
+    };
+
+    const chips = cardRenderer.getFactorRowData(match, { extractedMinExp: 3, educationMentioned: true, locationMatched: false });
+    assert.strictEqual(chips.length, 4);
+    assert.strictEqual(chips[0].label, 'Skills');
+    assert.strictEqual(chips[0].value, '60%');
+    assert.strictEqual(chips[1].label, 'Experience');
+    assert.strictEqual(chips[1].value, 'Not met');
+    assert.strictEqual(chips[2].label, 'Education');
+    assert.strictEqual(chips[2].value, "Met · Bachelor's held");
+    assert.strictEqual(chips[3].label, 'Location');
+    assert.strictEqual(chips[3].value, 'Relocation needed');
+
+    // Also test automatic extraction fallback from match.jdReq without opts.extractedMinExp
+    const matchWithJdReq = {
+      score: 85,
+      tier: 'Strong Match',
+      skillScore: 90,
+      hardGaps: [],
+      softGaps: [],
+      jdReq: { minExp: 2 },
+      breakdown: [{ label: 'Experience Meets Requirement', points: 4 }]
+    };
+    const autoChips = cardRenderer.getFactorRowData(matchWithJdReq, {});
+    const autoExpChip = autoChips.find(c => c.label === 'Experience');
+    assert.strictEqual(autoExpChip.value, 'Met', 'Experience chip must be "Met" when match.jdReq.minExp is stated and candidate has no gaps');
+    assert.strictEqual(autoExpChip.status, 'pass');
+
+    const cardHtml = cardRenderer.renderCopilotCard(match, { isExpanded: true, extractedMinExp: 3, educationMentioned: true });
+    assert.ok(cardHtml.includes('prepinterview-factor-chips-row'));
+    assert.ok(cardHtml.includes('Experience:</strong> Not met'));
+    assert.ok(!cardHtml.includes('No hard disqualifying gaps detected'), 'Contradictory green box must be removed');
+  });
+
+  test('UI-8: Relocation Toggle Visible Only on Location Mismatch', () => {
+    // 1. Without location mismatch -> toggle must NOT be rendered
+    const noMismatchMatch = {
+      score: 75,
+      tier: 'Good Match',
+      matchedSkills: ['Python'],
+      missingSkills: [],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+    const htmlNoReloc = cardRenderer.renderCopilotCard(noMismatchMatch);
+    assert.ok(!htmlNoReloc.includes('prepinterview-card-relocation-toggle'), 'Relocation switch must not render when no location mismatch');
+
+    // 2. With on-site location mismatch -> toggle MUST be rendered with proper switch semantics
+    const mismatchMatch = {
+      score: 55,
+      tier: 'Moderate Match',
+      matchedSkills: ['Python'],
+      missingSkills: [],
+      hardGaps: ['Location not matching'],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+    const htmlWithReloc = cardRenderer.renderCopilotCard(mismatchMatch, { openToRelocation: true });
+    assert.ok(htmlWithReloc.includes('prepinterview-card-relocation-toggle'), 'Relocation switch must render on location mismatch');
+    assert.ok(htmlWithReloc.includes('role="switch"'), 'Toggle must have role="switch"');
+    assert.ok(htmlWithReloc.includes('aria-checked="true"'), 'Toggle must have aria-checked="true"');
+    assert.ok(htmlWithReloc.includes("I&#39;m open to relocating") || htmlWithReloc.includes("I'm open to relocating"));
+  });
+
+  test('UI-9: Color Semantics, Pill Limit (Max 6 + More) & Section Renaming', () => {
+    const manySkillsMatch = {
+      score: 70,
+      tier: 'Good Match',
+      matchedSkills: ['Python', 'SQL', 'Docker', 'Kubernetes', 'AWS', 'GCP', 'PostgreSQL', 'Redis', 'Kafka'],
+      missingSkills: ['React', 'Next.js', 'Vue', 'Angular', 'Svelte', 'Ember', 'Backbone'],
+      hardGaps: ['Experience shortfall >= 1 year'],
+      softGaps: ['Relocation needed'],
+      notes: ['Slightly below the stated minimum'],
+      breakdown: []
+    };
+
+    const html = cardRenderer.renderCopilotCard(manySkillsMatch);
+
+    // Section headings renamed
+    assert.ok(html.includes('In your resume (9)'), 'Must have heading "In your resume"');
+    assert.ok(html.includes('Not found in your resume (7)'), 'Must have heading "Not found in your resume"');
+
+    // Pill limit: first 6 shown, followed by +3 more and +1 more
+    assert.ok(html.includes('+3 more'), 'Must show +3 more for matched skills exceeding 6');
+    assert.ok(html.includes('+1 more'), 'Must show +1 more for missing skills exceeding 6');
+
+    // Color semantics
+    assert.ok(html.includes('prepinterview-pill-hard'), 'Hard gaps must render as red pills');
+    assert.ok(html.includes('prepinterview-pill-neutral'), 'Skills must render as neutral pills');
+    assert.ok(html.includes('prepinterview-line-amber'), 'Soft notes must render as amber lines');
+  });
+
+  test('UI-10: CTA Text by Tier (1-Click Launch)', () => {
+    assert.strictEqual(cardRenderer.getTierCtaText('Strong Match'), 'Practice this interview ↗');
+    assert.strictEqual(cardRenderer.getTierCtaText('Good Match'), 'Practice this interview ↗');
+    assert.strictEqual(cardRenderer.getTierCtaText('Moderate Match (Gaps to Defend)'), 'Practice defending your gaps ↗');
+    assert.strictEqual(cardRenderer.getTierCtaText('Reach Role (Critical Gaps)'), 'Practice for a stretch role ↗');
+  });
+
+  test('UI-11: Text Contrast Ratios Meet WCAG AA (>= 4.5:1)', () => {
+    const bgDark = '#0d1117';
+    const bgCard = '#161b22';
+
+    const secondaryText = '#8b949e';
+    const bodyText = '#c9d1d9';
+    const primaryText = '#f0f6fc';
+
+    const ratioSecOnDark = cardRenderer.getContrastRatio(secondaryText, bgDark);
+    const ratioSecOnCard = cardRenderer.getContrastRatio(secondaryText, bgCard);
+    const ratioBodyOnDark = cardRenderer.getContrastRatio(bodyText, bgDark);
+    const ratioPrimaryOnDark = cardRenderer.getContrastRatio(primaryText, bgDark);
+
+    assert.ok(ratioSecOnDark >= 4.5, `Secondary text contrast ${ratioSecOnDark.toFixed(2)} must be >= 4.5:1`);
+    assert.ok(ratioSecOnCard >= 4.5, `Secondary text on card contrast ${ratioSecOnCard.toFixed(2)} must be >= 4.5:1`);
+    assert.ok(ratioBodyOnDark >= 4.5, `Body text contrast ${ratioBodyOnDark.toFixed(2)} must be >= 4.5:1`);
+    assert.ok(ratioPrimaryOnDark >= 4.5, `Primary text contrast ${ratioPrimaryOnDark.toFixed(2)} must be >= 4.5:1`);
+  });
+
+  test('UI-12: Diagnostic JSON Payload Privacy (Never Includes Resume or Full JD)', () => {
+    const match = {
+      score: 62,
+      tier: 'Moderate Match',
+      breakdown: [{ label: 'Meets the minimum experience', points: 4 }],
+      notes: ['Open to relocation'],
+      hardGaps: [],
+      softGaps: ['Relocation needed']
+    };
+    const options = {
+      jobId: '4469194138',
+      title: 'Senior Engineer',
+      company: 'Tech Corp',
+      extractedMinExp: 4,
+      extractedSkills: ['Python', 'Django']
+    };
+
+    const payload = cardRenderer.buildDiagnosticPayload(match, options);
+    assert.strictEqual(payload.version, '1.0.6');
+    assert.strictEqual(payload.jobId, '4469194138');
+    assert.strictEqual(payload.title, 'Senior Engineer');
+    assert.strictEqual(payload.company, 'Tech Corp');
+    assert.strictEqual(payload.extractedMinExp, 4);
+    assert.deepStrictEqual(payload.extractedSkills, ['Python', 'Django']);
+    assert.strictEqual(payload.resumeText, undefined, 'resumeText must NEVER be included in diagnostic payload');
+    assert.strictEqual(payload.jdText, undefined, 'jdText must NEVER be included in diagnostic payload');
+  });
+
+  test('UI-13: Render Fingerprint Reactivity on All Settings', () => {
+    const baseText = 'Experienced product manager with 4 years at fintech.';
+    const fp1 = cardRenderer.getRenderFingerprint(baseText, { openToRelocation: false });
+    const fp2 = cardRenderer.getRenderFingerprint(baseText, { openToRelocation: true });
+    const fp3 = cardRenderer.getRenderFingerprint(baseText, { openToRelocation: true, activeProfile: 'sde' });
+    const fp4 = cardRenderer.getRenderFingerprint(baseText, { openToRelocation: true, activeProfile: 'sde', overrides: { minExp: 5 } });
+    const fpResumeChanged = cardRenderer.getRenderFingerprint('Updated resume text', { openToRelocation: false });
+
+    assert.notStrictEqual(fp1, fp2, 'Fingerprint must change when openToRelocation changes');
+    assert.notStrictEqual(fp2, fp3, 'Fingerprint must change when activeProfile changes');
+    assert.notStrictEqual(fp3, fp4, 'Fingerprint must change when overrides change');
+    assert.notStrictEqual(fp1, fpResumeChanged, 'Fingerprint must change when resume text changes');
+    assert.ok(fp1.startsWith('1.0.6::'), 'Fingerprint must embed SCORING_VERSION');
+  });
+
+  test('UI-14: Practice Deep-Link URL Privacy (Contains Title, Company, JD but Strictly Never Resume Text)', () => {
+    const candidateResume = 'SECRET_CANDIDATE_RESUME_TEXT_JOHN_DOE_12345';
+    const sampleTitle = 'Senior Frontend Engineer';
+    const sampleCompany = 'Acme Corp';
+    const sampleJd = 'Looking for a Senior Frontend Engineer with 5+ years React experience.';
+
+    const urlString = cardRenderer.buildPracticeUrl({
+      title: sampleTitle,
+      company: sampleCompany,
+      jd: sampleJd,
+      resumeText: candidateResume
+    });
+
+    const parsed = new URL(urlString);
+    assert.strictEqual(parsed.origin, 'https://prepinterview.online');
+    assert.strictEqual(parsed.searchParams.get('title'), sampleTitle);
+    assert.strictEqual(parsed.searchParams.get('company'), sampleCompany);
+    assert.strictEqual(parsed.searchParams.get('jd'), sampleJd);
+    assert.strictEqual(parsed.searchParams.get('utm_source'), 'linkedin_copilot');
+
+    // Strictly assert resume text is absent from entire URL string and query params
+    assert.ok(!urlString.includes('SECRET_CANDIDATE_RESUME'), 'URL string must never contain candidate resume text');
+    assert.ok(!urlString.includes('JOHN_DOE'), 'URL string must never contain candidate identity or name');
+    assert.strictEqual(parsed.searchParams.get('resume'), null);
+    assert.strictEqual(parsed.searchParams.get('resumeText'), null);
+  });
+
+  test('UI-15: "Score looks off?" click opens FEEDBACK_URL via window.open exactly', () => {
+    const feedbackUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfP0mZBcah9TZ6qwmtVBkeFUSUX180q5E9OyDy7w2lwMSbYnw/viewform?usp=header';
+    let openedUrl = null;
+    let openedTarget = null;
+    let openedFeatures = null;
+
+    const mockWindow = {
+      open: (url, target, features) => {
+        openedUrl = url;
+        openedTarget = target;
+        openedFeatures = features;
+      }
+    };
+
+    // 1. Valid FEEDBACK_URL -> window.open called with exact URL, _blank, and noopener,noreferrer
+    const handled = cardRenderer.handleScoreLooksOff(mockWindow, { FEEDBACK_URL: feedbackUrl });
+    assert.strictEqual(handled, true);
+    assert.strictEqual(openedUrl, feedbackUrl);
+    assert.strictEqual(openedTarget, '_blank');
+    assert.strictEqual(openedFeatures, 'noopener,noreferrer');
+
+    // 2. When FEEDBACK_URL is REPLACE_ME -> do nothing (window.open must NOT be called)
+    let openedCount = 0;
+    const mockWindow2 = {
+      open: () => { openedCount++; }
+    };
+    const handledReplaceMe = cardRenderer.handleScoreLooksOff(mockWindow2, { FEEDBACK_URL: 'REPLACE_ME' });
+    assert.strictEqual(handledReplaceMe, false);
+    assert.strictEqual(openedCount, 0, 'window.open must not be called when FEEDBACK_URL is REPLACE_ME');
+
+    // 3. When FEEDBACK_URL is empty -> do nothing
+    const handledEmpty = cardRenderer.handleScoreLooksOff(mockWindow2, { FEEDBACK_URL: '' });
+    assert.strictEqual(handledEmpty, false);
+    assert.strictEqual(openedCount, 0, 'window.open must not be called when FEEDBACK_URL is empty');
+  });
+
+  test('UI-16: Disclosure and Footer Render in Order with Required Phrases', () => {
+    const mockMatch = {
+      score: 78,
+      tier: 'Good Match',
+      skillScore: 80,
+      matchedSkills: ['Python', 'SQL'],
+      missingSkills: ['Kubernetes'],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: [{ label: 'Meets the minimum experience', points: 4 }]
+    };
+
+    const html = cardRenderer.renderCopilotCard(mockMatch, { title: 'Backend Engineer', company: 'Stripe' });
+
+    // Check presence of required phrases
+    const disclosurePhrase = 'Your resume is not sent';
+    const footerPhrase = 'not a hiring prediction';
+
+    const disclosureIdx = html.indexOf(disclosurePhrase);
+    const footerIdx = html.indexOf(footerPhrase);
+
+    assert.ok(disclosureIdx !== -1, `Disclosure must contain phrase "${disclosurePhrase}"`);
+    assert.ok(footerIdx !== -1, `Footer must contain phrase "${footerPhrase}"`);
+
+    // Verify ordering: disclosure before footer
+    assert.ok(disclosureIdx < footerIdx, 'Disclosure must render before footer');
+
+    // Check divider presence in between
+    const dividerIdx = html.indexOf('prepinterview-footer-divider');
+    assert.ok(dividerIdx !== -1, 'Divider must be rendered');
+    assert.ok(disclosureIdx < dividerIdx && dividerIdx < footerIdx, 'Divider must render between disclosure and footer');
+
+    // Check CTA button inline SVG and aria-label
+    assert.ok(html.includes('prepinterview-cta-icon'), 'CTA must have inline SVG icon');
+    assert.ok(html.includes('aria-label="Practice this interview (opens prepinterview.online in a new tab)"'), 'CTA must have descriptive aria-label');
+  });
+
+  test('UI-17: Title Fallback Never Renders "Target Role" and Hides "Target:" Line When Missing', () => {
+    const mockMatch = {
+      score: 85,
+      tier: 'Strong Match',
+      matchedSkills: ['JavaScript'],
+      missingSkills: [],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: []
+    };
+
+    // 1. Without title option: "Target Role" must NOT appear, "Target:" line must be hidden
+    const htmlNoTitle = cardRenderer.renderCopilotCard(mockMatch, {});
+    assert.strictEqual(htmlNoTitle.includes('Target Role'), false, 'Must never render literal "Target Role"');
+    assert.strictEqual(htmlNoTitle.includes('Target:'), false, 'Must hide "Target:" line when title is missing');
+
+    // 2. With empty title: "Target Role" must NOT appear, "Target:" line must be hidden
+    const htmlEmptyTitle = cardRenderer.renderCopilotCard(mockMatch, { title: '   ' });
+    assert.strictEqual(htmlEmptyTitle.includes('Target Role'), false, 'Must never render literal "Target Role"');
+    assert.strictEqual(htmlEmptyTitle.includes('Target:'), false, 'Must hide "Target:" line when title is empty');
+
+    // 3. With explicit title: renders Target: <strong>...</strong>
+    const htmlWithTitle = cardRenderer.renderCopilotCard(mockMatch, { title: 'Staff Architect' });
+    assert.ok(htmlWithTitle.includes('Target: <strong>Staff Architect</strong>'), 'Must render Target line when title is present');
+  });
+
+  test('UI-18: Cap Label Displays "Maximum score shown is 98" When Capped Solely by 98 Max', () => {
+    // Match that had score capped from 100 to 98 with no unmet requirement gaps
+    const mockMatchCapped98 = {
+      score: 98,
+      preClampScore: 100,
+      tier: 'Strong Match',
+      skillScore: 92,
+      matchedSkills: ['React', 'Node.js'],
+      missingSkills: [],
+      hardGaps: [],
+      softGaps: [],
+      notes: [],
+      breakdown: [
+        { label: 'Experience Meets Requirement', points: 4 },
+        { label: 'Location Match Bonus', points: 4 },
+        { label: 'Capped: unmet requirement', points: -2 }
+      ]
+    };
+
+    const html = cardRenderer.renderCopilotCard(mockMatchCapped98, { isExpanded: true });
+    assert.ok(html.includes('Maximum score shown is 98'), 'Must show "Maximum score shown is 98"');
+    assert.strictEqual(html.includes('Capped: unmet requirement'), false, 'Must NOT show "Capped: unmet requirement" when only adjustment is 98 max');
+
+    // In contrast, when there IS an unmet requirement cap (e.g. 1 hard gap, capped at 71)
+    const mockMatchWithGaps = {
+      score: 71,
+      preClampScore: 84,
+      tier: 'Good Match',
+      skillScore: 80,
+      matchedSkills: ['React'],
+      missingSkills: [],
+      hardGaps: ['Degree requirement missing'],
+      softGaps: [],
+      notes: [],
+      breakdown: [
+        { label: 'Capped: unmet requirement', points: -13 }
+      ]
+    };
+    const htmlGaps = cardRenderer.renderCopilotCard(mockMatchWithGaps, { isExpanded: true });
+    assert.ok(htmlGaps.includes('Score limited because a stated requirement isn&#39;t met (max 71)'), 'Must indicate unmet requirement limit when gaps exist');
+  });
+
+  test('UI-19: Card CSS Rules Enforce Full Width, No Absolute Positioning, and Proper Margins', () => {
+    const cssPath = path.join(ROOT, 'extension/scripts/styles.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+    // Assert container styles
+    assert.ok(cssContent.includes('#prepinterview-copilot-container'), 'CSS must define #prepinterview-copilot-container');
+    assert.ok(cssContent.includes('display: block !important;'), 'Card must have display: block !important');
+    assert.ok(cssContent.includes('width: 100% !important;'), 'Card must have width: 100% !important');
+    assert.ok(cssContent.includes('box-sizing: border-box !important;'), 'Card must have box-sizing: border-box !important');
+    assert.ok(cssContent.includes('flex: 0 0 auto !important;'), 'Card must have flex: 0 0 auto !important');
+    assert.ok(cssContent.includes('margin: 12px 0 !important;'), 'Card must have margin: 12px 0 !important');
+    assert.ok(cssContent.includes('position: static !important;'), 'Card must have position: static !important');
+    assert.strictEqual(cssContent.includes('#prepinterview-copilot-container {\n  position: absolute'), false);
+    assert.strictEqual(cssContent.includes('.prepinterview-widget-card {\n  position: absolute'), false);
+  });
+
+  test('UI-20: Debug Logger Output Prints Anchor Tag, Classes, and 5 Parent Levels with Computed Display', () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const { JSDOM } = require('jsdom');
+
+    const dom = new JSDOM(`
+      <div id="level5" class="pane-wrapper" style="display: block;">
+        <div id="level4" class="content-pane" style="display: block;">
+          <div id="level3" class="top-card" style="display: block;">
+            <div id="level2" class="actions-wrapper" style="display: block;">
+              <div id="level1" class="btn-group" style="display: block;">
+                <div id="anchor" class="my-action-row" style="display: flex;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    let logged = null;
+    const originalLog = console.log;
+    console.log = (msg, payload) => {
+      if (typeof msg === 'string' && msg.includes('[PrepInterview Debug]')) {
+        logged = payload;
+      }
+    };
+
+    try {
+      dom.window.PREPINTERVIEW_DEBUG = true;
+      global.window = dom.window;
+      global.document = dom.window.document;
+      const anchorEl = dom.window.document.getElementById('anchor');
+      content.logAnchorDebug(anchorEl);
+
+      assert.ok(logged, 'Debug logger must have emitted output');
+      assert.strictEqual(logged.anchor.tag, 'div');
+      assert.strictEqual(logged.anchor.classes, 'my-action-row');
+      assert.strictEqual(logged.parentChain.length, 5, 'Parent chain must log 5 levels');
+      assert.strictEqual(logged.parentChain[0].tag, 'div');
+      assert.strictEqual(logged.parentChain[0].classes, 'btn-group');
+      assert.strictEqual(logged.parentChain[4].classes, 'pane-wrapper');
+    } finally {
+      console.log = originalLog;
+    }
+  });
+
+  test('UI-21: jsdom Snapshot Test: Apply/Save in Flex Row Injects Card as Next Sibling without Squeezing Buttons', () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const { JSDOM } = require('jsdom');
+    const fixtureHtml = fs.readFileSync(path.join(__dirname, 'fixtures/dom/search-results.html'), 'utf8');
+
+    const dom = new JSDOM(fixtureHtml);
+    const doc = dom.window.document;
+    global.window = dom.window;
+    global.document = doc;
+
+    const pane = doc.querySelector('.jobs-search-results-list__details') || doc.body;
+    const actionRow = doc.querySelector('.job-details-jobs-unified-top-card__actions-container');
+    const applyBtnContainer = doc.querySelector('.jobs-apply-button--top-card');
+    const saveBtnContainer = doc.querySelector('.jobs-save-button--top-card');
+
+    assert.ok(actionRow, 'Action row must exist in fixture');
+    assert.strictEqual(actionRow.children.length, 2, 'Action row must initially have Apply and Save containers');
+
+    // Resolve anchor
+    const anchor = content.getAnchorElement(pane);
+    assert.ok(anchor, 'Anchor must be resolved');
+
+    // Create container and insert
+    const container = doc.createElement('div');
+    container.id = 'prepinterview-copilot-container';
+    content.insertCardAfterAnchor(anchor, container);
+
+    // Assert card is inserted as a NEXT SIBLING of the action row (or outer non-flex ancestor)
+    assert.strictEqual(container.previousElementSibling, anchor, 'Card container must be the next sibling of the anchor');
+    assert.strictEqual(actionRow.contains(container), false, 'Card container must NEVER be inside the action row');
+
+    // Assert Apply and Save keep their original parent and order
+    assert.strictEqual(actionRow.children[0], applyBtnContainer, 'Apply button must retain its position as 1st child');
+    assert.strictEqual(actionRow.children[1], saveBtnContainer, 'Save button must retain its position as 2nd child');
+    assert.strictEqual(actionRow.children.length, 2, 'Action row must still have exactly 2 children (no squeezing)');
+  });
+
+  test('UI-22: Experience Factor Chip: Accurately Differentiates "Not met", "Met", and "Not stated"', () => {
+    // 1. Candidate with 1.4 years on 3-year JD -> Must be "Not met · you 1.4 / needs 3+"
+    const match1Point4 = {
+      score: 50,
+      tier: 'Moderate Match',
+      skillScore: 50,
+      jdReq: { minExp: 3 },
+      candExp: { years: 1.4, totalYears: 1.4 },
+      hardGaps: ['Experience shortfall >= 1 year'],
+      breakdown: [{ label: 'Experience Gap (>= 1 yr)', points: -20 }]
+    };
+    const chips1Point4 = cardRenderer.getFactorRowData(match1Point4, { extractedMinExp: 3 });
+    const expChip1 = chips1Point4.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip1.value, 'Not met · you 1.4 / needs 3+', 'Candidate with 1.4 years on 3-year JD must be "Not met · you 1.4 / needs 3+"');
+    assert.strictEqual(expChip1.status, 'gap');
+
+    // 2. JD without experience requirement (minExp: 0 or null) -> Must be "Not stated"
+    const matchNoExp = {
+      score: 50,
+      tier: 'Moderate Match',
+      skillScore: 50,
+      jdReq: { minExp: 0, isFresher: false },
+      candExp: { years: 1.4, totalYears: 1.4 },
+      hardGaps: [],
+      breakdown: []
+    };
+    const chipsNoExp = cardRenderer.getFactorRowData(matchNoExp, { extractedMinExp: null });
+    const expChip2 = chipsNoExp.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip2.value, 'Not stated', 'JD without stated experience must be "Not stated"');
+    assert.strictEqual(expChip2.status, 'neutral');
+
+    // 3. Candidate with 4 years on 3-year JD -> Must be "Met · you 4 / needs 3+"
+    const match4Yrs = {
+      score: 85,
+      tier: 'Strong Match',
+      skillScore: 85,
+      jdReq: { minExp: 3 },
+      candExp: { years: 4, totalYears: 4 },
+      hardGaps: [],
+      breakdown: [{ label: 'Experience Meets Requirement', points: 4 }]
+    };
+    const chips4Yrs = cardRenderer.getFactorRowData(match4Yrs, { extractedMinExp: 3 });
+    const expChip3 = chips4Yrs.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip3.value, 'Met · you 4 / needs 3+', 'Candidate with 4 years on 3-year JD must be "Met · you 4 / needs 3+"');
+    assert.strictEqual(expChip3.status, 'pass');
+
+    // 4. Turing case: Role profile mismatch suppressed experience in hardGaps, but breakdown has Experience Gap (-22 pts)
+    const matchTuring = {
+      score: 20,
+      tier: 'Reach Role',
+      skillScore: 13,
+      jdReq: { minExp: 3 },
+      candExp: { years: 0.4, totalYears: 2.2 },
+      hardGaps: ['Role profile not matching'],
+      softGaps: [],
+      breakdown: [
+        { label: 'Base skills match', points: 13 },
+        { label: 'Experience Gap (>= 1 yr)', points: -22 }
+      ]
+    };
+    const chipsTuring = cardRenderer.getFactorRowData(matchTuring, { extractedMinExp: 3 });
+    const expChipTuring = chipsTuring.find(c => c.label === 'Experience');
+    assert.strictEqual(expChipTuring.value, 'Not met · you 0.4 / needs 3+', 'Turing case with Experience Gap penalty in breakdown MUST be "Not met · you 0.4 / needs 3+"');
+    assert.strictEqual(expChipTuring.status, 'gap');
+
+    // 5. Alignerr case: Candidate has 1.4 years, JD requires 3 years (shortfall 1.6 years)
+    const matchAlignerr = {
+      score: 31,
+      tier: 'Reach Role',
+      skillScore: 27,
+      jdReq: { minExp: 3 },
+      candExp: { years: 1.4, totalYears: 1.4 },
+      hardGaps: [],
+      softGaps: [],
+      breakdown: [
+        { label: 'Base skills match', points: 27 },
+        { label: 'Experience Meets Requirement', points: 4 }
+      ]
+    };
+    const chipsAlignerr = cardRenderer.getFactorRowData(matchAlignerr, { extractedMinExp: 3 });
+    const expChipAlignerr = chipsAlignerr.find(c => c.label === 'Experience');
+    assert.strictEqual(expChipAlignerr.value, 'Not met · you 1.4 / needs 3+', 'Candidate with 1.4 years on 3-year JD MUST be "Not met · you 1.4 / needs 3+"');
+    assert.strictEqual(expChipAlignerr.status, 'gap');
+  });
+
+  test('UI-23: In-App Navigation: 5 job switches without reload renders exactly one card each', async () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+    const matcherModule = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+    const { JSDOM } = require('jsdom');
+    const fixtureHtml = fs.readFileSync(path.join(__dirname, 'fixtures/dom/search-results.html'), 'utf8');
+
+    const dom = new JSDOM(fixtureHtml, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=101' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    dom.window.PrepInterview = {
+      CardRenderer: cardRenderer,
+      Matcher: matcherModule
+    };
+
+    const jobs = [
+      { id: '101', title: 'Senior Software Engineer', desc: 'Seeking Senior Software Engineer with 5+ years of experience in JavaScript, TypeScript, and Node.js.' },
+      { id: '102', title: 'Product Manager', desc: 'Seeking Product Manager with 3+ years of experience in product roadmap, strategy, Agile, and metrics.' },
+      { id: '103', title: 'Data Scientist', desc: 'Seeking Data Scientist with 4+ years of experience in Python, SQL, Machine Learning, and statistics.' },
+      { id: '104', title: 'DevOps Engineer', desc: 'Seeking DevOps Engineer with 3+ years of experience in Kubernetes, Docker, CI/CD pipelines, and AWS.' },
+      { id: '105', title: 'Engineering Manager', desc: 'Seeking Engineering Manager with 6+ years of experience leading cross-functional teams and architecture.' }
+    ];
+
+    try {
+      for (let i = 0; i < jobs.length; i++) {
+        const job = jobs[i];
+
+        // In-app navigation: update URL and DOM elements without reload
+        dom.reconfigure({ url: `https://www.linkedin.com/jobs/search/?currentJobId=${job.id}` });
+
+        const titleEl = dom.window.document.querySelector('.job-details-jobs-unified-top-card__job-title');
+        if (titleEl) titleEl.textContent = job.title;
+
+        const descEl = dom.window.document.querySelector('#job-details .jobs-box__html-content p');
+        if (descEl) descEl.textContent = job.desc;
+
+        // Trigger in-app navigation handler
+        await content.handleNavigation();
+
+        // Verify: exactly ONE container exists in DOM
+        const containers = dom.window.document.querySelectorAll('#prepinterview-copilot-container');
+        assert.strictEqual(containers.length, 1, `Job switch ${i + 1} (${job.id}) must result in exactly 1 card container, got ${containers.length}`);
+
+        // Verify: card has correct data-job-id
+        const card = dom.window.document.getElementById('prepinterview-copilot-card');
+        assert.ok(card, `Card element must exist for job switch ${i + 1}`);
+        assert.strictEqual(card.getAttribute('data-job-id'), job.id, `Card data-job-id must be ${job.id}`);
+
+        // Verify: card container is located after the action row anchor
+        const actionRow = dom.window.document.querySelector('.job-details-jobs-unified-top-card__actions-container');
+        assert.strictEqual(containers[0].previousElementSibling, actionRow, 'Card must be next sibling of action row');
+      }
+
+      // Verify navigating away to non-jobs path removes the card
+      dom.reconfigure({ url: 'https://www.linkedin.com/feed/' });
+      await content.handleNavigation();
+      const nonJobContainers = dom.window.document.querySelectorAll('#prepinterview-copilot-container');
+      assert.strictEqual(nonJobContainers.length, 0, 'Navigating away from jobs page must remove the card');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('UI-24: Jobs Landing Page & Non-Job Pages Never Render Card or Pill', async () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+    const matcherModule = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+    const { JSDOM } = require('jsdom');
+
+    const landingHtml = `
+      <main>
+        <div class="recent-searches">
+          <h2>Recent job searches</h2>
+          <a href="/jobs/search/?keywords=Product%20Manager">Product Manager</a>
+        </div>
+        <div class="explore-companies">
+          <h2>Explore companies that hire for your skills</h2>
+          <div class="company-card">UST - 10,000+ employees</div>
+        </div>
+      </main>
+    `;
+
+    const dom = new JSDOM(landingHtml, { url: 'https://www.linkedin.com/jobs/' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    dom.window.PrepInterview = {
+      CardRenderer: cardRenderer,
+      Matcher: matcherModule
+    };
+
+    try {
+      assert.strictEqual(content.isViewingJob(), false, 'isViewingJob must return false on /jobs/ landing page');
+      assert.strictEqual(content.getJobDetailsPane(), null, 'getJobDetailsPane must return null when main is just the feed');
+
+      await content.handleNavigation();
+      const containers = dom.window.document.querySelectorAll('#prepinterview-copilot-container');
+      assert.strictEqual(containers.length, 0, 'No card container must be mounted on /jobs/ landing page');
+      const pills = dom.window.document.querySelectorAll('#prepinterview-floating-pill');
+      assert.strictEqual(pills.length, 0, 'No floating pill must be mounted on /jobs/ landing page');
+
+      dom.reconfigure({ url: 'https://www.linkedin.com/jobs/tracker/' });
+      assert.strictEqual(content.isViewingJob(), false, 'isViewingJob must be false on /jobs/tracker/');
+      await content.handleNavigation();
+      assert.strictEqual(dom.window.document.querySelectorAll('#prepinterview-copilot-container').length, 0);
+
+      dom.reconfigure({ url: 'https://www.linkedin.com/jobs/preferences/' });
+      assert.strictEqual(content.isViewingJob(), false, 'isViewingJob must be false on /jobs/preferences/');
+      await content.handleNavigation();
+      assert.strictEqual(dom.window.document.querySelectorAll('#prepinterview-copilot-container').length, 0);
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('UI-25: LinkedIn Pane Re-render After Injection — Card Automatically Restored', async () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+    const matcherModule = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+    const { JSDOM } = require('jsdom');
+
+    const fixtureHtml = fs.readFileSync(path.join(__dirname, 'fixtures/dom/search-results.html'), 'utf8');
+    const dom = new JSDOM(fixtureHtml, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=201' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    dom.window.PrepInterview = {
+      CardRenderer: cardRenderer,
+      Matcher: matcherModule
+    };
+
+    try {
+      content.attachNavigationListeners(dom.window);
+      await content.handleNavigation();
+
+      let card = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(card, 'Card must be mounted initially');
+      assert.strictEqual(dom.window.document.contains(card), true, 'Card must exist in DOM initially');
+
+      // Simulate LinkedIn re-rendering the details pane after injection (e.g. React wiping/updating pane)
+      const pane = content.getJobDetailsPane();
+      assert.ok(pane, 'Pane must exist');
+
+      pane.innerHTML = `
+        <div class="job-details-jobs-unified-top-card">
+          <h1 class="job-details-jobs-unified-top-card__job-title">Senior React Engineer</h1>
+          <div class="job-details-jobs-unified-top-card__actions-container">
+            <button class="jobs-apply-button">Apply</button>
+            <button class="jobs-save-button">Save</button>
+          </div>
+        </div>
+        <div id="job-details" class="jobs-description">
+          <div class="jobs-box__html-content">
+            <p>We are seeking a Senior React Engineer with 5+ years experience in React, JavaScript, and TypeScript.</p>
+          </div>
+        </div>
+      `;
+
+      // At this instant, LinkedIn wiped our card from the DOM
+      assert.strictEqual(dom.window.document.contains(card), false, 'Card must no longer exist in DOM after pane wipe');
+
+      // Trigger mutation observer handler
+      content.onMutationObserved();
+
+      // Allow 50ms debounce
+      await new Promise(r => setTimeout(r, 100));
+
+      const restoredCard = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(restoredCard, 'Card must be re-inserted after LinkedIn pane re-render');
+      assert.strictEqual(dom.window.document.contains(restoredCard), true, 'Restored card must be in DOM');
+      assert.strictEqual(pane.contains(restoredCard), true, 'Restored card must be inside the details pane');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('UI-26: Missing Anchor After Retries — Pill Displays "Card didn\'t load. Refresh the page."', async () => {
+    const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+    const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+    const matcherModule = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+    const { JSDOM } = require('jsdom');
+
+    const emptyPaneHtml = `
+      <div class="jobs-search-results-list__details">
+      </div>
+    `;
+    const dom = new JSDOM(emptyPaneHtml, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=301' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    dom.window.PrepInterview = {
+      CardRenderer: cardRenderer,
+      Matcher: matcherModule
+    };
+
+    try {
+      await content.handleNavigation();
+      // Allow fast test retries to complete (10 + 20 + 30ms = 60ms)
+      await new Promise(r => setTimeout(r, 150));
+
+      const pill = dom.window.document.getElementById('prepinterview-floating-pill');
+      assert.ok(pill, 'Floating pill must exist');
+      assert.strictEqual(pill.textContent, "Card didn't load. Refresh the page.");
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+});
+
+describe('PrepInterview Copilot — Experience Extraction Unit Tests (Requirement 8)', () => {
+  const matcher = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+  const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+
+  test('Sentence 1: "2-4 years" extracts min 2, max 4', () => {
+    const res = matcher.extractJdRequirements('Role: Software Engineer\nRequirements:\n2-4 years');
+    assert.strictEqual(res.minExp, 2);
+    assert.strictEqual(res.maxExp, 4);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 2: "2–4 years of experience" extracts min 2, max 4', () => {
+    const res = matcher.extractJdRequirements('Role: Software Engineer\nRequirements:\n2–4 years of experience');
+    assert.strictEqual(res.minExp, 2);
+    assert.strictEqual(res.maxExp, 4);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 3: "2+ years in product" extracts min 2, max null', () => {
+    const res = matcher.extractJdRequirements('Role: Product Manager\nRequirements:\n2+ years in product');
+    assert.strictEqual(res.minExp, 2);
+    assert.strictEqual(res.maxExp, null);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 4: "2+ years of direct team management experience" + "3–6 years of experience in business analysis" yields min 3, max 6', () => {
+    const jd = `
+Role: Engineering Lead
+Requirements:
+• 2+ years of direct team management experience
+• 3–6 years of experience in business analysis
+`;
+    const res = matcher.extractJdRequirements(jd);
+    assert.strictEqual(res.minExp, 3);
+    assert.strictEqual(res.maxExp, 6);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 5: "Over 5 years of experience required" extracts min 5', () => {
+    const res = matcher.extractJdRequirements('Role: Architect\nOver 5 years of experience required');
+    assert.strictEqual(res.minExp, 5);
+    assert.strictEqual(res.maxExp, null);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 6: "Candidates with 3 years of experience" extracts min 3', () => {
+    const res = matcher.extractJdRequirements('Role: Backend Developer\nCandidates with 3 years of experience are encouraged to apply');
+    assert.strictEqual(res.minExp, 3);
+    assert.strictEqual(res.maxExp, null);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 7: "Celebrating over 25 years of excellence" is ignored (blurb filter)', () => {
+    const res = matcher.extractJdRequirements('About Acme Corp: Celebrating over 25 years of excellence in enterprise software.\nNo formal experience specified.');
+    assert.strictEqual(res.minExp, null);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 8: "No prior experience with Jira required" + "3+ years of experience" extracts min 3', () => {
+    const jd = `
+Role: QA Engineer
+Requirements:
+• No prior experience with Jira required
+• 3+ years of experience in manual and automated testing
+`;
+    const res = matcher.extractJdRequirements(jd);
+    assert.strictEqual(res.minExp, 3);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 9: "Freshers welcome" only sets fresher (min 0)', () => {
+    const res = matcher.extractJdRequirements('Role: Junior Associate\nFreshers welcome to apply. Excellent communication skills needed.');
+    assert.strictEqual(res.minExp, 0);
+    assert.strictEqual(res.isFresher, true);
+  });
+
+  test('Sentence 10: "Experience: 2-4 years" above the Requirements heading extracts min 2', () => {
+    const jd = `
+Role: Full Stack Engineer
+Experience: 2-4 years
+
+Requirements:
+• Proficiency in TypeScript and React
+• Strong problem-solving skills
+`;
+    const res = matcher.extractJdRequirements(jd);
+    assert.strictEqual(res.minExp, 2);
+    assert.strictEqual(res.maxExp, 4);
+    assert.strictEqual(res.isFresher, false);
+  });
+
+  test('Sentence 11: education dates on their own line not counted in experience', () => {
+    const fixedRef = new Date(2026, 8, 19);
+    const resume = `
+John Doe
+john@example.com
+
+EDUCATION
+Stanford University
+B.Tech in Computer Science
+2018 - 2022
+
+EXPERIENCE
+Acme Corp
+Software Engineer
+2022 - 2024
+• Built cloud microservices
+`;
+    const exp = matcher.extractExperience(resume, { now: fixedRef });
+    assert.ok(exp.totalYears <= 3.5, `Education dates on their own line must not be counted; expected ~3 yrs, got ${exp.totalYears}`);
+    assert.ok(exp.totalYears >= 2.5, `Employment dates should be counted; got ${exp.totalYears}`);
+  });
+
+  test('Chip text shows numbers: "Not met · you 1.4 / needs 3+", "Met · you 3.2 / needs 2+", "Not stated"', () => {
+    const matchNotMet = {
+      experience: { status: 'not_met', jdMin: 3, jdMax: null, candidateYears: 1.4 }
+    };
+    const chipsNotMet = cardRenderer.getFactorRowData(matchNotMet);
+    const expChip1 = chipsNotMet.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip1.value, 'Not met · you 1.4 / needs 3+');
+    assert.strictEqual(expChip1.status, 'gap');
+
+    const matchMet = {
+      experience: { status: 'met', jdMin: 2, jdMax: 4, candidateYears: 3.2 }
+    };
+    const chipsMet = cardRenderer.getFactorRowData(matchMet);
+    const expChip2 = chipsMet.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip2.value, 'Met · you 3.2 / needs 2+');
+    assert.strictEqual(expChip2.status, 'pass');
+
+    const matchNotStated = {
+      experience: { status: 'not_stated', jdMin: null, jdMax: null, candidateYears: 2.0 }
+    };
+    const chipsNotStated = cardRenderer.getFactorRowData(matchNotStated);
+    const expChip3 = chipsNotStated.find(c => c.label === 'Experience');
+    assert.strictEqual(expChip3.value, 'Not stated');
+    assert.strictEqual(expChip3.status, 'neutral');
+  });
+});
+
+// ============================================================================
+// SUITE 8: EDUCATION EXTRACTION & PEDIGREE UNIT TESTS
+// ============================================================================
+describe('PrepInterview Copilot — Education Extraction & Pedigree Unit Tests', () => {
+  const colleges = require(path.join(ROOT, 'extension/scripts/data/colleges.js'));
+  const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+
+  const bachelorsResume = `
+John Doe
+john@example.com
+EDUCATION
+University of Texas
+Bachelor of Science in Computer Science
+2020 - 2024
+EXPERIENCE
+Acme Corp
+Software Engineer | 2024 - Present
+• Built web services
+SKILLS
+Python, SQL
+`;
+
+  const mbaResume = `
+Jane Doe
+jane@example.com
+EDUCATION
+Stanford University
+Master of Business Administration (MBA)
+2022 - 2024
+EXPERIENCE
+Acme Corp
+Product Manager | 2024 - Present
+• Growth strategy
+SKILLS
+Product Strategy, Roadmapping
+`;
+
+  const mdResume = `
+Dr. Smith
+smith@example.com
+EDUCATION
+Harvard Medical School
+Doctor of Medicine (MD)
+2018 - 2022
+EXPERIENCE
+General Hospital
+Physician | 2022 - Present
+SKILLS
+Clinical Research, Patient Care
+`;
+
+  test('Sentence Trace 1: JD with no education text returns "Not stated"', () => {
+    const jd = 'Role: Backend Developer\nRequirements:\n• 3+ years experience in Python\n• Cloud computing';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, null);
+    assert.strictEqual(req.mandatory, false);
+
+    const evalRes = matcher.evaluate(bachelorsResume, jd);
+    assert.strictEqual(evalRes.education.status, 'not_stated');
+    assert.strictEqual(evalRes.education.required.level, null);
+
+    const chips = cardRenderer.getFactorRowData(evalRes);
+    const eduChip = chips.find(c => c.label === 'Education');
+    assert.strictEqual(eduChip.value, 'Not stated');
+    assert.strictEqual(eduChip.status, 'neutral');
+  });
+
+  test('Sentence Trace 2: "Bachelor\'s degree in Business… or equivalent professional experience" is preferred and Met', () => {
+    const jd = 'Role: Analyst\nRequirements:\n• Bachelor\'s degree in Business… or equivalent professional experience\n• SQL, Excel';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, "Bachelor's");
+    assert.strictEqual(req.mandatory, false, '"or equivalent professional experience" must make requirement preferred');
+
+    const evalRes = matcher.evaluate(bachelorsResume, jd);
+    assert.strictEqual(evalRes.education.status, 'met');
+    assert.strictEqual(evalRes.education.required.mandatory, false);
+
+    const chips = cardRenderer.getFactorRowData(evalRes);
+    const eduChip = chips.find(c => c.label === 'Education');
+    assert.strictEqual(eduChip.value, "Met · Bachelor's held");
+    assert.strictEqual(eduChip.status, 'pass');
+  });
+
+  test('Sentence Trace 3: "MBA or higher degree preferred" evaluates ladder and preferred status', () => {
+    const jd = 'Role: Product Director\nRequirements:\n• MBA or higher degree preferred\n• 5+ years experience';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, 'MBA');
+    assert.strictEqual(req.mandatory, false);
+    assert.strictEqual(req.orHigher, true);
+
+    // Candidate holding MBA meets it
+    const evalMba = matcher.evaluate(mbaResume, jd);
+    assert.strictEqual(evalMba.education.status, 'met');
+    const chipsMba = cardRenderer.getFactorRowData(evalMba);
+    const eduChipMba = chipsMba.find(c => c.label === 'Education');
+    assert.strictEqual(eduChipMba.value, 'Met · MBA held');
+    assert.strictEqual(eduChipMba.status, 'pass');
+
+    // Candidate holding Bachelor's has preferred missing
+    const evalBach = matcher.evaluate(bachelorsResume, jd);
+    assert.strictEqual(evalBach.education.status, 'preferred_missing');
+    const chipsBach = cardRenderer.getFactorRowData(evalBach);
+    const eduChipBach = chipsBach.find(c => c.label === 'Education');
+    assert.strictEqual(eduChipBach.value, 'Preferred · MBA');
+    assert.strictEqual(eduChipBach.status, 'warn');
+  });
+
+  test('Sentence Trace 4: "we might look for at least an MBA" is preferred', () => {
+    const jd = 'Role: Strategy Lead\nRequirements:\n• In terms of academics, we might look for at least an MBA\n• Strong analytics';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, 'MBA');
+    assert.strictEqual(req.mandatory, false, '"might look for" must make requirement preferred');
+
+    const evalBach = matcher.evaluate(bachelorsResume, jd);
+    assert.strictEqual(evalBach.education.status, 'preferred_missing');
+    const chips = cardRenderer.getFactorRowData(evalBach);
+    const eduChip = chips.find(c => c.label === 'Education');
+    assert.strictEqual(eduChip.value, 'Preferred · MBA');
+    assert.strictEqual(eduChip.status, 'warn');
+  });
+
+  test('Sentence Trace 5: "MD or MBBS required" is mandatory and checks professional degrees', () => {
+    const jd = 'Role: Medical Director\nRequirements:\n• MD or MBBS required for clinical oversight\n• 3+ years experience';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, 'MD/MBBS');
+    assert.strictEqual(req.mandatory, true);
+
+    // Candidate holding Bachelor's fails mandatory
+    const evalBach = matcher.evaluate(bachelorsResume, jd);
+    assert.strictEqual(evalBach.education.status, 'not_met');
+    assert.ok(evalBach.hardGaps.includes('Mandatory degree mismatch'));
+    assert.ok(evalBach.disqualifiers.includes('Degree not matching'));
+    const chipsBach = cardRenderer.getFactorRowData(evalBach);
+    const eduChipBach = chipsBach.find(c => c.label === 'Education');
+    assert.strictEqual(eduChipBach.value, 'Not met · needs MD/MBBS');
+    assert.strictEqual(eduChipBach.status, 'gap');
+
+    // Candidate holding MD meets it
+    const evalMd = matcher.evaluate(mdResume, jd);
+    assert.strictEqual(evalMd.education.status, 'met');
+    const chipsMd = cardRenderer.getFactorRowData(evalMd);
+    const eduChipMd = chipsMd.find(c => c.label === 'Education');
+    assert.strictEqual(eduChipMd.value, 'Met · MD held');
+    assert.strictEqual(eduChipMd.status, 'pass');
+  });
+
+  test('Bug Fix: "Travel may be required" must not set degree mandatory', () => {
+    const jd = 'Role: Field Consultant\nTravel may be required across the region. High flexibility expected.';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, null);
+    assert.strictEqual(req.mandatory, false);
+  });
+
+  test('Bug Fix: "Candidates will be required to" must not set degree mandatory', () => {
+    const jd = 'Role: Operations Lead\nCandidates will be required to work from our central facility.';
+    const req = matcher.extractJdEducationRequirement(jd);
+    assert.strictEqual(req.level, null);
+    assert.strictEqual(req.mandatory, false);
+  });
+
+  test('College Specificity: "MIT Manipal" must be Tier 2 (not Tier 1 MIT)', () => {
+    const tier = colleges.detectCollegeTier('Graduated from MIT Manipal with B.Tech in CSE');
+    assert.strictEqual(tier, 'Tier 2', '"MIT Manipal" must match Tier 2, beating Tier 1 "mit" by length');
+  });
+
+  test('College Guards: "University of British Columbia" must not trigger Tier 1 Columbia', () => {
+    const tier = colleges.detectCollegeTier('Education: University of British Columbia, Bachelor of Science');
+    assert.strictEqual(tier, 'unknown', '"University of British Columbia" must be guarded from matching Columbia Tier 1');
+  });
+
+  test('College Guards: "Oxford Brookes" and "Cambridge Institute" must not trigger Tier 1', () => {
+    assert.strictEqual(colleges.detectCollegeTier('Graduated from Oxford Brookes University'), 'unknown');
+    assert.strictEqual(colleges.detectCollegeTier('Cambridge Institute of Technology, Bangalore'), 'unknown');
+  });
+
+  test('VIT Campuses: VIT Vellore, VIT Chennai, VIT Bhopal, VIT AP are Tier 2', () => {
+    assert.strictEqual(colleges.detectCollegeTier('VIT Vellore'), 'Tier 2');
+    assert.strictEqual(colleges.detectCollegeTier('VIT Chennai campus'), 'Tier 2');
+    assert.strictEqual(colleges.detectCollegeTier('VIT Bhopal University'), 'Tier 2');
+    assert.strictEqual(colleges.detectCollegeTier('VIT AP Amaravati'), 'Tier 2');
+  });
+
+  test('Bug Fix: LLM in AI/tech context must not be extracted as Master of Laws degree', () => {
+    const jdAi1 = 'Opportunity to work on cutting-edge AI projects with leading LLM companies.';
+    const req1 = matcher.extractJdEducationRequirement(jdAi1);
+    assert.strictEqual(req1.level, null, '"leading LLM companies" must NOT extract LLM degree');
+
+    const jdAi2 = 'Role: AI Engineer\nRequirements:\nKnowledge of LLMs, prompt engineering and fine-tuning required.';
+    const req2 = matcher.extractJdEducationRequirement(jdAi2);
+    assert.strictEqual(req2.level, null, '"Knowledge of LLMs" must NOT extract LLM degree');
+
+    const jdLaw1 = 'Role: Legal Counsel\nRequirements:\nMaster of Laws (LL.M.) required from an accredited university.';
+    const req3 = matcher.extractJdEducationRequirement(jdLaw1);
+    assert.strictEqual(req3.level, 'LLM', '"Master of Laws (LL.M.)" must extract LLM degree');
+    assert.strictEqual(req3.mandatory, true);
+
+    const jdLaw2 = 'Role: Corporate Attorney\nRequirements:\nLLB or LLM required with 3+ years bar admission.';
+    const req4 = matcher.extractJdEducationRequirement(jdLaw2);
+    assert.ok(req4.level === 'LLB' || req4.level === 'LLM', '"LLB or LLM required" in legal context must extract law degree');
+  });
+});
+
+// ============================================================================
+// SUITE 9: LINKEDIN AI SEARCH RESULTS (/jobs/search-results/) SYNTHETIC REGRESSION TESTS
+// ============================================================================
+describe('Suite 9: LinkedIn AI Search Results (/jobs/search-results/) Synthetic Regression Tests', () => {
+  const { JSDOM } = require('jsdom');
+  const syntheticHtml = fs.readFileSync(path.join(__dirname, 'fixtures/dom/search-results-synthetic.html'), 'utf8');
+  const content = require(path.join(ROOT, 'extension/scripts/content.js'));
+  const cardRenderer = require(path.join(ROOT, 'extension/scripts/card-renderer.js'));
+  const matcherModule = require(path.join(ROOT, 'extension/scripts/matcher.js'));
+
+  test('Suite 9 - Test 1: Card appears once after action row on synthetic fixture; Apply/Save buttons untouched', async () => {
+    const dom = new JSDOM(syntheticHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=501' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      assert.strictEqual(content.isViewingJob(), true);
+      const pane = content.getJobDetailsPane();
+      assert.ok(pane, 'Pane must be found');
+      const anchor = content.getAnchorElement(pane);
+      assert.ok(anchor, 'Anchor must be found');
+      assert.strictEqual(anchor.className, '_g663d44', 'Anchor must be the action row container');
+
+      await content.handleNavigation();
+
+      const containers = dom.window.document.querySelectorAll('#prepinterview-copilot-container');
+      assert.strictEqual(containers.length, 1, 'Exactly one container must be inserted');
+
+      const actionRow = dom.window.document.querySelector('._g663d44');
+      assert.strictEqual(actionRow.nextElementSibling, containers[0], 'Container must be the next sibling of action row');
+
+      // Check Apply and Save buttons are untouched inside action row
+      const applyBtn = actionRow.querySelector('a._h774e55');
+      const saveBtn = actionRow.querySelector('button._j885f66');
+      assert.ok(applyBtn, 'Apply button must remain intact');
+      assert.ok(saveBtn, 'Save button must remain intact');
+      assert.strictEqual(actionRow.children.length, 2, 'Action row must contain only the 2 action buttons');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 2: Card upgrades when description arrives (>= 200 chars, stable 500ms)', async () => {
+    const dom = new JSDOM(syntheticHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=501' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      const card = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(card);
+      assert.ok(card.textContent.includes('Reading job description…'), 'Card must initially show loading state');
+
+      // Simulate lazy-loaded description arriving in the pane
+      const descContainer = dom.window.document.getElementById('lazy-description-container');
+      const longJdText = 'About the job\n\nWe are looking for a Senior Frontend Engineer with 5+ years of experience in React, TypeScript, and modern web application development. You will architect scalable frontends, collaborate with backend teams, and optimize web performance. Must have strong skills in React, JavaScript, CSS, HTML, and testing frameworks.';
+      descContainer.innerHTML = `<h2>About the job</h2><div>${longJdText}</div>`;
+
+      // Trigger mutation
+      content.onMutationObserved([{ target: descContainer }]);
+
+      // Wait for debounce and stability to complete
+      await new Promise(r => setTimeout(r, 650));
+
+      const updatedCard = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(!updatedCard.textContent.includes('Reading job description…'), 'Loading state must be replaced');
+      const isUpgraded = updatedCard.textContent.includes('Click extension icon to save resume') ||
+                         updatedCard.textContent.includes('%') ||
+                         updatedCard.textContent.includes('Match');
+      assert.ok(isUpgraded, 'Card must upgrade to full or resume-prompt state');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 3: If no description after timeout (8s in prod, 200ms in test), neutral card and pill appear', async () => {
+    const dom = new JSDOM(syntheticHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=501' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      const card = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(card.textContent.includes('Reading job description…'));
+
+      // Wait for NO_DESC_TIMEOUT (200ms in test)
+      await new Promise(r => setTimeout(r, 300));
+
+      const neutralCard = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(neutralCard.textContent.includes('Scroll down so the job description loads, then the score appears.'));
+      const pill = dom.window.document.getElementById('prepinterview-floating-pill');
+      assert.ok(pill);
+      assert.strictEqual(pill.textContent, 'Scroll to load job');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 4: Job switch produces exactly one card', async () => {
+    const dom = new JSDOM(syntheticHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=501' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      assert.strictEqual(dom.window.document.querySelectorAll('#prepinterview-copilot-container').length, 1);
+
+      // Switch to job 502
+      dom.reconfigure({ url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=502' });
+      dom.window.document.querySelector('h1._e441b22').textContent = 'Staff Backend Engineer';
+      await content.handleNavigation();
+
+      const containers = dom.window.document.querySelectorAll('#prepinterview-copilot-container');
+      assert.strictEqual(containers.length, 1, 'Must have exactly one container after job switch');
+      const cards = dom.window.document.querySelectorAll('#prepinterview-copilot-card');
+      assert.strictEqual(cards.length, 1, 'Must have exactly one card after job switch');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 5: Missing anchor displays "Card didn\'t load. Refresh the page." on pill', async () => {
+    const noAnchorHtml = `
+      <div class="jobs-search-results-list__details">
+        <div class="empty-placeholder">No action row or buttons here</div>
+      </div>
+    `;
+    const dom = new JSDOM(noAnchorHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=999' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      // Allow fast test retries to complete (10 + 20 + 30ms = 60ms)
+      await new Promise(r => setTimeout(r, 150));
+
+      const pill = dom.window.document.getElementById('prepinterview-floating-pill');
+      assert.ok(pill, 'Pill must exist');
+      assert.strictEqual(pill.textContent, "Card didn't load. Refresh the page.");
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 6: "Copy debug info" copies report without resume or JD text', async () => {
+    const dom = new JSDOM(syntheticHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=501' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      const copyLink = dom.window.document.getElementById('prepinterview-copy-debug-link');
+      assert.ok(copyLink, 'Copy debug info link must be present');
+
+      copyLink.click();
+      assert.strictEqual(copyLink.textContent, 'Copied!');
+
+      const reportStr = dom.window.__prepinterview_last_copied_debug || copyLink.__lastCopiedReport;
+      assert.ok(reportStr, 'Debug report must be recorded');
+      const report = JSON.parse(reportStr);
+
+      assert.strictEqual(report.urlPathType, 'search-results');
+      assert.strictEqual(report.gateResult, true);
+      assert.strictEqual(report.anchorStrategy, 'semantic_apply_save');
+      assert.ok(report.actionRow);
+      assert.strictEqual(typeof report.descriptionLength, 'number');
+      assert.strictEqual(report.cardInserted, 'yes');
+
+      // Privacy checks: Strictly verify resume and JD are NEVER present in report
+      assert.strictEqual(report.resumeText, undefined, 'resumeText must NOT be in report');
+      assert.strictEqual(report.jdText, undefined, 'jdText must NOT be in report');
+      assert.strictEqual(report.jobDescription, undefined, 'jobDescription must NOT be in report');
+      assert.ok(!reportStr.includes('Senior Frontend Engineer'), 'JD contents must not be in report string');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 7: Card placement is strictly below Apply/Save buttons on both classic /jobs/search/ and /jobs/search-results/ (never in left list)', async () => {
+    // 1. Verify classic /jobs/search/ two-column layout
+    const classicHtml = `
+      <div class="scaffold-layout">
+        <div class="scaffold-layout__list">
+          <ul class="jobs-search-results-list">
+            <li class="jobs-search-results__list-item" data-occludable-job-id="101">
+              <a href="/jobs/view/101">Product Manager</a>
+              <span>Viewed · 5 days ago · in Easy Apply</span>
+            </li>
+          </ul>
+        </div>
+        <div class="scaffold-layout__detail">
+          <div class="job-details-jobs-unified-top-card">
+            <h1>Product Manager</h1>
+            <div class="job-details-jobs-unified-top-card__actions-container" style="display:flex;">
+              <button class="jobs-apply-button" aria-label="Easy Apply to Product Manager">Easy Apply</button>
+              <button class="jobs-save-button" aria-label="Save job">Save</button>
+            </div>
+          </div>
+          <div id="job-details" class="jobs-description__content">
+            <p>Looking for a product manager with 4+ years of experience in product lifecycle and roadmap execution.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const domClassic = new JSDOM(classicHtml, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=101' });
+    global.window = domClassic.window;
+    global.document = domClassic.window.document;
+    domClassic.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      const listCards = domClassic.window.document.querySelectorAll('.scaffold-layout__list #prepinterview-copilot-container');
+      assert.strictEqual(listCards.length, 0, 'Card must NEVER appear in the left search list on /jobs/search/');
+
+      const detailCards = domClassic.window.document.querySelectorAll('.scaffold-layout__detail #prepinterview-copilot-container');
+      assert.strictEqual(detailCards.length, 1, 'Card must appear exactly once in the right details pane on /jobs/search/');
+
+      const actionRow = domClassic.window.document.querySelector('.job-details-jobs-unified-top-card__actions-container');
+      assert.strictEqual(actionRow.nextElementSibling, detailCards[0], 'Card must be placed directly below the Apply/Save button row on /jobs/search/');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+
+    // 2. Verify new /jobs/search-results/ layout with "in Easy Apply" in search results list
+    const aiSearchHtml = `
+      <div class="search-results-filters" role="toolbar">
+        <button class="artdeco-pill">Easy Apply</button>
+      </div>
+      <div class="scaffold-layout">
+        <div class="_b124e55">
+          <ul>
+            <li class="_c992d11" data-job-id="202">
+              <a href="/jobs/search-results/?currentJobId=202">Founder's Office Associate</a>
+              <span>Viewed · 5 days ago · in Easy Apply</span>
+            </li>
+          </ul>
+        </div>
+        <main class="_790ec37f">
+          <h1 class="_e441b22">Founder's Office Associate</h1>
+          <div class="_g663d44" style="display: flex; gap: 8px;">
+            <button class="_h774e55" aria-label="Easy Apply">Easy Apply</button>
+            <button class="_j885f66" aria-label="Save job">Save</button>
+          </div>
+          <div class="_k996a77">Your profile and resume match this role</div>
+          <div id="job-details" class="_m228c99">
+            <p>Founder's office role requiring 3+ years experience in high-growth operations.</p>
+          </div>
+        </main>
+      </div>
+    `;
+
+    const domAi = new JSDOM(aiSearchHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=202' });
+    global.window = domAi.window;
+    global.document = domAi.window.document;
+    domAi.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+      const listCards = domAi.window.document.querySelectorAll('._b124e55 #prepinterview-copilot-container');
+      assert.strictEqual(listCards.length, 0, 'Card must NEVER appear in the left search list on /jobs/search-results/');
+
+      const mainCards = domAi.window.document.querySelectorAll('main #prepinterview-copilot-container');
+      assert.strictEqual(mainCards.length, 1, 'Card must appear exactly once in the main details pane on /jobs/search-results/');
+
+      const actionRow = domAi.window.document.querySelector('._g663d44');
+      assert.strictEqual(actionRow.nextElementSibling, mainCards[0], 'Card must be placed directly below the Apply/Save button row on /jobs/search-results/');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 8: Placement A — Apply+Save in a flex row (card is sibling after the row, Save not stretched)', async () => {
+    const html = `
+      <div class="scaffold-layout__detail">
+        <div class="job-details-jobs-unified-top-card">
+          <h1>Frontend Developer</h1>
+          <div class="job-details-jobs-unified-top-card__actions-container" style="display: flex; flex-direction: row;">
+            <div class="jobs-apply-button--top-card">
+              <button class="jobs-apply-button" aria-label="Easy Apply to Frontend Developer">Easy Apply</button>
+            </div>
+            <div class="jobs-save-button--top-card">
+              <button class="jobs-save-button" aria-label="Save job">Save</button>
+            </div>
+          </div>
+        </div>
+        <div id="job-details" class="jobs-description__content">
+          <p>Frontend role requiring 4+ years of experience in React, JavaScript, and CSS.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=701' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+
+      const actionRow = dom.window.document.querySelector('.job-details-jobs-unified-top-card__actions-container');
+      const wrapper = dom.window.document.querySelector('[data-prepinterview-wrapper="true"]');
+      assert.ok(wrapper, 'Wrapper must have data-prepinterview-wrapper="true"');
+      assert.strictEqual(wrapper.id, 'prepinterview-copilot-container');
+
+      // Card must be next sibling AFTER the action row, never inside it
+      assert.strictEqual(actionRow.nextElementSibling, wrapper, 'Card must be the next sibling of the action row');
+      assert.strictEqual(actionRow.contains(wrapper), false, 'Card must NEVER be inside the action row');
+
+      // Action row children must be unchanged (Save button not stretched or displaced)
+      assert.strictEqual(actionRow.children.length, 2, 'Action row must contain only the 2 button containers');
+      assert.strictEqual(actionRow.children[0].className, 'jobs-apply-button--top-card');
+      assert.strictEqual(actionRow.children[1].className, 'jobs-save-button--top-card');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 9: Placement B — Row inside a flex-row parent (climbs one level)', async () => {
+    const html = `
+      <div class="job-details-pane">
+        <div class="outer-actions-flex" style="display: flex; flex-direction: row;">
+          <div class="inner-button-row" style="display: flex; flex-direction: row;">
+            <button class="jobs-apply-button" aria-label="Apply to job">Apply</button>
+            <button class="jobs-save-button" aria-label="Save job">Save</button>
+          </div>
+          <div class="more-options-btn">...</div>
+        </div>
+        <div id="job-details">
+          <p>Looking for an Engineer with 3+ years experience.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=702' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      const pane = dom.window.document.querySelector('.job-details-pane');
+      const outerFlex = dom.window.document.querySelector('.outer-actions-flex');
+      const innerRow = dom.window.document.querySelector('.inner-button-row');
+
+      const anchor = content.getAnchorElement(pane);
+      // It must climb 1 level from inner-button-row to outer-actions-flex because outer-actions-flex is flex-row!
+      assert.strictEqual(anchor, outerFlex, 'Anchor must climb to outer flex-row container');
+
+      await content.handleNavigation();
+
+      const wrapper = dom.window.document.querySelector('[data-prepinterview-wrapper="true"]');
+      assert.ok(wrapper);
+      assert.strictEqual(outerFlex.nextElementSibling, wrapper, 'Wrapper must be inserted after the outer flex container');
+      assert.strictEqual(outerFlex.contains(wrapper), false, 'Wrapper must NOT be inside the outer flex container');
+      assert.strictEqual(innerRow.contains(wrapper), false, 'Wrapper must NOT be inside the inner button row');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 10: Placement C — Save before Apply in DOM order (finds common ancestor, card after row)', async () => {
+    const html = `
+      <div class="job-pane">
+        <div class="custom-actions-bar" style="display: flex; flex-direction: row;">
+          <button class="save-job-btn" aria-label="Save this job">Save</button>
+          <button class="apply-job-btn" aria-label="Easy Apply now">Easy Apply</button>
+        </div>
+        <div id="job-details">
+          <p>Full stack role requiring 5+ years experience.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=703' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      const pane = dom.window.document.querySelector('.job-pane');
+      const actionsBar = dom.window.document.querySelector('.custom-actions-bar');
+
+      const anchor = content.getAnchorElement(pane);
+      assert.strictEqual(anchor, actionsBar, 'Anchor must resolve to common ancestor of Save and Apply');
+
+      await content.handleNavigation();
+
+      const wrapper = dom.window.document.querySelector('[data-prepinterview-wrapper="true"]');
+      assert.ok(wrapper);
+      assert.strictEqual(actionsBar.nextElementSibling, wrapper, 'Card must be next sibling after actionsBar');
+      assert.strictEqual(actionsBar.children.length, 2, 'Actions bar must retain both buttons without card inside');
+      assert.strictEqual(actionsBar.children[0].textContent.trim(), 'Save');
+      assert.strictEqual(actionsBar.children[1].textContent.trim(), 'Easy Apply');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 11: Placement D — Collapsed wrapper contains only the card (no empty placeholders or gaps)', async () => {
+    const html = `
+      <div class="job-pane">
+        <div class="job-actions-row" style="display: flex;">
+          <button aria-label="Easy Apply">Easy Apply</button>
+          <button aria-label="Save">Save</button>
+        </div>
+        <div id="job-details">
+          <p>Engineering role with 3+ years experience in Node.js and cloud infrastructure.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=704' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+
+      const wrapper = dom.window.document.querySelector('[data-prepinterview-wrapper="true"]');
+      assert.ok(wrapper, 'Wrapper div must exist');
+      assert.strictEqual(wrapper.children.length, 1, 'Wrapper must contain ONLY the card element');
+
+      const card = wrapper.firstElementChild;
+      assert.strictEqual(card.id, 'prepinterview-copilot-card');
+
+      // Collapsed details panel must be display: none
+      const detailsPanel = card.querySelector('#prepinterview-details-panel');
+      if (detailsPanel) {
+        assert.ok(detailsPanel.classList.contains('prepinterview-collapsed'), 'Details panel must be collapsed by default');
+      }
+
+      // Check wrapper styles (padding, not margin)
+      assert.ok(wrapper.style.margin === '0px' || wrapper.style.margin === '0', 'Wrapper margin must be 0');
+      assert.ok(wrapper.style.padding.includes('12px'), 'Wrapper padding must be 12px 0');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+});
+
 

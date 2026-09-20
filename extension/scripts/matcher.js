@@ -351,12 +351,14 @@
     const defaultCurrentMonth = !isNaN(refDate.getTime()) ? refDate.getMonth() : 8;
     const currentMaxKey = defaultCurrentYear * 12 + defaultCurrentMonth;
 
+    let hasExpHeading = false;
     let expSection = clean;
     const expMatch = clean.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:experience|work experience|employment history|professional experience)\b/i)
       || clean.match(/\b(?:experience|work experience|employment history|professional experience)\b/i);
     if (expMatch) {
+      hasExpHeading = true;
       const fromExp = clean.slice(expMatch.index + expMatch[0].length);
-      const endMatch = fromExp.match(/\n\s*(?:##\s*|\*\*\s*)?(?:education|projects|technical skills|skills|certifications|publications|achievements)\b/i);
+      const endMatch = fromExp.match(/\n\s*(?:##\s*|\*\*\s*)?(?:education|academic background|projects|technical skills|skills|certifications|publications|achievements)\b/i);
       expSection = endMatch ? fromExp.slice(0, endMatch.index) : fromExp;
     }
 
@@ -366,21 +368,78 @@
       'gi'
     );
 
+    const degreeKeywordsRegex = /\b(b\.?tech|m\.?tech|mba|bachelor|master|degree|university|college|ph\.?d|institute|school|academics|cgpa|gpa|diploma|b\.?e|b\.?s|m\.?s|bba|bca|b\.?com)\b/i;
+    const nonExpHeadingRegex = /^\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:education|academic background|projects|certifications|publications|achievements|skills|technical skills)\b/i;
+    const resumeExpHeadingRegex = /^\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:experience|work experience|employment history|professional experience)\b/i;
+
     const internshipWeight = (config.experience && config.experience.internshipWeight) || 0.5;
     const calendarMonths = new Map();
     const familyCounts = {};
 
-    const lines = expSection.split(/\r?\n/);
+    const lines = (hasExpHeading ? expSection : clean).split(/\r?\n/);
     let currentRoleFamily = 'unknown';
     let currentIsInternship = false;
+    let inNonExpBlock = false;
 
     for (let i = 0; i < lines.length; i++) {
       const rawLine = lines[i];
       const line = rawLine.trim();
       if (!line) continue;
 
-      if (/\b(b\.?tech|m\.?tech|mba|bachelor|master|degree|university|college|cgpa|gpa)\b/i.test(line)) {
+      if (!hasExpHeading) {
+        if (nonExpHeadingRegex.test(line)) {
+          inNonExpBlock = true;
+          continue;
+        }
+        if (resumeExpHeadingRegex.test(line)) {
+          inNonExpBlock = false;
+          continue;
+        }
+        if (inNonExpBlock) {
+          continue;
+        }
+        // With no Experience heading, skip ranges within 3 lines of a degree keyword
+        let nearDegree = false;
+        for (let j = Math.max(0, i - 3); j <= Math.min(lines.length - 1, i + 3); j++) {
+          if (degreeKeywordsRegex.test(lines[j])) {
+            nearDegree = true;
+            break;
+          }
+        }
+        if (nearDegree) {
+          continue;
+        }
+      }
+
+      if (degreeKeywordsRegex.test(line)) {
         continue;
+      }
+
+      // Check if line has only dates
+      rangeRegex.lastIndex = 0;
+      const hasDateMatch = rangeRegex.test(line);
+      rangeRegex.lastIndex = 0;
+
+      if (hasDateMatch) {
+        const withoutDates = line.replace(new RegExp(rangeRegex.source, 'gi'), '').replace(/[\s•\-\*|~,().]/g, '');
+        if (withoutDates.length === 0) {
+          // Line has only dates: look at previous 2 lines
+          const prev1 = (i >= 1) ? lines[i - 1].trim() : '';
+          const prev2 = (i >= 2) ? lines[i - 2].trim() : '';
+          if (degreeKeywordsRegex.test(prev1) || degreeKeywordsRegex.test(prev2)) {
+            // Skip education dates!
+            continue;
+          }
+
+          const prevTitle = prev1 + ' ' + prev2;
+          const famFromPrev = detectRoleFamily(prevTitle);
+          if (famFromPrev !== 'unknown') {
+            currentRoleFamily = famFromPrev;
+            currentIsInternship = /\b(intern|internship|trainee|apprentice)\b/i.test(prevTitle);
+          } else if (/\b(intern|internship|trainee|apprentice)\b/i.test(prevTitle)) {
+            currentIsInternship = true;
+          }
+        }
       }
 
       const detectedFam = detectRoleFamily(line);
@@ -394,6 +453,26 @@
       let match;
       rangeRegex.lastIndex = 0;
       while ((match = rangeRegex.exec(line)) !== null) {
+        const matchedSnippet = match[0];
+        const afterMatch = line.slice(match.index + matchedSnippet.length, match.index + matchedSnippet.length + 4);
+        if (afterMatch.includes('%') || afterMatch.includes('$')) {
+          continue;
+        }
+        const beforeMatch = line.slice(Math.max(0, match.index - 2), match.index);
+        if (beforeMatch.includes('$') || beforeMatch.includes('€') || beforeMatch.includes('£') || beforeMatch.includes('₹') || beforeMatch.includes('%')) {
+          continue;
+        }
+
+        const hasStartMonth = Boolean(match[1]);
+        const hasEndMonth = Boolean(match[4]);
+        const startRaw = match[2];
+        const endRaw = match[5];
+        const isBareTwoDigitStart = !hasStartMonth && startRaw && startRaw.length === 2 && !matchedSnippet.startsWith("'");
+        const isBareTwoDigitEnd = !hasEndMonth && endRaw && endRaw.length === 2 && !matchedSnippet.includes("'" + endRaw);
+        if (isBareTwoDigitStart && isBareTwoDigitEnd) {
+          continue;
+        }
+
         let roleFam = currentRoleFamily;
         let isInt = currentIsInternship;
 
@@ -572,8 +651,43 @@
   }
 
   // --- 7. EDUCATION & PEDIGREE EXTRACTION ---
+  const PROFESSIONAL_DEGREES = ['MD', 'MBBS', 'BDS', 'BAMS', 'BHMS', 'LLB', 'LLM', 'CA', 'CMA', 'CS', 'B.Arch', 'B.Pharm'];
+
+  const DEGREE_RANKS = {
+    'PhD': 3,
+    'Doctorate': 3,
+    'Master\'s': 2,
+    'MBA': 2,
+    'PGDM': 2,
+    'M.Tech': 2,
+    'MS': 2,
+    'ME': 2,
+    'LLM': 2,
+    'Bachelor\'s': 1,
+    'B.Tech': 1,
+    'BS': 1,
+    'BE': 1,
+    'BBA': 1,
+    'B.Com': 1,
+    'BBA/B.Com': 1,
+    'BCA': 1,
+    'B.Des': 1,
+    'Graduate': 1,
+    'Diploma': 0
+  };
+
+  function getDegreeLadderRank(degree) {
+    if (!degree) return 0;
+    if (DEGREE_RANKS[degree] !== undefined) return DEGREE_RANKS[degree];
+    const d = degree.toLowerCase();
+    if (d.includes('phd') || d.includes('doctor')) return 3;
+    if (d.includes('master') || d.includes('mba') || d.includes('pgdm') || d.includes('m.tech') || d.includes('ms') || d.includes('me') || d.includes('llm')) return 2;
+    if (d.includes('bachelor') || d.includes('b.tech') || d.includes('bs') || d.includes('be') || d.includes('graduate') || d.includes('bba') || d.includes('b.com') || d.includes('bca') || d.includes('b.des')) return 1;
+    return 0;
+  }
+
   function extractCandidateEducation(text, config) {
-    if (!text) return { degree: 'Not specified', tier: 'unknown', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
+    if (!text) return { degree: 'Not specified', degreesHeld: [], tier: 'unknown', isTier1: false, isTier2: false, tierName: '', label: 'Not specified' };
 
     // 1. Prefer isolating the Education section
     const eduMatch = text.match(/\n?\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:education|academic background|academics|qualifications)\b/i);
@@ -590,32 +704,54 @@
       eduText = nonExpLines.join('\n');
     }
 
-    const norm = normalizeWhitespace(eduText).toLowerCase().replace(/\s+/g, ' ');
+    const degreesHeld = [];
 
-    // Best degree across text
+    // Case-sensitive short checks on original eduText
+    if (/\b(?:M\.D\.|MD)\b/.test(eduText)) degreesHeld.push('MD');
+    if (/\bMBBS\b/i.test(eduText)) degreesHeld.push('MBBS');
+    if (/\bBDS\b/i.test(eduText)) degreesHeld.push('BDS');
+    if (/\bBAMS\b/i.test(eduText)) degreesHeld.push('BAMS');
+    if (/\bBHMS\b/i.test(eduText)) degreesHeld.push('BHMS');
+    if (/\b(?:LL\.?B\.?|bachelor of laws?)\b/i.test(eduText)) degreesHeld.push('LLB');
+    const candIsAi = /\b(?:large\s+language|model|models|ai|genai|artificial\s+intelligence|machine\s+learning|nlp)\b/i.test(eduText);
+    if (!candIsAi && (/\b(?:master\s+of\s+laws?|LL\.M\.|L\.L\.M\.)\b/i.test(eduText) || (/\bLLM\b/.test(eduText) && /\b(?:law|legal|ll\.?b|bar|juris)\b/i.test(eduText)))) degreesHeld.push('LLM');
+    if (/\b(?:chartered accountant|C\.?A\.)\b/i.test(eduText) || /\bCA\b/.test(eduText)) degreesHeld.push('CA');
+    if (/\b(?:cost and management accountant|C\.?M\.?A\.|CMA)\b/i.test(eduText)) degreesHeld.push('CMA');
+    if (/\bcompany secretary\b/i.test(eduText) || (/\bCS\b/.test(eduText) && !/\bcomputer science\b/i.test(eduText))) degreesHeld.push('CS');
+    if (/\b(?:b\.?arch|bachelor of architecture)\b/i.test(eduText)) degreesHeld.push('B.Arch');
+    if (/\b(?:b\.?pharm|bachelor of pharmacy)\b/i.test(eduText)) degreesHeld.push('B.Pharm');
+    if (/\b(?:b\.?des|bachelor of design)\b/i.test(eduText)) degreesHeld.push('B.Des');
+
+    if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(eduText)) degreesHeld.push('PhD');
+    if (/\b(m\.?b\.?a\.?|master of business administration|pgdm)\b/i.test(eduText)) degreesHeld.push('MBA');
+    if (/\b(m\.?tech|master of technology)\b/i.test(eduText) || /\b(?:M\.E\.|ME)\b/.test(eduText)) degreesHeld.push('M.Tech');
+    if (/\b(m\.?s\.?|master of science|m\.?sc)\b/i.test(eduText) || /\b(?:M\.S\.|MS)\b/.test(eduText)) degreesHeld.push('MS');
+    if (/\b(b\.?tech|bachelor of technology|bachelor of engineering)\b/i.test(eduText) || /\b(?:B\.E\.|BE)\b/.test(eduText)) degreesHeld.push('B.Tech');
+    if (/\b(b\.?s\.?|bachelor of science|b\.?sc)\b/i.test(eduText) || /\b(?:B\.S\.|BS)\b/.test(eduText)) degreesHeld.push('BS');
+    if (/\b(bba|b\.?com|bachelor of commerce|bca)\b/i.test(eduText)) degreesHeld.push('BBA/B.Com');
+    if (/\b(bachelor|degree)\b/i.test(eduText) && !degreesHeld.some(d => d.startsWith('B.') || d === 'BS' || d === 'Bachelor\'s')) degreesHeld.push('Bachelor\'s');
+
+    // Primary degree: pick highest degree
     let degree = 'Bachelor\'s';
-    if (/\b(ph\.?d|doctorate|doctor of philosophy)\b/i.test(norm)) {
-      degree = 'PhD';
-    } else if (/\b(m\.?b\.?a\.?|master of business administration|pgdm)\b/i.test(norm)) {
-      degree = 'MBA';
-    } else if (/\b(m\.?tech|m\.?e\.?|master of technology)\b/i.test(norm)) {
-      degree = 'M.Tech';
-    } else if (/\b(m\.?s\.?|master of science|m\.?sc)\b/i.test(norm)) {
-      degree = 'MS';
-    } else if (/\b(b\.?tech|b\.?e\.?|bachelor of technology|bachelor of engineering)\b/i.test(norm)) {
-      degree = 'B.Tech';
-    } else if (/\b(b\.?s\.?|bachelor of science|b\.?sc)\b/i.test(norm)) {
-      degree = 'BS';
-    } else if (/\b(bba|b\.?com|bachelor of commerce|bca)\b/i.test(norm)) {
-      degree = 'BBA/B.Com';
-    } else if (/\b(bachelor|degree)\b/i.test(norm)) {
-      degree = 'Bachelor\'s';
-    } else {
-      degree = 'Graduate';
-    }
+    if (degreesHeld.includes('PhD')) degree = 'PhD';
+    else if (degreesHeld.includes('MD')) degree = 'MD';
+    else if (degreesHeld.includes('MBBS')) degree = 'MBBS';
+    else if (degreesHeld.includes('MBA')) degree = 'MBA';
+    else if (degreesHeld.includes('M.Tech')) degree = 'M.Tech';
+    else if (degreesHeld.includes('MS')) degree = 'MS';
+    else if (degreesHeld.includes('LLM')) degree = 'LLM';
+    else if (degreesHeld.includes('B.Tech')) degree = 'B.Tech';
+    else if (degreesHeld.includes("Bachelor's") || degreesHeld.includes('BS')) degree = "Bachelor's";
+    else if (degreesHeld.includes('LLB')) degree = 'LLB';
+    else if (degreesHeld.includes('CA')) degree = 'CA';
+    else if (degreesHeld.includes('B.Arch')) degree = 'B.Arch';
+    else if (degreesHeld.includes('B.Pharm')) degree = 'B.Pharm';
+    else if (degreesHeld.includes('B.Des')) degree = 'B.Des';
+    else if (degreesHeld.includes('BBA/B.Com')) degree = 'BBA/B.Com';
+    else degree = 'Bachelor\'s';
 
     // Best tier across detected institutions in Education section
-    const detectedTier = (CollegesData && CollegesData.detectCollegeTier) ? CollegesData.detectCollegeTier(norm) : 'unknown';
+    const detectedTier = (CollegesData && CollegesData.detectCollegeTier) ? CollegesData.detectCollegeTier(eduText) : 'unknown';
     const tier = detectedTier || 'unknown';
     const isTier1 = (tier === 'Tier 1');
     const isTier2 = (tier === 'Tier 2');
@@ -624,6 +760,7 @@
 
     return {
       degree: degree,
+      degreesHeld: degreesHeld,
       tier: tier,
       isTier1: isTier1,
       isTier2: isTier2,
@@ -672,77 +809,344 @@
     return isNaN(n) ? null : n;
   }
 
+  function extractJdExperienceRequirement(rawJd) {
+    if (!rawJd || typeof rawJd !== 'string') {
+      return { minExp: null, maxExp: null, isFresher: false };
+    }
+
+    // 1. Blurb filter: drop "over/with/more than N years" only in company sentences (we/our/founded/celebrating/serving/heritage).
+    // Keep "Candidates with 3 years of experience" and "Over 5 years of experience required" as requirements.
+    const companyMarker = /\b(?:we(?:\s+are|'re|\s+have)?|our|us|company|firm|founded|celebrating|serving|heritage|history|excellence|leadership|legacy)\b/i;
+    const blurbPhrasePattern = /\b(?:over|with|more\s+than)\s+\d+\s+(?:years?|yrs?)\b/i;
+
+    const rawLines = rawJd.split(/\r?\n/);
+    const cleanedLines = rawLines.map(line => {
+      if (blurbPhrasePattern.test(line) && companyMarker.test(line)) {
+        return line.replace(/\b(?:celebrating|serving|founded(?:\s+with)?|our\s+company\s+has|we\s+have)?\s*(?:over|with|more\s+than)\s+\d+\s+(?:years?|yrs?)(?:\s+of)?(?:\s+[a-zA-Z\s]{0,25}?)?(?:excellence|history|leadership|experience|serving|service|heritage)?\b/gi, ' ');
+      }
+      return line;
+    });
+
+    // 2. Headings and lines processing
+    // Search whole JD, never a narrowed section. Use requirement headings only to rank matches. Ignore preferred/plus lines.
+    const reqHeadingRegex = /^\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:requirements|must[- ]haves|required\s+skills|qualifications|who\s+you\s+are|what\s+we(?:'re|\s+are)?\s+looking\s+for|minimum\s+requirements|basic\s+qualifications)\b/i;
+    const exitHeadingRegex = /^\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:responsibilities|what\s+you(?:'ll|\s+will)?\s+do|benefits|perks|compensation|about\s+us|about\s+the\s+company)\b/i;
+    const preferredLineRegex = /\b(?:preferred|good\s+to\s+have|nice\s+to\s+have|plus|a\s+plus|optional|not\s+mandatory|not\s+required)\b/i;
+
+    let inReqSection = false;
+    const matches = [];
+
+    // Range separators: -, –, —, ~, "to"
+    const sep = '(?:[-–—~]|\\bto\\b)';
+
+    const rangeRegex = new RegExp(
+      '\\b(\\d+(?:\\.\\d+)?)\\s*' + sep + '\\s*(\\d+(?:\\.\\d+)?)\\s*(?:years?|yrs?)(?:\\s*\'s?|\\s+of)?(?:\\s+[a-zA-Z0-9+#./-]+){0,8}?(?:\\s+(?:experience|exp)\\b|\\s+(?:in|as|of)\\b)?',
+      'i'
+    );
+
+    const plusRegex = new RegExp(
+      '\\b(\\d+(?:\\.\\d+)?)\\s*\\+\\s*(?:years?|yrs?)(?:\\s*\'s?|\\s+of)?(?:\\s+[a-zA-Z0-9+#./-]+){0,8}?(?:\\s+(?:experience|exp)\\b|\\s+(?:in|as|of)\\b)?',
+      'i'
+    );
+
+    const atLeastRegex = new RegExp(
+      '(?:at\\s+least|minimum(?:\\s+of)?|over)\\s+(\\d+(?:\\.\\d+)?)(?:\\s*' + sep + '\\s*(\\d+(?:\\.\\d+)?))?\\s*\\+?\\s*(?:years?|yrs?)(?:\\s*\'s?|\\s+of)?(?:\\s+[a-zA-Z0-9+#./-]+){0,8}?(?:\\s+(?:experience|exp)\\b|\\s+(?:in|as|of)\\b)?',
+      'i'
+    );
+
+    const orMoreRegex = new RegExp(
+      '\\b(\\d+(?:\\.\\d+)?)\\s*(?:or\\s+more|and\\s+above)\\s*(?:years?|yrs?)(?:\\s*\'s?|\\s+of)?(?:\\s+[a-zA-Z0-9+#./-]+){0,8}?(?:\\s+(?:experience|exp)\\b|\\s+(?:in|as|of)\\b)?',
+      'i'
+    );
+
+    const colonRegex = new RegExp(
+      '\\b(?:experience|exp)\\s*:\\s*(\\d+(?:\\.\\d+)?)(?:\\s*' + sep + '\\s*(\\d+(?:\\.\\d+)?))?\\s*\\+?\\s*(?:years?|yrs?)?',
+      'i'
+    );
+
+    const generalExpRegex = new RegExp(
+      '\\b(\\d+(?:\\.\\d+)?)\\s*(?:years?|yrs?)(?:\\s*\'s?|\\s+of)?(?:\\s+[a-zA-Z0-9+#./-]+){0,8}?\\s+(?:experience|exp)\\b',
+      'i'
+    );
+
+    for (let i = 0; i < cleanedLines.length; i++) {
+      const line = cleanedLines[i];
+      let workingLine = line.trim();
+      if (!workingLine) continue;
+
+      if (reqHeadingRegex.test(workingLine)) {
+        inReqSection = true;
+        continue;
+      }
+      if (exitHeadingRegex.test(workingLine)) {
+        inReqSection = false;
+        continue;
+      }
+
+      if (preferredLineRegex.test(workingLine)) {
+        continue;
+      }
+
+      // 1. Colon check
+      let m = colonRegex.exec(workingLine);
+      if (m && m[1]) {
+        matches.push({ min: parseFloat(m[1]), max: m[2] ? parseFloat(m[2]) : null, inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+
+      // 2. Range check (e.g. 2-4 years, 3–6 years of experience)
+      m = rangeRegex.exec(workingLine);
+      if (m && m[1] && m[2]) {
+        matches.push({ min: parseFloat(m[1]), max: parseFloat(m[2]), inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+
+      // 3. At least / minimum / over
+      m = atLeastRegex.exec(workingLine);
+      if (m && m[1]) {
+        matches.push({ min: parseFloat(m[1]), max: m[2] ? parseFloat(m[2]) : null, inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+
+      // 4. Plus (e.g. 2+ years)
+      m = plusRegex.exec(workingLine);
+      if (m && m[1]) {
+        matches.push({ min: parseFloat(m[1]), max: null, inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+
+      // 5. Or more
+      m = orMoreRegex.exec(workingLine);
+      if (m && m[1]) {
+        matches.push({ min: parseFloat(m[1]), max: null, inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+
+      // 6. General (e.g. Candidates with 3 years of experience)
+      m = generalExpRegex.exec(workingLine);
+      if (m && m[1]) {
+        matches.push({ min: parseFloat(m[1]), max: null, inReq: inReqSection });
+        workingLine = workingLine.replace(m[0], ' ');
+      }
+    }
+
+    const reqMatches = matches.filter(m => m.inReq);
+    const pool = reqMatches.length > 0 ? reqMatches : matches;
+
+    if (pool.length > 0) {
+      let best = pool[0];
+      for (let i = 1; i < pool.length; i++) {
+        if (pool[i].min > best.min) {
+          best = pool[i];
+        }
+      }
+      return {
+        minExp: best.min,
+        maxExp: best.max,
+        isFresher: false
+      };
+    }
+
+    // 3. Fresher check ONLY when NO numeric years are found
+    let isFresher = false;
+    const fullCleanedJd = cleanedLines.join('\n');
+    const sentences = fullCleanedJd.split(/(?<=[.!?\n])/);
+
+    for (const sent of sentences) {
+      const s = sent.trim();
+      if (!s) continue;
+      if (preferredLineRegex.test(s)) continue;
+
+      if (/\b(?:freshers?(?:\s+(?:welcome|can\s+apply))?|entry[- ]level|new\s+grads?|new\s+graduates?)\b/i.test(s)) {
+        isFresher = true;
+        break;
+      }
+
+      if (/\bno\s+(?:prior\s+|previous\s+)?(?:work\s+|professional\s+)?experience\s+(?:is\s+)?(?:required|needed|necessary|mandatory)\b/i.test(s)) {
+        if (!/\bexperience\s+(?:with|in|using)\b/i.test(s)) {
+          isFresher = true;
+          break;
+        }
+      }
+    }
+
+    if (isFresher) {
+      return { minExp: 0, maxExp: null, isFresher: true };
+    }
+
+    return { minExp: null, maxExp: null, isFresher: false };
+  }
+
+  function parseJdEducationSentence(sentence) {
+    if (!sentence || typeof sentence !== 'string') return null;
+
+    // Case-sensitive short checks on original sentence
+    const hasBE = /\b(?:B\.E\.|BE)\b/.test(sentence);
+    const hasME = /\b(?:M\.E\.|ME)\b/.test(sentence);
+    const hasMS = /\b(?:M\.S\.|MS)\b/.test(sentence);
+    const hasBS = /\b(?:B\.S\.|BS)\b/.test(sentence);
+    const hasMD = /\b(?:M\.D\.|MD)\b/.test(sentence);
+    const hasCA = /\b(?:C\.A\.|CA)\b/.test(sentence);
+    const hasCS = /\b(?:C\.S\.|CS)\b/.test(sentence) && !/\bcomputer\s+science\b/i.test(sentence);
+
+    const hasPhD = /\b(?:ph\.?d|phd|doctorate|doctor\s+of\s+philosophy)\b/i.test(sentence);
+    const hasMBA = /\b(?:mba|m\.?b\.?a\.?|pgdm|master\s+of\s+business\s+administration)\b/i.test(sentence);
+    const hasMTech = /\b(?:m\.?tech|master\s+of\s+technology)\b/i.test(sentence) || hasME;
+    const hasMasters = /\b(?:master'?s(?:\s+degree)?|master\s+of\s+science|m\.?sc)\b/i.test(sentence) || hasMS;
+
+    const hasBTech = /\b(?:b\.?tech|bachelor\s+of\s+technology|bachelor\s+of\s+engineering)\b/i.test(sentence) || hasBE;
+    const hasBachelors = /\b(?:bachelor'?s(?:\s+degree)?|undergraduate|bba|b\.?com|bca)\b/i.test(sentence) || hasBS;
+    const hasGraduate = /\b(?:graduation|graduate\s+degree)\b/i.test(sentence);
+
+    const hasMBBS = /\bMBBS\b/i.test(sentence);
+    const hasBDS = /\bBDS\b/i.test(sentence);
+    const hasBAMS = /\bBAMS\b/i.test(sentence);
+    const hasBHMS = /\bBHMS\b/i.test(sentence);
+    const hasLLB = /\b(?:LL\.?B\.?|bachelor\s+of\s+laws?|law\s+degree)\b/i.test(sentence);
+    const isAiContext = /\b(?:large\s+language|model|models|ai|genai|artificial\s+intelligence|machine\s+learning|nlp|prompt|prompts|prompting|fine[- ]tuning|rag|companies|tools|technologies|frameworks|pipeline|agents?)\b/i.test(sentence);
+    const hasLLM = !isAiContext && (
+      /\b(?:master\s+of\s+laws?|LL\.M\.|L\.L\.M\.)\b/i.test(sentence) ||
+      (/\bLLM\b/.test(sentence) && /\b(?:law|legal|ll\.?b|bar\s+admission|juris|advocate|counsel)\b/i.test(sentence))
+    );
+    const hasChartered = /\bchartered\s+accountant\b/i.test(sentence) || hasCA;
+    const hasCMA = /\b(?:cost\s+and\s+management\s+accountant|C\.?M\.?A\.|CMA)\b/i.test(sentence);
+    const hasCompSec = /\bcompany\s+secretary\b/i.test(sentence) || /\b(?:CA\s*[/,&]\s*CS|CS\s*[/,&]\s*CA)\b/i.test(sentence);
+    const hasBArch = /\b(?:b\.?arch|bachelor\s+of\s+architecture)\b/i.test(sentence);
+    const hasBPharm = /\b(?:b\.?pharm|bachelor\s+of\s+pharmacy)\b/i.test(sentence);
+    const hasBDes = /\b(?:b\.?des|bachelor\s+of\s+design)\b/i.test(sentence);
+
+    const degrees = [];
+    if (hasPhD) degrees.push('PhD');
+    if (hasMBA) degrees.push('MBA');
+    if (hasMTech) degrees.push('M.Tech');
+    if (hasMasters && !hasMBA && !hasMTech) degrees.push("Master's");
+    if (hasMD) degrees.push('MD');
+    if (hasMBBS) degrees.push('MBBS');
+    if (hasBDS) degrees.push('BDS');
+    if (hasBAMS) degrees.push('BAMS');
+    if (hasBHMS) degrees.push('BHMS');
+    if (hasLLB) degrees.push('LLB');
+    if (hasLLM) degrees.push('LLM');
+    if (hasChartered) degrees.push('CA');
+    if (hasCMA) degrees.push('CMA');
+    if (hasCompSec) degrees.push('CS');
+    if (hasBArch) degrees.push('B.Arch');
+    if (hasBPharm) degrees.push('B.Pharm');
+    if (hasBDes) degrees.push('B.Des');
+    if (hasBTech) degrees.push('B.Tech');
+    if (hasBachelors && !degrees.includes('B.Tech')) degrees.push("Bachelor's");
+    if (hasGraduate && degrees.length === 0) degrees.push("Bachelor's");
+
+    if (degrees.length === 0) return null;
+
+    // Cues
+    const hasEqExp = /\bor\s+(?:equivalent|relevant)\s+(?:professional\s+|work\s+)?experience\b/i.test(sentence);
+    const hasPreferredCue = /\b(?:preferred|plus|a\s+plus|desired|advantage|ideally|preferably|might\s+look\s+for|good\s+to\s+have|nice\s+to\s+have)\b/i.test(sentence);
+    const hasMandatoryCue = /\b(?:required|must(?:\s+have)?|mandatory|minimum|at\s+least)\b/i.test(sentence);
+    const orHigher = /\b(?:or\s+(?:higher|above|more|equivalent\s+degree))\b/i.test(sentence);
+
+    let mandatory = false;
+    if (hasEqExp || hasPreferredCue) {
+      mandatory = false;
+    } else if (hasMandatoryCue) {
+      mandatory = true;
+    } else {
+      mandatory = true;
+    }
+
+    let level = degrees[0];
+    if (degrees.includes('MD') && degrees.includes('MBBS')) {
+      level = 'MD/MBBS';
+    } else if (degrees.includes('B.Tech') && degrees.includes('M.Tech')) {
+      level = 'B.Tech/M.Tech';
+    }
+
+    return {
+      level: level,
+      degrees: degrees,
+      mandatory: mandatory,
+      orHigher: orHigher,
+      sentence: sentence.trim()
+    };
+  }
+
+  function extractAllJdEducationRequirements(jdText) {
+    if (!jdText || typeof jdText !== 'string') return [];
+    const lines = jdText.split(/\r?\n/);
+    const list = [];
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+      if (/\bsee how you compare\b/i.test(trimmedLine) || /\b\d+\s+applicants\b/i.test(trimmedLine) || /\btop schools:\b/i.test(trimmedLine)) {
+        continue;
+      }
+      const sentences = trimmedLine.split(/(?<=[a-z0-9][.!?])\s+(?=[A-Z])/);
+      for (const sent of sentences) {
+        const parsed = parseJdEducationSentence(sent);
+        if (parsed) {
+          list.push(parsed);
+        }
+      }
+    }
+    return list;
+  }
+
+  function extractJdEducationRequirement(jdText) {
+    const list = extractAllJdEducationRequirements(jdText);
+    if (list.length === 0) {
+      return {
+        level: null,
+        degrees: [],
+        mandatory: false,
+        sentence: null,
+        orHigher: false
+      };
+    }
+    const mandatoryReq = list.find(r => r.mandatory);
+    return mandatoryReq || list[0];
+  }
+
+  function candidateMeetsRequirement(candEdu, req) {
+    if (!req || !req.degrees || req.degrees.length === 0) return true;
+
+    const candRank = getDegreeLadderRank(candEdu.degree);
+
+    for (const deg of req.degrees) {
+      if (PROFESSIONAL_DEGREES.includes(deg)) {
+        if (candEdu.degree === deg || (Array.isArray(candEdu.degreesHeld) && candEdu.degreesHeld.includes(deg))) {
+          return true;
+        }
+      } else {
+        const degRank = getDegreeLadderRank(deg);
+        if (req.orHigher) {
+          if (candRank >= degRank) return true;
+        }
+        if (deg === 'PhD') {
+          if (candEdu.degree === 'PhD' || (Array.isArray(candEdu.degreesHeld) && candEdu.degreesHeld.includes('PhD'))) return true;
+        } else if (deg === 'MBA' || deg === 'PGDM') {
+          if (candRank >= 2 && (candEdu.degree === 'MBA' || candEdu.degree === 'PGDM' || (Array.isArray(candEdu.degreesHeld) && (candEdu.degreesHeld.includes('MBA') || candEdu.degreesHeld.includes('PGDM'))))) return true;
+        } else if (deg === 'B.Tech') {
+          if (candEdu.degree === 'B.Tech' || candEdu.degree === 'M.Tech' || (Array.isArray(candEdu.degreesHeld) && (candEdu.degreesHeld.includes('B.Tech') || candEdu.degreesHeld.includes('M.Tech')))) return true;
+        } else if (deg === "Master's" || deg === 'M.Tech' || deg === 'MS') {
+          if (candRank >= 2) return true;
+        } else if (deg === "Bachelor's" || deg === 'Graduate') {
+          if (candRank >= 1) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   function extractJdRequirements(jdText, locationMeta, config) {
     const rawJd = normalizeWhitespace(jdText || '');
     const rawLoc = normalizeWhitespace(locationMeta || '');
     const combined = (rawLoc + '\n' + rawJd);
 
-    // Blurb filter: remove marketing/company blurbs
-    const filteredJd = rawJd.replace(/\b(?:over|with|founded|celebrating|more than)\s+\d+\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|history|innovation|leadership|excellence|serving)\b/gi, ' ');
-
-    // Prefer Requirements section for experience extraction
-    let expSearchText = filteredJd;
-    const reqMatch = filteredJd.match(/\n?\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*\b(?:requirements|qualifications|what you(?:'ll)? need|what we(?:'re)? looking for|minimum requirements)\b/i);
-    if (reqMatch) {
-      const fromReq = filteredJd.slice(reqMatch.index + reqMatch[0].length);
-      const endReq = fromReq.match(/\n\s*(?:##+|\*\*|[0-9]+\.|\u2022|\-)?\s*(?:responsibilities|benefits|about us|perks|compensation)\b/i);
-      const reqSection = endReq ? fromReq.slice(0, endReq.index) : fromReq;
-      if (/\b(?:experience|exp|years?|yrs?)\b/i.test(reqSection)) {
-        expSearchText = reqSection;
-      }
-    }
-
-    let minExp = null;
-    let maxExp = null;
-
-    // Check for fresher / entry level phrases first
-    const isFresher = /\b(?:fresher|freshers|entry[- ]level|new\s+grad|new\s+graduate|no\s+prior\s+experience|no\s+experience\s+required)\b/i.test(expSearchText);
-    if (isFresher) {
-      minExp = 0;
-    }
-
-    if (minExp === null) {
-      const expRegex = /(?:minimum\s+(?:of\s+)?|at\s+least\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:relevant\s+|work\s+|professional\s+)?(?:experience|exp)/i;
-      const expMatch = expSearchText.match(expRegex);
-      if (expMatch && expMatch[1]) {
-        minExp = parseFloat(expMatch[1]);
-        if (expMatch[2]) maxExp = parseFloat(expMatch[2]);
-      }
-    }
-
-    if (minExp === null) {
-      const altMatch = expSearchText.match(/(?:experience|exp)\s*:\s*(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*\+?\s*(?:years?|yrs?)/i);
-      if (altMatch && altMatch[1]) {
-        minExp = parseFloat(altMatch[1]);
-        if (altMatch[2]) maxExp = parseFloat(altMatch[2]);
-      }
-    }
-
-    if (minExp === null) {
-      const rangeMatch = expSearchText.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i);
-      if (rangeMatch && rangeMatch[1]) {
-        minExp = parseFloat(rangeMatch[1]);
-        maxExp = parseFloat(rangeMatch[2]);
-      }
-    }
-
-    if (minExp === null) {
-      const words = 'zero|one|two|three|four|five|six|seven|eight|nine|ten';
-      const wordMatch = expSearchText.match(new RegExp('(?:minimum(?:\\s+of)?|at\\s+least)?\\s*(' + words + ')\\s*(?:-|to)?\\s*(' + words + ')?\\s*(?:years?|yrs?)\\s+(?:of)?\\s*(?:[a-zA-Z\\s]{0,35}?)?(?:experience|exp)', 'i'));
-      if (wordMatch && wordMatch[1]) {
-        minExp = parseNumberWord(wordMatch[1]);
-        if (wordMatch[2]) maxExp = parseNumberWord(wordMatch[2]);
-      }
-    }
-
-    if (minExp === null) {
-      const anyExpMatch = expSearchText.match(/(\d+)\+?\s*(?:years?|yrs?)/i);
-      if (anyExpMatch) {
-        minExp = parseFloat(anyExpMatch[1]);
-      } else {
-        minExp = 0;
-      }
-    }
+    const expResult = extractJdExperienceRequirement(rawJd);
+    const minExp = expResult.minExp;
+    const maxExp = expResult.maxExp;
+    const isFresher = expResult.isFresher;
 
     let workMode = 'Flexible';
     if (/\b(remote|work from home|wfh|anywhere)\b/i.test(combined)) {
@@ -791,7 +1195,7 @@
 
     // Then search JD text for any additional locations
     for (const item of allKnownCities) {
-      if (item.regex.test(filteredJd)) {
+      if (item.regex.test(rawJd)) {
         if (!jobCities.includes(item.name)) jobCities.push(item.name);
         const r = getCityRegion(item.name, config);
         if (r && !jobRegions.includes(r)) jobRegions.push(r);
@@ -809,13 +1213,13 @@
     const iitPreferredPattern = /\b(?:iit|iim|bits|nit)\s+(?:is\s+)?(?:preferred|desired|plus|a plus)\b/i;
     const tierPreferred = !tierMandatory && (tierPreferredPattern.test(normJd) || iitPreferredPattern.test(normJd));
 
-    const phdReq = /\b(?:ph\.?d|doctorate)\s+(?:is\s+)?(?:mandatory|required|must have)\b/i.test(normJd);
-    const mbaMandatory = /\b(?:mba|pgdm)\s+(?:is\s+)?(?:mandatory|required|must have)\b/i.test(normJd);
-    const mbaPref = !mbaMandatory && /\b(?:mba|pgdm)\s+(?:is\s+)?(?:preferred|plus|a plus|desired)\b/i.test(normJd);
-    const btechMandatory = /\b(?:b\.?tech|b\.?e\.?|bachelor\s+of\s+engineering|bachelor\s+of\s+technology)\s*(?:degree\s*)?(?:is\s+)?(?:mandatory|required|must\s+have)\b/i.test(normJd);
+    const eduReqs = extractAllJdEducationRequirements(rawJd);
+    const mandatoryEdu = eduReqs.find(r => r.mandatory);
+    const preferredEdu = eduReqs.find(r => !r.mandatory);
 
-    let degreeMandatory = phdReq || mbaMandatory || btechMandatory;
-    let degreeReq = phdReq ? 'PhD' : (mbaMandatory ? 'MBA' : (btechMandatory ? 'B.Tech' : null));
+    const degreeMandatory = Boolean(mandatoryEdu);
+    const degreeReq = mandatoryEdu ? mandatoryEdu.level : null;
+    const mbaPref = !degreeMandatory && Boolean(preferredEdu && preferredEdu.level === 'MBA');
 
     const roleFamily = detectRoleFamily(combined);
 
@@ -855,6 +1259,8 @@
         matchedSkills: [],
         missingSkills: [],
         disqualifiers: [],
+        experience: { status: 'not_stated', jdMin: null, jdMax: null, candidateYears: 0 },
+        education: { status: 'not_stated', required: { level: null, mandatory: false, sentence: null }, candidate: { degree: 'Not specified', tier: 'unknown' } },
         message: 'Click extension icon to save your resume and unlock instant Skill Match.'
       };
     }
@@ -1061,28 +1467,112 @@
       }
     }
 
-    // Degree check
-    if (jdReq.degreeMandatory) {
-      if (jdReq.degreeReq === 'PhD' && candEdu.degree !== 'PhD') {
+    // FACTOR B2: DEGREE EVALUATION & SCORING
+    const jdEduList = extractAllJdEducationRequirements(jdText);
+    let eduStatus = 'not_stated';
+    let eduReqObj = { level: null, mandatory: false, sentence: null };
+
+    if (jdEduList.length === 0) {
+      eduStatus = 'not_stated';
+      eduReqObj = { level: null, mandatory: false, sentence: null };
+    } else {
+      const mandatoryReqs = jdEduList.filter(r => r.mandatory);
+      const preferredReqs = jdEduList.filter(r => !r.mandatory);
+
+      let failedMandatory = null;
+      for (const mReq of mandatoryReqs) {
+        if (!candidateMeetsRequirement(candEdu, mReq)) {
+          failedMandatory = mReq;
+          break;
+        }
+      }
+
+      if (failedMandatory) {
+        eduStatus = 'not_met';
+        eduReqObj = {
+          level: failedMandatory.level,
+          mandatory: true,
+          sentence: failedMandatory.sentence
+        };
+      } else if (preferredReqs.length > 0) {
+        let missingPref = null;
+        let metPref = null;
+        for (const pReq of preferredReqs) {
+          if (candidateMeetsRequirement(candEdu, pReq)) {
+            metPref = pReq;
+          } else {
+            missingPref = pReq;
+            break;
+          }
+        }
+
+        if (missingPref) {
+          eduStatus = 'preferred_missing';
+          eduReqObj = {
+            level: missingPref.level,
+            mandatory: false,
+            sentence: missingPref.sentence
+          };
+        } else if (metPref) {
+          eduStatus = 'met';
+          eduReqObj = {
+            level: metPref.level,
+            mandatory: false,
+            sentence: metPref.sentence
+          };
+        } else {
+          eduStatus = 'met';
+          eduReqObj = {
+            level: mandatoryReqs[0].level,
+            mandatory: true,
+            sentence: mandatoryReqs[0].sentence
+          };
+        }
+      } else {
+        eduStatus = 'met';
+        eduReqObj = {
+          level: mandatoryReqs[0].level,
+          mandatory: true,
+          sentence: mandatoryReqs[0].sentence
+        };
+      }
+    }
+
+    const educationObj = {
+      status: eduStatus,
+      required: eduReqObj,
+      candidate: {
+        degree: candEdu.degree,
+        tier: candEdu.tier
+      }
+    };
+
+    if (educationObj.status === 'not_met') {
+      const reqLevel = educationObj.required.level;
+      if (reqLevel === 'PhD') {
         penalties += config.penalties.degreePhdMandatory;
         breakdown.push({ label: 'PhD Mandatory Penalty', points: -config.penalties.degreePhdMandatory });
-        disqualifiers.push(config.disqualifierMessages.degree);
-        hardGaps.push('Mandatory degree mismatch');
-      } else if (jdReq.degreeReq === 'MBA' && candEdu.degree !== 'MBA') {
+      } else if (reqLevel === 'MBA') {
         penalties += config.penalties.degreeMbaMandatory;
         breakdown.push({ label: 'MBA Mandatory Penalty', points: -config.penalties.degreeMbaMandatory });
-        disqualifiers.push(config.disqualifierMessages.degree);
-        hardGaps.push('Mandatory degree mismatch');
-      } else if (jdReq.degreeReq === 'B.Tech' && !/\b(B\.Tech|M\.Tech|BE|ME)\b/i.test(candEdu.degree)) {
+      } else if (reqLevel === 'B.Tech') {
         const bTechPen = config.penalties.degreeMismatch || 15;
         penalties += bTechPen;
         breakdown.push({ label: 'B.Tech Mandatory Penalty', points: -bTechPen });
-        disqualifiers.push(config.disqualifierMessages.degree);
-        hardGaps.push('Mandatory degree mismatch');
+      } else {
+        const genPen = config.penalties.degreeMismatch || 15;
+        penalties += genPen;
+        breakdown.push({ label: `${reqLevel} Mandatory Penalty`, points: -genPen });
       }
-    } else if (jdReq.mbaPreferred && candEdu.degree === 'MBA') {
-      bonuses += config.bonuses.degreeMbaPreferred;
-      breakdown.push({ label: 'MBA Preferred Bonus', points: config.bonuses.degreeMbaPreferred });
+      disqualifiers.push(config.disqualifierMessages.degree);
+      hardGaps.push('Mandatory degree mismatch');
+    } else if (educationObj.status === 'preferred_missing') {
+      notes.push(`${educationObj.required.level} preferred`);
+    } else if (educationObj.status === 'met') {
+      if (!educationObj.required.mandatory && educationObj.required.level === 'MBA') {
+        bonuses += config.bonuses.degreeMbaPreferred;
+        breakdown.push({ label: 'MBA Preferred Bonus', points: config.bonuses.degreeMbaPreferred });
+      }
     }
 
     // FACTOR C: LOCATION
@@ -1159,6 +1649,23 @@
       color = config.tiers.reachRole.color;
     }
 
+    const candYearsValue = (candExp.years !== undefined) ? candExp.years : (candExp.totalYears || 0);
+    let expChipStatus = 'not_stated';
+    if (jdReq.minExp === null || (jdReq.minExp === 0 && !jdReq.isFresher)) {
+      expChipStatus = 'not_stated';
+    } else if (jdReq.isFresher) {
+      expChipStatus = 'met';
+    } else if (typeof jdReq.minExp === 'number' && jdReq.minExp > 0) {
+      expChipStatus = (candYearsValue >= (jdReq.minExp - 0.5)) ? 'met' : 'not_met';
+    }
+
+    const experienceObj = {
+      status: expChipStatus,
+      jdMin: jdReq.minExp,
+      jdMax: jdReq.maxExp,
+      candidateYears: candYearsValue
+    };
+
     return {
       status: 'ready',
       score: finalScore,
@@ -1176,6 +1683,8 @@
       candExp: candExp,
       candEdu: candEdu,
       jdReq: jdReq,
+      experience: experienceObj,
+      education: educationObj,
       totalJdSkills: jdSkillCount,
       confidence: confidence,
       lowConfidence: lowConfidence,
@@ -1212,6 +1721,8 @@
     extractEducation: extractCandidateEducation,
     isCollegeMandatory: isCollegeMandatory,
     extractJdRequirements: extractJdRequirements,
+    extractJdEducationRequirement: extractJdEducationRequirement,
+    candidateMeetsRequirement: candidateMeetsRequirement,
     detectRoleFamily: detectRoleFamily,
     evaluate: evaluate,
     evaluateMultiFactor: evaluateMultiFactor,

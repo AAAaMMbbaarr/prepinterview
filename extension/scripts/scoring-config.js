@@ -312,6 +312,63 @@
         color: '#3fb950'
       }
     },
+    scoreBands: {
+      strong: {
+        id: 'strong',
+        name: 'Strong Match',
+        internalTier: 'Strong Match',
+        minScore: 80,
+        badge: '🟢',
+        color: '#3fb950',
+        description: 'Your resume covers the core requirements in this posting.',
+        cta: 'Practice this interview'
+      },
+      good: {
+        id: 'good',
+        name: 'Good Match',
+        internalTier: 'Good Match',
+        minScore: 72,
+        badge: '🟢',
+        color: '#2ea043',
+        description: 'Your resume covers most of the requirements.',
+        cta: 'Practice this interview'
+      },
+      moderate: {
+        id: 'moderate',
+        name: 'Moderate Match',
+        internalTier: 'Moderate Match (Gaps to Defend)',
+        minScore: 45,
+        badge: '🟡',
+        color: '#d29922',
+        description: 'Partial overlap with the requirements; see the gaps below.',
+        cta: 'Practice defending your gaps'
+      },
+      reach: {
+        id: 'reach',
+        name: 'Reach Role',
+        internalTier: 'Reach Role (Critical Gaps)',
+        minScore: 20,
+        badge: '🔴',
+        color: '#f85149',
+        description: 'Low overlap, or several requirements aren\'t met.',
+        cta: 'Practice for a stretch role'
+      },
+      footer: 'Estimate based on the job text, not a hiring prediction.'
+    },
+    breakdownLabelMap: {
+      'Experience Gap Penalty': 'Experience shortfall',
+      'Experience Requirement Met': 'Meets the minimum experience',
+      'Location Match Bonus': 'Location matches',
+      'Location Mismatch Penalty': 'Location mismatch',
+      'College Tier Penalty': 'College tier requirement',
+      'College Tier Preferred Bonus': 'Preferred college bonus',
+      'College Tier Mandatory Bonus': 'Mandatory college met',
+      'Degree Mandatory Penalty': 'Degree requirement',
+      'Degree Preferred Bonus': 'Preferred degree bonus',
+      'Overqualified Penalty': 'Seniority above posted range',
+      'Role Profile Mismatch': 'Role profile mismatch',
+      'Soft Gaps Penalty': 'Requirement gaps adjustment'
+    },
     flags: {
       enableRoleProfileDisqualifier: true
     }

@@ -24,6 +24,12 @@ Thumbs.db
 # Streamlit
 .streamlit/secrets.toml
 
+# Node
+node_modules/
+
 # Builds & Archives
 *.zip
+extension-build.zip
 
+# Local test fixtures
+tests/local/

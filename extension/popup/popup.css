@@ -258,7 +258,73 @@ button {
 }
 
 .version {
-  color: #484f58;
+  color: #8b949e;
+}
+
+.beta-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #1f6feb22;
+  color: #58a6ff;
+  border: 1px solid #1f6feb66;
+  padding: 1px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.limits-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.limits-summary {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.limits-summary:hover {
+  color: #58a6ff;
+}
+
+.limits-content {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #21262d;
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.5;
+}
+
+.limits-content ul {
+  padding-left: 16px;
+  margin-top: 4px;
+}
+
+.limits-content li {
+  margin-bottom: 4px;
+}
+
+.btn-danger {
+  background: #21262d;
+  color: #ff7b72;
+  border: 1px solid #f8514944;
+}
+
+.btn-danger:hover {
+  background: #da363322;
+  border-color: #f8514988;
 }
 
 /* Toggle Switch */

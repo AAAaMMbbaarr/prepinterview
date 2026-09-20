@@ -4,6 +4,25 @@
 
 ---
 
+## 🧩 PrepInterview Copilot (Chrome Extension Beta)
+
+PrepInterview Copilot is a lightweight Chrome Extension (Manifest V3) that evaluates job postings directly on LinkedIn against your resume locally and provides instant interview preparation.
+
+### Known limitations
+* Works on LinkedIn jobs pages (search results, collections, and direct job postings); not active on non-jobs pages like feed or messaging.
+* Evaluates one resume at a time (stores a single active resume profile).
+* College tier detection covers Indian institutions only; non-Indian colleges default to neutral fit without penalty.
+* LinkedIn layout changes: DOM updates by LinkedIn can temporarily misalign or break card insertion until updated.
+* Only evaluates English job descriptions.
+* Skills not explicitly named in the job text won't be counted, even if common in the role.
+* Tier estimates are heuristics based on stated requirements, not actual hiring decisions.
+* Relocation preference is manual; the extension does not infer your willingness to move
+
+### Privacy & Data Protection
+The extension makes no network requests. If you click Practice, your browser opens prepinterview.online with the job's text, title and company in the link. Your resume is never included.
+
+---
+
 ## 💼 Business & Monetization Architecture
 
 This edition of Interview Intelligence is engineered as a **commercial B2C SaaS product** with high-converting hybrid monetization:

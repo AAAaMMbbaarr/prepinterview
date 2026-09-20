@@ -11,54 +11,73 @@
     <div class="logo-area">
       <div class="logo-badge">🎯</div>
       <div>
-        <h1 class="brand-title">PrepInterview Copilot</h1>
-        <p class="brand-sub">LinkedIn Match & Interview Coach</p>
+        <h1 class="brand-title">PrepInterview Copilot <span class="beta-badge">Beta</span></h1>
+        <p class="brand-sub">LinkedIn Match & Interview Prep</p>
       </div>
     </div>
-    <span class="status-pill">🟢 Active</span>
+    <span class="status-pill">Active</span>
   </div>
 
   <div class="main-card">
     <div class="section-label">
-      <span>📄 Your Master Resume</span>
+      <span>Master Resume</span>
       <span id="charCount" class="count-pill">0 words</span>
     </div>
-    <p class="helper-text">Paste your resume text below. It stays 100% private in your browser and is used to calculate Skill Match on LinkedIn jobs.</p>
-    <textarea id="resumeInput" placeholder="Paste your plain-text resume here... (e.g. Experience, Skills, Education)"></textarea>
+    <p class="helper-text" style="color:#58a6ff; font-weight:500;">Your resume is saved only in this browser. This extension itself sends no data anywhere.</p>
+    <textarea id="resumeInput" placeholder="Paste your plain-text resume here... (Experience, Skills, Education)"></textarea>
     
     <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:8px 10px; background:#0d1117; border-radius:6px; border:1px solid #30363d;">
       <div>
-        <div style="font-size:12px; font-weight:600; color:#f0f6fc;">✈️ Open to Relocation</div>
-        <div style="font-size:11px; color:#8b949e;">Waives on-site location mismatch penalty</div>
+        <div style="font-size:12px; font-weight:600; color:#f0f6fc;">Open to Relocation</div>
+        <div style="font-size:11px; color:#8b949e;">Waives on-site location mismatch</div>
       </div>
       <label class="switch">
-        <input type="checkbox" id="relocationToggle">
+        <input type="checkbox" id="relocationToggle" aria-label="Open to relocation">
         <span class="slider round"></span>
       </label>
     </div>
 
     <div class="btn-row">
-      <button id="saveBtn" class="btn-primary">💾 Save Preferences Locally</button>
-      <button id="clearBtn" class="btn-secondary">Clear</button>
+      <button id="saveBtn" class="btn-primary">Save Preferences Locally</button>
+      <button id="clearBtn" class="btn-danger" title="Deletes all stored extension data">Clear All Data</button>
     </div>
-    <div id="saveToast" class="toast hidden">✅ Preferences saved! Copilot active on LinkedIn.</div>
+    <div id="saveToast" class="toast hidden">Preferences saved! Active on LinkedIn.</div>
   </div>
 
+  <details class="limits-card">
+    <summary class="limits-summary">Known limitations ▾</summary>
+    <div class="limits-content">
+      <ul>
+        <li>Works on LinkedIn jobs pages (search results, collections, and direct job postings); not active on non-jobs pages like feed or messaging</li>
+        <li>Evaluates one resume at a time (stores a single active resume profile)</li>
+        <li>College tier detection covers Indian institutions only; non-Indian colleges default to neutral fit without penalty</li>
+        <li>LinkedIn layout changes: DOM updates by LinkedIn can temporarily misalign or break card insertion until updated</li>
+        <li>Only evaluates English job descriptions</li>
+        <li>Skills not explicitly named in the job text won't be counted, even if common in the role</li>
+        <li>Tier estimates are heuristics based on stated requirements, not actual hiring decisions</li>
+        <li>Relocation preference is manual; the extension does not infer your willingness to move</li>
+      </ul>
+    </div>
+  </details>
+
   <div class="info-card">
-    <div class="info-title">⚡ Score Bands & Role Fit Tiers</div>
+    <div class="info-title">Match Bands & Evaluation</div>
     <ul class="info-list">
-      <li><strong>🟢 Strong Match (80–98%):</strong> Strong fit across skills, experience, and pedigree. Shortlist likely.</li>
-      <li><strong>🟢 Good Match (72–79%):</strong> Competitive profile; minor soft notes (e.g. hybrid relocation).</li>
-      <li><strong>🟡 Moderate Match (45–71%):</strong> Viable profile with one requirement gap to defend in interview.</li>
-      <li><strong>🔴 Reach Role (< 45%):</strong> Significant hurdles (low skill overlap or 2+ hard requirement gaps).</li>
+      <li><strong>Strong Match (80–98%):</strong> Your resume covers the core requirements in this posting.</li>
+      <li><strong>Good Match (72–79%):</strong> Your resume covers most of the requirements.</li>
+      <li><strong>Moderate Match (45–71%):</strong> Partial overlap with the requirements; see the gaps below.</li>
+      <li><strong>Reach Role (&lt; 45%):</strong> Low overlap, or several requirements aren&#39;t met.</li>
     </ul>
+    <p style="font-size:11px; color:#8b949e; margin-top:8px; line-height:1.3;">Estimate based on the job text, not a hiring prediction.</p>
   </div>
 
   <div class="footer">
-    <a href="https://prepinterview.online" target="_blank" class="web-link">Open PrepInterview AI ↗</a>
+    <a href="https://prepinterview.online" target="_blank" rel="noopener noreferrer" class="web-link">Open PrepInterview ↗</a>
+    <a href="#" id="feedbackLink" target="_blank" rel="noopener noreferrer" class="web-link">Send feedback</a>
     <span class="version">v1.0.6</span>
   </div>
 
+  <script src="../scripts/release-config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

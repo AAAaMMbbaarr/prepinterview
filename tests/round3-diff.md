@@ -1,9 +1,9 @@
 # PrepInterview Copilot — Behavior Diff (Round 3 Correctness Upgrades)
 
-**Generated Date:** 2026-09-19T12:05:00.400Z
+**Generated Date:** 2026-09-20T03:59:45.433Z
 **Base Commit:** `HEAD` (Pre-Round 3)
 **Total Evaluation Pairs:** 120
-**Changed Pairs:** 0 / 120 (0.0%)
+**Changed Pairs:** 1 / 120 (0.8%)
 
 ## Summary of Round 3 Core Upgrades
 
@@ -15,3 +15,4 @@
 
 | Pair | Old Score | New Score | Delta | Old Tier | New Tier | Old Gaps | New Gaps | Movement |
 | :--- | :---: | :---: | :---: | :--- | :--- | :--- | :--- | :--- |
+| senior_tier1_iit x jd_26 | 73 | 76 | +3 | Good Match | Good Match | None | None | 🟢 Toward (Exact Gap Match) |

@@ -1,9 +1,14 @@
 {
   "name": "prepinterview-copilot",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "PrepInterview Copilot Chrome Extension",
   "private": true,
   "scripts": {
-    "test": "node --test tests/runner.test.js"
+    "test": "node --test tests/runner.test.js",
+    "release:check": "node scripts/release-check.js",
+    "release:build": "node scripts/release-build.js"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }

@@ -28,6 +28,7 @@ These engineering rules are strictly enforced across the PrepInterview Copilot c
 - Parsing, keyword matching, multi-factor evaluation, date math, and gap analysis must execute **100% locally** in the content script sandbox.
 - The raw resume text, parsed profile, and scoring results **never leave the user's browser**.
 - Resume data stored in `chrome.storage.local` stays strictly within the user's local Chrome profile and is never synced or exfiltrated.
+- The extension makes no network requests. If you click Practice, your browser opens prepinterview.online with the job's text, title and company in the link. Your resume is never included.
 
 ---
 

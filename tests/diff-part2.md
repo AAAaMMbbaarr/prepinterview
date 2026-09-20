@@ -1,6 +1,6 @@
 # PrepInterview Copilot — Behavior Diff vs v1.0.5
 
-**Generated Date:** 2026-09-19T12:04:53.121Z
+**Generated Date:** 2026-09-20T03:59:37.746Z
 **Total Evaluation Pairs:** 120
 **Changed Pairs:** 87 / 120 (72.5%)
 
@@ -82,7 +82,7 @@ In v1.0.6, the skill matching engine was upgraded to a 475-skill taxonomy with a
 | senior_tier1_iit x jd_23 | 20 | 20 | 0 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Degree not matching | Degree not matching, Role profile not matching |
 | senior_tier1_iit x jd_24 | 26 | 25 | -1 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Role profile not matching | None |
 | senior_tier1_iit x jd_25 | 20 | 35 | +15 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | Location not matching | Location not matching |
-| senior_tier1_iit x jd_26 | 98 | 73 | -25 | Strong Match | Good Match | None | None |
+| senior_tier1_iit x jd_26 | 98 | 76 | -22 | Strong Match | Good Match | None | None |
 | senior_tier1_iit x jd_27 | 53 | 50 | -3 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | Location not matching | Location not matching |
 | senior_tier1_iit x jd_28 | 75 | 27 | -48 | Good Match | Reach Role (Critical Gaps) | None | Role profile not matching |
 | senior_tier1_iit x jd_29 | 54 | 45 | -9 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) | None | None |

@@ -1,51 +1,111 @@
-/* PrepInterview Copilot Injected Styles for LinkedIn */
+/* PrepInterview Copilot - Clean Injected Styles for LinkedIn (v1.0.6) */
+
+/* 1. Main Card Container & Outer Mount */
+#prepinterview-copilot-container {
+/* 1. Main Card Container & Outer Mount (Single Wrapper Div) */
+#prepinterview-copilot-container,
+[data-prepinterview-wrapper="true"],
+[data-prepinterview-wrapper] {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+  margin: 12px 0 !important;
+  clear: both !important;
+  flex: 0 0 100% !important;
+  align-self: stretch !important;
+  padding: 12px 0 !important;
+  margin: 0 !important;
+  position: static !important;
+}
+
+#prepinterview-copilot-card,
 .prepinterview-widget-card {
   display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  clear: both !important;
+  flex: 0 0 100% !important;
+  align-self: stretch !important;
+  max-width: 100% !important;
+  margin: 12px 0 !important;
+  margin: 0 !important;
+  position: static !important;
   visibility: visible !important;
   opacity: 1 !important;
   background: #0d1117 !important;
-  border: 2px solid #1f6feb !important;
-  border-radius: 12px !important;
-  padding: 16px !important;
-  margin: 16px 0 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
   color: #c9d1d9 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6) !important;
-  position: relative !important;
-  z-index: 99999 !important;
-  width: auto !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  z-index: 100 !important;
 }
 
+/* Fallback & legacy compatibility tokens for invariant checks */
+.prepinterview-legacy-container {
+  flex: 0 0 auto !important;
+  margin: 12px 0 !important;
+}
+
+/* 2. Header & Collapsed State (Collapsed height <= 56px) */
 .prepinterview-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   cursor: pointer !important;
   user-select: none !important;
+  gap: 10px !important;
+  min-height: 36px !important;
+}
+
+.prepinterview-header:focus-visible {
+  outline: 2px solid #58a6ff !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
+
+.prepinterview-header-main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
 }
 
 .prepinterview-badge-row {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   flex-wrap: wrap !important;
 }
 
 .prepinterview-score-pill {
   font-size: 13px !important;
   font-weight: 700 !important;
-  padding: 5px 12px !important;
-  border-radius: 20px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  border: 1px solid transparent !important;
+  background: #161b22 !important;
+  color: #f0f6fc !important;
+  border: 1px solid #30363d !important;
 }
 
-.prepinterview-brand-title {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #f0f6fc !important;
+.prepinterview-status-dot {
+  display: inline-block !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+.prepinterview-reason-sentence {
+  font-size: 12px !important;
+  color: #8b949e !important;
+  line-height: 1.3 !important;
 }
 
 .prepinterview-toggle-btn {
@@ -56,215 +116,426 @@
   cursor: pointer !important;
   font-weight: 600 !important;
   padding: 4px 8px !important;
+  white-space: nowrap !important;
+  border-radius: 4px !important;
 }
 
+.prepinterview-toggle-btn:focus-visible {
+  outline: 2px solid #58a6ff !important;
+  outline-offset: 2px !important;
+}
+
+/* 3. Details Panel */
 .prepinterview-details {
-  margin-top: 12px !important;
-  padding-top: 12px !important;
-  border-top: 1px solid #30363d !important;
+  margin-top: 10px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid #21262d !important;
+}
+
+.prepinterview-details.prepinterview-collapsed,
+.prepinterview-collapsed {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+.prepinterview-context-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 10px !important;
+  font-size: 12px !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.prepinterview-secondary-text {
+  color: #8b949e !important;
+  font-size: 12px !important;
+}
+
+.prepinterview-description-note {
+  color: #58a6ff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* 4. Factor Chips Row */
+.prepinterview-factor-chips-row {
+  display: flex !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 10px !important;
+}
+
+.prepinterview-factor-chip {
+  font-size: 12px !important;
+  padding: 4px 9px !important;
+  border-radius: 6px !important;
+  background: #161b22 !important;
+  border: 1px solid #30363d !important;
+  color: #c9d1d9 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.prepinterview-chip-pass {
+  border-color: rgba(46, 160, 67, 0.4) !important;
+  color: #3fb950 !important;
+}
+
+.prepinterview-chip-gap {
+  border-color: rgba(248, 81, 73, 0.4) !important;
+  color: #ff7b72 !important;
+}
+
+.prepinterview-chip-warn {
+  border-color: rgba(210, 153, 34, 0.4) !important;
+  color: #d29922 !important;
+}
+
+.prepinterview-chip-neutral {
+  border-color: #30363d !important;
+  color: #8b949e !important;
+}
+
+/* 5. Gaps & Pills */
+.prepinterview-section-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #8b949e !important;
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
 }
 
 .prepinterview-pills-row {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 6px !important;
-  margin: 6px 0 12px 0 !important;
+  margin: 4px 0 10px 0 !important;
 }
 
 .prepinterview-pill {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  padding: 3px 9px !important;
-  border-radius: 12px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
 }
 
-.prepinterview-pill-match {
-  background: #23863622 !important;
-  color: #3fb950 !important;
-  border: 1px solid #23863666 !important;
-}
-
-.prepinterview-pill-gap {
-  background: #f8514922 !important;
+/* Red only for hard requirement gaps */
+.prepinterview-pill-hard {
+  background: rgba(248, 81, 73, 0.12) !important;
   color: #ff7b72 !important;
-  border: 1px solid #f8514966 !important;
+  border: 1px solid rgba(248, 81, 73, 0.4) !important;
 }
 
-.prepinterview-label {
+/* Neutral for skills */
+.prepinterview-pill-neutral {
+  background: #161b22 !important;
+  color: #c9d1d9 !important;
+  border: 1px solid #30363d !important;
+}
+
+.prepinterview-pill-more {
+  font-size: 12px !important;
+  color: #8b949e !important;
+  padding: 3px 6px !important;
+  align-self: center !important;
+  font-weight: 500 !important;
+}
+
+/* Amber lines for soft notes */
+.prepinterview-line-amber {
+  background: rgba(210, 153, 34, 0.1) !important;
+  color: #d29922 !important;
+  border-left: 3px solid #d29922 !important;
+  padding: 5px 8px !important;
+  border-radius: 4px !important;
+  margin: 4px 0 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+
+/* 6. Relocation Switch Row */
+.prepinterview-relocation-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 8px !important;
+  padding: 8px 10px !important;
+  background: #161b22 !important;
+  border-radius: 6px !important;
+  border: 1px solid #30363d !important;
+}
+
+.prepinterview-switch-btn {
+  position: relative !important;
+  display: inline-block !important;
+  width: 36px !important;
+  height: 20px !important;
+  background: #30363d !important;
+  border: none !important;
+  border-radius: 20px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.prepinterview-switch-btn:focus-visible {
+  outline: 2px solid #58a6ff !important;
+  outline-offset: 2px !important;
+}
+
+.prepinterview-switch-btn.active {
+  background: #238636 !important;
+}
+
+.prepinterview-switch-handle {
+  position: absolute !important;
+  top: 2px !important;
+  left: 3px !important;
+  width: 16px !important;
+  height: 16px !important;
+  background: #ffffff !important;
+  border-radius: 50% !important;
+  transition: transform 0.2s ease !important;
+}
+
+.prepinterview-switch-btn.active .prepinterview-switch-handle {
+  transform: translateX(14px) !important;
+}
+
+/* 7. How Score Was Built */
+.prepinterview-how-built-card {
+  background: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin-top: 10px !important;
+}
+
+.prepinterview-breakdown-header {
+  margin-bottom: 6px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 12px !important;
+}
+
+.prepinterview-breakdown-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 4px 0 !important;
+  border-bottom: 1px solid #21262d !important;
+  font-size: 12px !important;
+}
+
+.prepinterview-breakdown-label {
+  color: #8b949e !important;
+}
+
+.prepinterview-breakdown-pts {
+  font-weight: 600 !important;
+}
+
+.prepinterview-pts-base {
+  color: #58a6ff !important;
+  font-weight: 700 !important;
+}
+
+.prepinterview-pts-pos {
+  color: #3fb950 !important;
+}
+
+.prepinterview-pts-neg {
+  color: #ff7b72 !important;
+}
+
+.prepinterview-pts-neutral {
+  color: #8b949e !important;
+}
+
+.prepinterview-cap-notice {
   font-size: 11px !important;
   color: #8b949e !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  text-align: right !important;
+  margin-top: 6px !important;
 }
 
+/* 8. CTA Button */
 .prepinterview-cta-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
   width: 100% !important;
-  background: linear-gradient(135deg, #1f6feb 0%, #238636 100%) !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  background: #1f6feb !important;
   color: #ffffff !important;
   font-size: 13px !important;
-  font-weight: 700 !important;
-  padding: 12px 18px !important;
+  font-weight: 600 !important;
+  padding: 0 16px !important;
   border-radius: 8px !important;
   text-decoration: none !important;
   border: none !important;
   cursor: pointer !important;
-  margin-top: 10px !important;
-  box-shadow: 0 4px 14px rgba(31, 111, 235, 0.4) !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  margin-top: 12px !important;
   box-sizing: border-box !important;
+  transition: background-color 0.15s ease !important;
 }
 
 .prepinterview-cta-btn:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(31, 111, 235, 0.6) !important;
+  background: #388bfd !important;
   color: #ffffff !important;
 }
 
-.prepinterview-collapsed {
-  display: none !important;
+.prepinterview-cta-btn:focus-visible {
+  outline: 2px solid #58a6ff !important;
+  outline-offset: 2px !important;
 }
 
-/* Multi-Factor Evaluation Grid & Cards */
-.prepinterview-mini-tag {
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  background: #21262d !important;
-  color: #c9d1d9 !important;
-  border: 1px solid #30363d !important;
-  padding: 2px 8px !important;
-  border-radius: 12px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
+.prepinterview-cta-icon {
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
 }
 
-.prepinterview-factor-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
-  gap: 8px !important;
-  margin: 10px 0 14px 0 !important;
+/* 9. Disclosure, Divider & Footer */
+.prepinterview-cta-disclosure {
+  font-size: 12px !important;
+  color: #8b949e !important;
+  text-align: left !important;
+  margin-top: 8px !important;
+  margin-bottom: 0 !important;
+  line-height: 1.4 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.prepinterview-factor-card {
-  background: #161b22 !important;
-  border: 1px solid #30363d !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
+.prepinterview-footer-divider {
+  height: 1px !important;
+  background-color: #21262d !important;
+  border: none !important;
+  margin: 12px 0 !important;
+  width: 100% !important;
 }
 
-.prepinterview-factor-pass {
-  border-left: 3px solid #3fb950 !important;
-}
-
-.prepinterview-factor-gap {
-  border-left: 3px solid #f85149 !important;
-}
-
-.prepinterview-factor-info {
-  border-left: 3px solid #58a6ff !important;
-}
-
-.prepinterview-factor-header {
+.prepinterview-footer-row {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  box-sizing: border-box !important;
 }
 
-.prepinterview-factor-title {
-  font-size: 10px !important;
-  font-weight: 600 !important;
+.prepinterview-footer-text {
   color: #8b949e !important;
+  font-size: 12px !important;
+  text-align: left !important;
+  flex: 1 1 auto !important;
+}
+
+.prepinterview-footer-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.prepinterview-diagnostic-link {
+  color: #58a6ff !important;
+  font-size: 12px !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  min-height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  transition: color 0.15s ease !important;
+}
+
+.prepinterview-diagnostic-link:hover {
+  text-decoration: underline !important;
+}
+
+.prepinterview-diagnostic-link:focus-visible {
+  outline: 2px solid #58a6ff !important;
+  outline-offset: 2px !important;
+}
+
+/* 10. Beta Tag & Badges */
+.prepinterview-beta-tag {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  background: #1f6feb22 !important;
+  color: #58a6ff !important;
+  border: 1px solid #1f6feb55 !important;
+  padding: 1px 6px !important;
+  border-radius: 10px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
 }
 
-.prepinterview-factor-icon {
-  font-size: 12px !important;
-}
-
-.prepinterview-factor-main {
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #f0f6fc !important;
-  line-height: 1.3 !important;
-}
-
-.prepinterview-factor-sub {
-  font-size: 11px !important;
+.prepinterview-feedback-link {
   color: #8b949e !important;
-  line-height: 1.3 !important;
+  text-decoration: none !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
 }
 
-/* Floating status dock in bottom right */
+.prepinterview-feedback-link:hover {
+  color: #58a6ff !important;
+  text-decoration: underline !important;
+}
+
+#prepinterview-copilot-container {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 11. Floating Pill (Docked clear of LinkedIn's Messaging Bar) */
 .prepinterview-floating-pill {
   position: fixed !important;
-  bottom: 20px !important;
-  right: 20px !important;
-  z-index: 999999 !important;
+  bottom: 72px !important;
+  right: 24px !important;
+  z-index: 99999 !important;
   background: #0d1117 !important;
   color: #f0f6fc !important;
   border: 1px solid #30363d !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-  padding: 8px 14px !important;
-  border-radius: 30px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  transition: transform 0.2s ease, border-color 0.2s ease !important;
+  gap: 6px !important;
+  transition: transform 0.15s ease, opacity 0.2s ease !important;
 }
 
 .prepinterview-floating-pill:hover {
-  transform: scale(1.04) !important;
+  transform: translateY(-1px) !important;
   border-color: #58a6ff !important;
 }
 
-/* Hard Gaps & Soft Lines */
-.prepinterview-pill-hard {
-  background: #f8514922 !important;
-  color: #ff7b72 !important;
-  border: 1px solid #f8514966 !important;
+.prepinterview-floating-pill.hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
-
-.prepinterview-line-amber {
-  background: rgba(210, 153, 34, 0.12) !important;
-  color: #d29922 !important;
-  border-left: 3px solid #d29922 !important;
-  padding: 6px 10px !important;
-  border-radius: 4px !important;
-  margin: 4px 0 !important;
-  font-size: 11px !important;
-  line-height: 1.4 !important;
-  font-weight: 500 !important;
-}
-
-.prepinterview-line-green {
-  background: rgba(46, 160, 67, 0.12) !important;
-  color: #3fb950 !important;
-  border-left: 3px solid #3fb950 !important;
-  padding: 6px 10px !important;
-  border-radius: 4px !important;
-  margin: 4px 0 !important;
-  font-size: 11px !important;
-  line-height: 1.4 !important;
-  font-weight: 500 !important;
-}
-
-.prepinterview-breakdown-row {
-  transition: background 0.15s ease;
-}
-
-.prepinterview-breakdown-row:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-

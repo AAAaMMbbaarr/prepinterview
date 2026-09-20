@@ -1,6 +1,6 @@
 # PrepInterview Copilot — Baseline & Upgraded Accuracy Report
 
-**Generated Date:** 2026-09-19T12:05:00.403Z
+**Generated Date:** 2026-09-20T03:59:45.439Z
 **Version:** v1.0.6 (Upgraded Skills Match Engine)
 **Total Evaluation Pairs:** 120
 
@@ -148,7 +148,7 @@
 | senior_tier1_iit x jd_23 | 20 | Reach Role (Critical Gaps) | Reach Role (Critical Gaps) | ✅ | Role profile not matching, Degree not matching | Degree not matching | ✅ | ✅ PASS |
 | senior_tier1_iit x jd_24 | 25 | Reach Role (Critical Gaps) | Good Match / Moderate Match (Gaps to Defend) | ❌ | None | None | ✅ | ⚠️ REVIEW |
 | senior_tier1_iit x jd_25 | 35 | Reach Role (Critical Gaps) | Moderate Match (Gaps to Defend) / Reach Role (Critical Gaps) | ✅ | Location not matching | Location not matching | ✅ | ✅ PASS |
-| senior_tier1_iit x jd_26 | 73 | Good Match | Strong Match / Good Match | ✅ | None | None | ✅ | ✅ PASS |
+| senior_tier1_iit x jd_26 | 76 | Good Match | Strong Match / Good Match | ✅ | None | None | ✅ | ✅ PASS |
 | senior_tier1_iit x jd_27 | 50 | Moderate Match (Gaps to Defend) | Moderate Match (Gaps to Defend) / Reach Role (Critical Gaps) | ✅ | Location not matching | Location not matching | ✅ | ✅ PASS |
 | senior_tier1_iit x jd_28 | 27 | Reach Role (Critical Gaps) | Good Match / Moderate Match (Gaps to Defend) | ❌ | Role profile not matching | None | ✅ | ⚠️ REVIEW |
 | senior_tier1_iit x jd_29 | 45 | Moderate Match (Gaps to Defend) | Strong Match / Good Match | ❌ | None | None | ✅ | ⚠️ REVIEW |
