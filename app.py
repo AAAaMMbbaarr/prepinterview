@@ -1615,7 +1615,7 @@ if st.session_state.step == 0:
         st.success(f"✓ {resume_file.name}")
     st.markdown(
         '<p style="font-size:0.75rem;color:#3fb950;margin-top:-6px;margin-bottom:14px;">'
-        '🔒 Processed in active memory · Never stored · Never trained on'
+        '🔒 Not stored on our servers · Sent to an AI service only to generate your results'
         '</p>',
         unsafe_allow_html=True,
     )
