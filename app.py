@@ -1715,7 +1715,7 @@ if st.session_state.step == 0:
         PrepInterview was built independently by Ambar, a product and tech builder who kept seeing candidates (and himself) get blindsided by tough resume-defense questions in interviews. Most interview prep tools just ask generic questions like *"Tell me about yourself."* PrepInterview was built to do the uncomfortable, necessary work: testing whether you can actually defend every number and claim on your resume.
 
         **2. What happens to my uploaded resume and audio recordings?**  
-        We do not store your resume or audio in our own systems. Your documents and voice recordings are processed ephemerally during your active session and are never saved to our servers, sold to recruiters, or used to train models.
+        We do not store your resume or audio on our own servers. They are held in memory during your session and discarded afterwards. To generate your results, your content is sent to a third-party AI service. During this beta we use the provider's free tier, where the provider may use submitted content to improve its products. We never sell your data to recruiters. Please avoid uploading highly sensitive information.
         
         **3. How does Resume Attack Mode work?**  
         Unlike generic interview bots that ask textbook questions, our engine extracts the exact claims and quantitative metrics from your resume and tests whether you can defend their baselines, methodology, and trade-offs under pressure.
