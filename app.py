@@ -77,8 +77,13 @@ st.markdown("""
     div[data-testid="stDecoration"] {display: none !important;}
 
     /* Global Typography & Layout */
-    html, body, [class*="st-"] {
+    html, body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    }
+
+    /* Preserve Streamlit Material Icons */
+    [data-testid="stIconMaterial"], [class*="material-icons"], [class*="MaterialSymbols"], [class*="stIcon"] {
+        font-family: "Material Symbols Rounded", "Material Icons" !important;
     }
 
     .stApp {
@@ -1673,7 +1678,7 @@ elif st.session_state.step == 2:
             comp_str = f" at <strong>{target_company}</strong>" if target_company else ""
             context_html = f'<div style="font-size:12px;color:#8b949e;margin-top:6px;">Target: <strong style="color:#f0f6fc;">{target_title}</strong>{comp_str}</div>'
 
-        st.markdown(f"""
+        st.html(f"""
         <div class="copilot-card" style="text-align:center;padding:1.4rem 1.2rem;margin-bottom:1.2rem;">
             <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
                 <span class="prep-score-pill">
@@ -1687,7 +1692,7 @@ elif st.session_state.step == 2:
                 {one_line}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
         def format_scannable_bullet(item: str) -> str:
             item = item.strip()
@@ -1703,27 +1708,23 @@ elif st.session_state.step == 2:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("""
-            <div class="copilot-card" style="height:100%;padding:1rem;">
-                <div style="font-size:12px;font-weight:700;color:#3fb950;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
-                    ✅ Why You Match (Strengths)
-                </div>
-            """, unsafe_allow_html=True)
+            st.html("""
+            <div style="font-size:12px;font-weight:700;color:#3fb950;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+                ✅ Why You Match (Strengths)
+            </div>
+            """)
             for s in summary.get("strengths", []):
                 st.markdown(format_scannable_bullet(s))
-            st.markdown("</div>", unsafe_allow_html=True)
         with col2:
-            st.markdown("""
-            <div class="copilot-card" style="height:100%;padding:1rem;">
-                <div style="font-size:12px;font-weight:700;color:#ff7b72;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
-                    ⚠️ Gaps to Defend (Review Areas)
-                </div>
-            """, unsafe_allow_html=True)
+            st.html("""
+            <div style="font-size:12px;font-weight:700;color:#ff7b72;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+                ⚠️ Gaps to Defend (Review Areas)
+            </div>
+            """)
             for g in summary.get("gaps", []):
                 st.markdown(format_scannable_bullet(g))
-            st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    st.html("<div style='height:12px;'></div>")
     render_pro_bar()
 
     # ── Tabbed results ──
@@ -1925,26 +1926,27 @@ elif st.session_state.step == 2:
             st.info("Could not parse follow-up chains. Try re-running.")
 
     # ══════════════════════════════════════════════════════════
-    # 🎤 AI MOCK INTERVIEW CTA
+    # 🎤 AI MOCK INTERVIEW CTA (Zone 5)
     # ══════════════════════════════════════════════════════════
 
-    st.markdown("""
-    <div class="cta-banner">
-        <h2>🎤 Practice with an AI Interviewer</h2>
-        <p>
-            You've seen the questions. Now practice answering them live.<br>
-            The AI adapts to YOUR resume, this JD, and scores your responses.
-        </p>
-        <div class="features">
-            <span class="feature">🎯 Uses your predicted questions</span>
-            <span class="feature">🗣️ Real-time feedback</span>
-            <span class="feature">📊 Answer scoring</span>
-            <span class="feature">🔄 Keeps drilling deeper</span>
+    st.html("""
+    <div class="copilot-card" style="border: 1px solid #1f6feb88; background: linear-gradient(180deg, #161b22 0%, #0d1117 100%); text-align: center; padding: 1.6rem 1.4rem; margin: 2rem 0 1rem 0;">
+        <div style="font-size: 1.35rem; font-weight: 800; color: #f0f6fc; margin-bottom: 0.4rem;">
+            🎤 Practice This Spoken Interview
+        </div>
+        <div style="font-size: 0.92rem; color: #8b949e; margin-bottom: 1.2rem; max-width: 580px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+            You've reviewed your fit and question predictions. Now test your real-time defense under spoken pressure with our AI hiring manager.
+        </div>
+        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 0.6rem;">
+            <span class="prep-factor-chip prep-chip-pass">🎯 Role-Specific Probes</span>
+            <span class="prep-factor-chip prep-chip-warn">🥊 Pressure Grilling</span>
+            <span class="prep-factor-chip prep-chip-neutral">📊 Post-Interview Debrief</span>
+            <span class="prep-factor-chip prep-chip-pass">⚡ 1-Click Spoken Trial</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
-    if st.button("🎤 Start Mock Interview", type="primary", use_container_width=True):
+    if st.button("🎤 Start Spoken Mock Interview →", type="primary", use_container_width=True):
         st.session_state.step = 3
         st.session_state.mock_messages = []
         st.rerun()
