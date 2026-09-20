@@ -18,6 +18,13 @@ import os
 import time
 import json
 import re
+import html as html_lib
+import hashlib
+import io
+import wave
+import numpy as np
+import requests
+import hmac
 
 # ──────────────────────────────────────────────────────────────
 # SETUP
@@ -577,7 +584,7 @@ def inject_tts(text: str):
     """)
 
 
-def call_gemini_audio(audio_bytes: bytes, prompt: str) -> str:
+def call_gemini_audio(audio_bytes: bytes, prompt: str, temperature: float = 0.7) -> str:
     """Send audio + text prompt to Gemini for transcription and evaluation."""
     models_to_try = [MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite"]
     seen = set()
@@ -595,9 +602,11 @@ def call_gemini_audio(audio_bytes: bytes, prompt: str) -> str:
                     ],
                     config={
                         "system_instruction": (
-                            "You are a professional interviewer conducting a realistic job interview."
+                            "You are a professional interviewer conducting a realistic job interview. "
+                            "You only ever report words that are actually audible in the audio. "
+                            "You never guess, infer or invent what a candidate said."
                         ),
-                        "temperature": 0.7,
+                        "temperature": temperature,
                     },
                 )
                 return response.text
@@ -612,6 +621,74 @@ def call_gemini_audio(audio_bytes: bytes, prompt: str) -> str:
                 else:
                     raise e
     raise last_error
+
+
+NO_SPEECH_MSG = (
+    "We didn't hear any speech, so nothing was submitted. Check that your microphone isn't muted and the "
+    "right input is selected in your browser, then record again (or switch to Type mode)."
+)
+
+
+def analyze_wav(audio_bytes: bytes):
+    """Cheap local silence check on 16-bit PCM WAV. Returns stats, or None if the format isn't parseable."""
+    try:
+        with wave.open(io.BytesIO(audio_bytes), "rb") as w:
+            n_ch, sw, sr, n = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
+            raw = w.readframes(n)
+        if sw != 2 or sr <= 0 or n == 0:
+            return None
+        x = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+        if n_ch > 1:
+            x = x[: (len(x) // n_ch) * n_ch].reshape(-1, n_ch).mean(axis=1)
+        win = max(1, int(sr * 0.03))
+        k = len(x) // win
+        seconds = len(x) / sr
+        peak = float(np.abs(x).max()) if len(x) else 0.0
+        if k == 0:
+            return {"seconds": seconds, "peak": peak, "voiced_seconds": 0.0}
+        rms = np.sqrt((x[: k * win].reshape(k, win) ** 2).mean(axis=1))
+        thresh = max(0.008, 3 * float(np.percentile(rms, 10)))
+        return {"seconds": seconds, "peak": peak, "voiced_seconds": float((rms > thresh).sum() * 0.03)}
+    except Exception:
+        return None
+
+
+def audio_looks_silent(stats) -> bool:
+    if not stats:
+        return False  # unknown format: let the model-side guard decide
+    return stats["seconds"] < 0.8 or stats["peak"] < 0.02 or stats["voiced_seconds"] < 0.4
+
+
+def parse_voice_response(response: str):
+    """Return (transcript, interviewer_reply, error). error is None on success."""
+    text = (response or "").strip()
+    if not text or text.upper().startswith("NO_SPEECH_DETECTED"):
+        return None, None, NO_SPEECH_MSG
+    if "**You said:**" not in text:
+        return None, None, "We couldn't reliably transcribe that recording, so nothing was submitted. Please record again or switch to Type mode."
+    raw = text.split("**You said:**", 1)[1].strip()
+    end = raw.find("\n\n")
+    if end > 0:
+        transcript, reply = raw[:end].strip(), raw[end:].strip()
+    elif "\n" in raw:
+        transcript, reply = raw.split("\n", 1)[0].strip(), raw.split("\n", 1)[1].strip()
+    else:
+        transcript, reply = raw[:250].strip(), ""
+    transcript = transcript.strip(' "\u201c\u201d')
+    if len(transcript.split()) < 3 or re.match(r"^[\[(]?\s*(silence|no speech|inaudible|unintelligible|nothing|no audio)", transcript, re.I):
+        return None, None, NO_SPEECH_MSG
+    return transcript, reply, None
+
+
+def candidate_word_count(messages: list) -> int:
+    n = 0
+    for m in messages:
+        if m.get("role") == "candidate":
+            t = str(m.get("content", ""))
+            if "[Voice answer]" in t:
+                continue
+            n += len(t.replace("🎙️", "").split())
+    return n
 
 
 ENABLE_SPONSOR_ADS = os.getenv("ENABLE_SPONSOR_ADS", "false").lower() == "true"
@@ -691,6 +768,67 @@ def run_sponsor_ad_countdown(target_type: str, target_id=None):
     st.rerun()
 
 
+# ══════════════════════════════════════════════════════════════
+# 🔑 RAZORPAY CONFIG  —  WHERE TO PUT YOUR KEY ID AND SECRET
+# ──────────────────────────────────────────────────────────────
+# DO NOT paste keys into this file (it is public on GitHub).
+# Put them in Streamlit SECRETS instead:
+#
+#   • Streamlit Cloud : your app → ⋮ (menu) → Settings → Secrets
+#   • Local (VS Code) : create  .streamlit/secrets.toml  (see secrets.toml.example)
+#       RAZORPAY_KEY_ID     = "rzp_test_xxxxxxxxxxxx"      # ← YOUR KEY ID
+#       RAZORPAY_KEY_SECRET = "xxxxxxxxxxxxxxxxxxxxxxxx"   # ← YOUR KEY SECRET
+#       PRO_TOKEN           = "long-random-string"         # ← OPTIONAL temporary stopgap
+#
+# Use rzp_test_… keys while testing, rzp_live_… keys once Razorpay approves your website.
+# Nothing unlocks Pro unless a payment is verified with Razorpay (or PRO_TOKEN matches).
+# ══════════════════════════════════════════════════════════════
+PASS_AMOUNT_PAISE = 4900  # ₹49 in paise. Change this if you change the price.
+
+
+def get_secret(name: str) -> str:
+    """Read a secret from Streamlit secrets, falling back to environment variables / .env."""
+    try:
+        value = st.secrets[name]
+    except Exception:
+        value = os.getenv(name, "")
+    return str(value or "").strip()
+
+
+@st.cache_resource
+def _used_payments():
+    return {}  # payment_id -> number of sessions unlocked (resets when the app restarts)
+
+
+def verify_razorpay_payment(payment_id: str):
+    """Ask Razorpay (server-side) whether this payment really happened. Returns (ok, message)."""
+    payment_id = (payment_id or "").strip()
+    if not re.fullmatch(r"pay_[A-Za-z0-9]{8,30}", payment_id):
+        return False, "That doesn't look like a Razorpay payment ID (it starts with pay_)."
+    key_id = get_secret("RAZORPAY_KEY_ID")          # 🔑 from secrets, see RAZORPAY CONFIG above
+    key_secret = get_secret("RAZORPAY_KEY_SECRET")  # 🔑 from secrets, see RAZORPAY CONFIG above
+    if not key_id or not key_secret:
+        return False, "Payment verification isn't configured yet. Please contact support."
+    try:
+        r = requests.get(
+            f"https://api.razorpay.com/v1/payments/{payment_id}",
+            auth=(key_id, key_secret),
+            timeout=10,
+        )
+    except requests.RequestException:
+        return False, "Couldn't reach the payment provider. Try again in a minute."
+    if r.status_code != 200:
+        return False, "Payment not found."
+    p = r.json()
+    if p.get("status") != "captured" or p.get("amount") != PASS_AMOUNT_PAISE or p.get("currency") != "INR":
+        return False, "This isn't a completed ₹49 payment."
+    used = _used_payments()
+    if used.get(payment_id, 0) >= 10:
+        return False, "This payment ID has been used too many times."
+    used[payment_id] = used.get(payment_id, 0) + 1
+    return True, "Payment verified."
+
+
 def render_pro_bar():
     """Render the Pro Pass status bar when unlocked; no intrusive banner in free mode."""
     if st.session_state.is_pro:
@@ -710,6 +848,26 @@ def render_pro_bar():
                 st.session_state.unlocked_attacks = False
                 st.session_state.unlocked_voice = False
                 st.rerun()
+    else:
+        just_paid = "session" in st.query_params or "razorpay_payment_id" in st.query_params
+        with st.expander("Already paid? Unlock with your payment ID", expanded=just_paid):
+            if just_paid:
+                st.caption("Thanks for your payment! Paste your Razorpay payment ID (from the receipt email or SMS) to unlock Pro.")
+            if st.session_state.get("pay_verify_msg"):
+                st.error(st.session_state.pay_verify_msg)
+            pid_in = st.text_input("Razorpay payment ID", placeholder="pay_XXXXXXXXXXXXXX", key="pay_id_input")
+            if st.button("Verify & unlock", key="btn_verify_pay"):
+                st.session_state.pay_attempts = st.session_state.get("pay_attempts", 0) + 1
+                if st.session_state.pay_attempts > 5:
+                    st.error("Too many attempts. Refresh the page and try again.")
+                else:
+                    ok, msg = verify_razorpay_payment(pid_in)
+                    if ok:
+                        st.session_state.is_pro = True
+                        st.session_state.pay_verify_msg = ""
+                        st.rerun()
+                    else:
+                        st.error(msg)
 
 
 
@@ -986,7 +1144,7 @@ COMPLETE WORD-FOR-WORD INTERVIEW TRANSCRIPT:
 
 CRITICAL GROUNDING REQUIREMENTS:
 1. Under "weakest_answer", "strongest_answer", and "exposed_claims", you MUST cite EXACT phrases, metrics, or technologies spoken by the candidate in the transcript or written in their resume.
-2. DO NOT hallucinate or invent resume claims or candidate answers that were not present.
+2. DO NOT hallucinate or invent resume claims or candidate answers that were not present. If the candidate\'s answers are missing, off-topic or too short to judge, say so plainly and score conservatively. Never credit the candidate for anything that appears only in the resume.
 3. Rigorously evaluate across 3 diagnostic dimensions (0-100 each):
    - Quantitative Rigor & Baselines: Did the candidate provide baselines (e.g., from X to Y), specify sample sizes/scale, and isolate their individual contribution vs the broader team?
    - STAR Structure & Brevity: Did they keep context/situation under 20% of speaking time and spend >70% on concrete technical/strategic actions and measurable business results?
@@ -1030,7 +1188,13 @@ Return ONLY valid JSON with this exact structure:
 
 
 def generate_candidate_debrief(resume_text: str, jd_text: str, messages: list, is_single_round: bool = False) -> dict:
-    """Generate structured candidate debrief with fallback resilience."""
+    """Generate the structured debrief. Never returns invented scores: if there is nothing to evaluate
+    or the AI call fails, returns {"unavailable": True, "reason": ...} instead."""
+    if candidate_word_count(messages) < 12:
+        return {
+            "unavailable": True,
+            "reason": "We didn't capture enough of your answer to evaluate it. Please try again and answer out loud or in the text box.",
+        }
     prompt = build_debrief_prompt(resume_text, jd_text, messages, is_single_round)
     try:
         raw_json = call_gemini(prompt, use_json=True)
@@ -1039,39 +1203,9 @@ def generate_candidate_debrief(resume_text: str, jd_text: str, messages: list, i
             return data
     except Exception:
         pass
-    
-    # Fallback default structure
     return {
-        "overall_readiness_score": 70,
-        "verdict": "Completed Evaluation",
-        "executive_summary": "Candidate defended core resume claims under direct questioning with room for quantitative sharpening.",
-        "scores": {
-            "quantitative_rigor": 65,
-            "star_structure": 75,
-            "pressure_defense": 70
-        },
-        "strongest_answer": {
-            "question": "Opening Resume Claim",
-            "quote_or_summary": "Outlined relevant background and past project experience.",
-            "why_it_worked": "Showed direct alignment with key requirements of the target role."
-        },
-        "weakest_answer": {
-            "question": "Claim Verification Probe",
-            "claim_tested": "Key project metric from resume",
-            "quote_or_gap": "Attribution and initial baselines were not fully isolated.",
-            "why_it_failed": "Skeptical interviewers probe baseline numbers and individual contribution depth.",
-            "recommended_rephrase": "Anchor the response with a clear starting baseline, explain the exact technical or product decision you owned, and conclude with verified percentage and dollar impact."
-        },
-        "exposed_resume_claims": [
-            {
-                "bullet_claim": "Primary technical or business metric",
-                "risk_note": "Ensure absolute baseline and sample sizes are memorized before human rounds."
-            }
-        ],
-        "actionable_corrections": [
-            "Quantify starting baselines before stating percentage lifts.",
-            "Isolate your personal ownership ('I architected') vs team effort ('we helped')."
-        ]
+        "unavailable": True,
+        "reason": "We couldn't generate your evaluation this time because the AI service didn't respond. Nothing about your answers was scored. Please try again.",
     }
 
 
@@ -1098,6 +1232,9 @@ def render_steps(current: int):
 
 
 def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
+    if debrief.get("unavailable"):
+        st.warning("📝 " + str(debrief.get("reason", "Evaluation unavailable.")))
+        return
     score = debrief.get("overall_readiness_score", 70)
     verdict = debrief.get("verdict", "Evaluation Complete")
     summary = debrief.get("executive_summary", "")
@@ -1342,14 +1479,53 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# Automatic payment unlock from checkout redirect (e.g. ?session=paid or ?pass=PRO2026)
-if "session" in st.query_params and str(st.query_params["session"]).lower() in ["paid", "pro", "success"]:
+# ── PRO UNLOCK ──────────────────────────────────────────────
+# URL flags such as ?session=paid or ?pass=... NO LONGER unlock anything.
+# Pro is granted only by (a) a payment that Razorpay confirms server-side, or
+# (b) the optional temporary PRO_TOKEN stopgap (secret, unguessable).
+_pro_token = get_secret("PRO_TOKEN")  # 🔑 OPTIONAL: set in secrets, then use ?session=<PRO_TOKEN> as the payment-link redirect
+if _pro_token and hmac.compare_digest(str(st.query_params.get("session", "")), _pro_token):
     st.session_state.is_pro = True
-if "pass" in st.query_params and str(st.query_params["pass"]).upper() in ["PRO2026", "VIP", "INTERVIEWPRO", "PASS"]:
-    st.session_state.is_pro = True
+
+_pid = str(st.query_params.get("razorpay_payment_id", "") or "").strip()
+if _pid and not st.session_state.is_pro:
+    _checked = st.session_state.setdefault("pay_checked", {})
+    if _pid not in _checked:  # verify each ID once per session (no repeated API calls on reruns)
+        _checked[_pid] = verify_razorpay_payment(_pid)
+    _ok, _msg = _checked[_pid]
+    if _ok:
+        st.session_state.is_pro = True
+        st.session_state.pay_verify_msg = ""
+    else:
+        st.session_state.pay_verify_msg = _msg
 
 # Apply model from session state
 MODEL = st.session_state.selected_model
+
+
+# Copilot-style arrival card + small-screen tuning (v2)
+st.markdown("""
+<style>
+    .prep-arrival-card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-left: 3px solid #1f6feb;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 0 0 1.2rem 0;
+    }
+    .prep-arrival-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .prep-arrival-brand { font-size: 12px; font-weight: 600; color: #8b949e; }
+    .prep-arrival-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .prep-arrival-role { font-size: 1.3rem; font-weight: 700; color: #f0f6fc; line-height: 1.25; margin-top: 2px; }
+    .prep-arrival-company { font-size: 0.95rem; color: #c9d1d9; margin-top: 2px; }
+    .prep-arrival-ok { font-size: 12px; font-weight: 500; color: #3fb950; margin-top: 10px; }
+    @media (max-width: 640px) {
+        .hero-title { font-size: 1.6rem; }
+        .hero-sub { font-size: 0.92rem; }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1359,15 +1535,7 @@ MODEL = st.session_state.selected_model
 if st.session_state.step == 0:
     render_steps(0)
 
-    st.markdown('<p class="hero-title">Find What Interviewers Will Challenge on Your Resume</p>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="hero-sub" style="margin-bottom:1.2rem;">'
-        'Upload your resume and target job description. We pinpoint the exact claims an interviewer will challenge, grill you in a realistic spoken mock interview, and score your defense under pressure.'
-        '</p>',
-        unsafe_allow_html=True,
-    )
-
-    # Check for deep-link from LinkedIn Copilot extension
+    # Deep-link from the LinkedIn Copilot extension (?jd=&title=&company=)
     param_jd = st.query_params.get("jd", "")
     param_title = (st.query_params.get("title", "") or "").strip()
     if param_title.lower() == "target role":
@@ -1382,31 +1550,56 @@ if st.session_state.step == 0:
     prefilled_jd = st.session_state.get("prefill_jd", "")
     prefilled_title = st.session_state.get("prefill_title", "")
     prefilled_company = st.session_state.get("prefill_company", "")
+    arrived_from_copilot = bool(prefilled_jd)
 
-    if prefilled_jd:
-        display_title = prefilled_title if prefilled_title and prefilled_title.lower() != "target role" else "Target Role"
-        company_label = f" at <strong style='color:#f0f6fc;'>{prefilled_company}</strong>" if prefilled_company else ""
+    jd_placeholder = "Paste the target job description or key role requirements here..."
+
+    if arrived_from_copilot:
+        # Copilot-style arrival: one clear task (upload resume), job already known
+        st.markdown('<p class="hero-title">Prepare for this interview</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="hero-sub" style="margin-bottom:1.2rem;">'
+            'Upload your resume. We find the claims an interviewer is most likely to challenge for this role, '
+            'then you practice defending them out loud.'
+            '</p>',
+            unsafe_allow_html=True,
+        )
+        role_txt = prefilled_title if prefilled_title and prefilled_title.lower() != "target role" else "this role"
+        role_html = html_lib.escape(role_txt)  # URL params are untrusted: always escape
+        company_html = (
+            f'<div class="prep-arrival-company">at {html_lib.escape(prefilled_company)}</div>'
+            if prefilled_company else ""
+        )
+        jd_words = len(prefilled_jd.split())
         st.markdown(
             f"""
-            <div style="background:#161b22;border:1px solid #1f6feb66;border-radius:8px;padding:12px 16px;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                <div>
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                        <span class="prep-score-pill" style="font-size:12px;padding:2px 8px;">
-                            <span class="prep-status-dot" style="background:#58a6ff;"></span>
-                            Copilot Target
-                        </span>
-                        <span style="color:#f0f6fc;font-weight:700;font-size:13px;">{display_title}</span>
-                        <span style="color:#8b949e;font-size:12px;">{company_label}</span>
-                    </div>
-                    <div style="font-size:11px;color:#3fb950;font-weight:500;">✓ Job description pre-filled from your LinkedIn session. Drop in your resume below!</div>
+            <div class="prep-arrival-card">
+                <div class="prep-arrival-top">
+                    <span class="prep-arrival-brand">PrepInterview</span>
+                    <span class="prep-beta-tag">From LinkedIn Copilot</span>
                 </div>
+                <div class="prep-arrival-label">Preparing for</div>
+                <div class="prep-arrival-role">{role_html}</div>
+                {company_html}
+                <div class="prep-arrival-ok"><span aria-hidden="true">✓</span> Job description pre-filled · {jd_words:,} words</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+    else:
+        st.markdown('<p class="hero-title">Find What Interviewers Will Challenge on Your Resume</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="hero-sub" style="margin-bottom:1.2rem;">'
+            'Upload your resume and target job description. We pinpoint the exact claims an interviewer will challenge, grill you in a realistic spoken mock interview, and score your defense under pressure.'
+            '</p>',
+            unsafe_allow_html=True,
+        )
 
-    # ── Step 1: Resume Upload ──
-    st.markdown('<p class="input-label">1. Upload Your Resume (PDF)</p>', unsafe_allow_html=True)
+    # ── Resume Upload ──
+    st.markdown(
+        f'<p class="input-label">{"Upload your resume (PDF)" if arrived_from_copilot else "1. Upload Your Resume (PDF)"}</p>',
+        unsafe_allow_html=True,
+    )
     resume_file = st.file_uploader(
         "Resume",
         type=["pdf"],
@@ -1422,15 +1615,26 @@ if st.session_state.step == 0:
         unsafe_allow_html=True,
     )
 
-    # ── Step 2: Job Description ──
-    st.markdown('<p class="input-label">2. Target Job Description</p>', unsafe_allow_html=True)
-    jd_input = st.text_area(
-        "Job Description",
-        value=prefilled_jd if prefilled_jd else "",
-        height=160,
-        placeholder="Paste the target job description or key role requirements here...",
-        label_visibility="collapsed",
-    )
+    # ── Job Description ──
+    if arrived_from_copilot:
+        # Already known from LinkedIn: keep it out of the way, but editable
+        with st.expander("Review or edit the job description", expanded=False):
+            jd_input = st.text_area(
+                "Job Description",
+                value=prefilled_jd,
+                height=160,
+                placeholder=jd_placeholder,
+                label_visibility="collapsed",
+            )
+    else:
+        st.markdown('<p class="input-label">2. Target Job Description</p>', unsafe_allow_html=True)
+        jd_input = st.text_area(
+            "Job Description",
+            value="",
+            height=160,
+            placeholder=jd_placeholder,
+            label_visibility="collapsed",
+        )
 
     # ── Optional Settings (Interviewer Persona) ──
     with st.expander("⚙️ Optional: Change Interviewer Persona (Default: Strategic Hiring Manager)", expanded=False):
@@ -1461,7 +1665,7 @@ if st.session_state.step == 0:
     st.markdown("")
     col_cta1, col_cta2 = st.columns([2, 1])
     with col_cta1:
-        if st.button("Scan My Resume & Start Free →", type="primary", use_container_width=True):
+        if st.button("Analyze my fit & start free →" if arrived_from_copilot else "Scan My Resume & Start Free →", type="primary", use_container_width=True):
             if not resume_file or not jd_input.strip():
                 st.error("Please upload your resume and provide the target job description.")
             else:
@@ -2089,6 +2293,13 @@ CRITICAL INTERVIEW RULES:
                 else:
                     st.markdown(f"**👤 You:** {msg['content']}")
 
+        if st.session_state.mock_debrief.get("unavailable"):
+            if st.button("🎤 Try this round again", type="primary", use_container_width=True, key="btn_retry_round"):
+                st.session_state.mock_messages = []
+                st.session_state.mock_debrief = None
+                st.session_state.interview_concluded = False
+                st.rerun()
+
         st.markdown("---")
         col_nav1, col_nav2 = st.columns(2)
         with col_nav1:
@@ -2334,65 +2545,72 @@ CRITICAL INTERVIEW RULES:
 
             if audio:
                 audio_bytes = audio.read()
+                audio_id = hashlib.md5(audio_bytes).hexdigest()
+                rejected_audio = st.session_state.setdefault("rejected_audio", {})
 
-                # Build conversation context for Gemini
-                conv = interviewer_ctx + "\n\nConversation so far:\n"
-                for msg in st.session_state.mock_messages:
-                    label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
-                    conv += f"\n{label}: {msg['content']}\n"
-                conv += (
-                    "\nThe candidate just answered via voice (audio attached). "
-                    "IMPORTANT INSTRUCTIONS:\n"
-                    "1. FIRST, listen carefully to the ENTIRE audio and transcribe EXACTLY what the candidate said, "
-                    "word-for-word. Show the full transcription on the very first line as: '**You said:** [complete word-for-word transcription]'\n"
-                    "2. Then on subsequent lines, respond in-character as the interviewer (acknowledge briefly, probe deeper if vague or ask next high-stakes question).\n"
-                    "3. NEVER output grades, scores, or meta-lists."
-                )
+                if audio_id in rejected_audio:
+                    # Already checked this exact recording: don't re-run (or re-bill) the AI call
+                    st.warning(rejected_audio[audio_id])
+                elif audio_looks_silent(analyze_wav(audio_bytes)):
+                    rejected_audio[audio_id] = NO_SPEECH_MSG
+                    st.warning(NO_SPEECH_MSG)
+                else:
+                    # Build conversation context for Gemini
+                    conv = interviewer_ctx + "\n\nConversation so far:\n"
+                    for msg in st.session_state.mock_messages:
+                        label = "Interviewer" if msg["role"] == "interviewer" else "Candidate"
+                        conv += f"\n{label}: {msg['content']}\n"
+                    conv += (
+                        "\nThe candidate just answered via voice (audio attached). "
+                        "IMPORTANT INSTRUCTIONS:\n"
+                        "0. If the audio contains no clear spoken words (silence, background noise, breathing or unintelligible speech), "
+                        "reply with exactly NO_SPEECH_DETECTED and nothing else. Never guess or fill in what the candidate might have said, "
+                        "and never write an answer for them from their resume.\n"
+                        "1. Otherwise, listen carefully to the ENTIRE audio and transcribe EXACTLY what the candidate said, "
+                        "word-for-word, using only words that are actually audible. Show the full transcription on the very first line as: "
+                        "'**You said:** <the words spoken>'\n"
+                        "2. Then on subsequent lines, respond in-character as the interviewer (acknowledge briefly, probe deeper if vague or ask next high-stakes question).\n"
+                        "3. NEVER output grades, scores, or meta-lists."
+                    )
 
-                with st.spinner("🎤 Listening and preparing interviewer response..."):
-                    try:
-                        response = call_gemini_audio(audio_bytes, conv)
+                    with st.spinner("🎤 Listening and preparing interviewer response..."):
+                        try:
+                            response = call_gemini_audio(audio_bytes, conv, temperature=0.2)
+                            spoken, interviewer_response, voice_error = parse_voice_response(response)
 
-                        # Try to extract what the AI transcribed
-                        transcript = "🎙️ *[Voice answer]*"
-                        interviewer_response = response
-                        if "**You said:**" in response:
-                            parts = response.split("**You said:**", 1)
-                            if len(parts) > 1:
-                                raw = parts[1].strip()
-                                end = raw.find("\n\n")
-                                if end > 0:
-                                    transcript = "🎙️ " + raw[:end].strip()
-                                    interviewer_response = raw[end:].strip()
-                                else:
-                                    transcript = "🎙️ " + raw[:250].strip()
+                            new_turns = candidate_turns + 1
+                            turns_limit = 1 if is_single_round else 4
+                            is_last_turn = new_turns >= turns_limit
 
-                        st.session_state.clarification_used = False
-                        st.session_state.mock_messages.append(
-                            {"role": "candidate", "content": transcript}
-                        )
+                            if voice_error is None and not is_last_turn and not interviewer_response:
+                                voice_error = "The interviewer's reply didn't come through, so nothing was submitted. Please record again."
 
-                        # Check if this answer finishes the required turns
-                        new_turns = candidate_turns + 1
-                        turns_limit = 1 if is_single_round else 4
-
-                        if new_turns >= turns_limit:
-                            with st.spinner("Compiling your post-interview candidate debrief..."):
-                                debrief_data = generate_candidate_debrief(
-                                    resume_text, jd_text, st.session_state.mock_messages, is_single_round=is_single_round
+                            if voice_error:
+                                rejected_audio[audio_id] = voice_error
+                                st.warning(voice_error)
+                            else:
+                                st.session_state.clarification_used = False
+                                st.session_state.mock_messages.append(
+                                    {"role": "candidate", "content": "🎙️ " + spoken}
                                 )
-                                st.session_state.mock_debrief = debrief_data
-                                st.session_state.interview_concluded = True
-                                st.rerun()
-                        else:
-                            st.session_state.mock_messages.append(
-                                {"role": "interviewer", "content": interviewer_response}
-                            )
-                            st.rerun()
 
-                    except Exception as e:
-                        st.error(f"Could not process audio: {str(e)[:150]}")
-                        st.info("Try switching to Type mode, or record again.")
+                                if is_last_turn:
+                                    with st.spinner("Compiling your post-interview candidate debrief..."):
+                                        debrief_data = generate_candidate_debrief(
+                                            resume_text, jd_text, st.session_state.mock_messages, is_single_round=is_single_round
+                                        )
+                                        st.session_state.mock_debrief = debrief_data
+                                        st.session_state.interview_concluded = True
+                                        st.rerun()
+                                else:
+                                    st.session_state.mock_messages.append(
+                                        {"role": "interviewer", "content": interviewer_response}
+                                    )
+                                    st.rerun()
+
+                        except Exception as e:
+                            st.error(f"Could not process audio: {str(e)[:150]}")
+                            st.info("Try switching to Type mode, or record again.")
 
         else:
             text_answer = st.text_area(
