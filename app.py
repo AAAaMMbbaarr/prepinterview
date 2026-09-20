@@ -803,8 +803,13 @@ def _used_payments():
 def verify_razorpay_payment(payment_id: str):
     """Ask Razorpay (server-side) whether this payment really happened. Returns (ok, message)."""
     payment_id = (payment_id or "").strip()
+    # Razorpay's confirmation page shows the ID WITHOUT the "pay_" prefix, so accept it with or without
+    if payment_id.lower().startswith("pay_"):
+        payment_id = "pay_" + payment_id[4:]
+    elif payment_id:
+        payment_id = "pay_" + payment_id
     if not re.fullmatch(r"pay_[A-Za-z0-9]{8,30}", payment_id):
-        return False, "That doesn't look like a Razorpay payment ID (it starts with pay_)."
+        return False, "That doesn't look like a Razorpay payment ID. Copy it exactly from your Razorpay confirmation page or receipt."
     key_id = get_secret("RAZORPAY_KEY_ID")          # 🔑 from secrets, see RAZORPAY CONFIG above
     key_secret = get_secret("RAZORPAY_KEY_SECRET")  # 🔑 from secrets, see RAZORPAY CONFIG above
     if not key_id or not key_secret:
@@ -852,10 +857,10 @@ def render_pro_bar():
         just_paid = "session" in st.query_params or "razorpay_payment_id" in st.query_params
         with st.expander("Already paid? Unlock with your payment ID", expanded=just_paid):
             if just_paid:
-                st.caption("Thanks for your payment! Paste your Razorpay payment ID (from the receipt email or SMS) to unlock Pro.")
+                st.caption("Just paid? Paste the Payment ID shown on Razorpay's confirmation page (or in your receipt email/SMS) to unlock Pro.")
             if st.session_state.get("pay_verify_msg"):
                 st.error(st.session_state.pay_verify_msg)
-            pid_in = st.text_input("Razorpay payment ID", placeholder="pay_XXXXXXXXXXXXXX", key="pay_id_input")
+            pid_in = st.text_input("Razorpay payment ID", placeholder="e.g. TeMioYSoJreLUD (with or without pay_)", key="pay_id_input")
             if st.button("Verify & unlock", key="btn_verify_pay"):
                 st.session_state.pay_attempts = st.session_state.get("pay_attempts", 0) + 1
                 if st.session_state.pay_attempts > 5:
@@ -2670,5 +2675,3 @@ CRITICAL INTERVIEW RULES:
                 st.session_state.clarification_used = False
                 st.session_state["last_spoken"] = -1
                 st.rerun()
-
-
