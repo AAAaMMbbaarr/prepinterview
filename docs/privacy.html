@@ -20,38 +20,85 @@
     a:hover { text-decoration: underline; }
     .badge { background: #23863622; color: #3fb950; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 12px; border: 1px solid #23863666; }
     .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .note { background: #d2992218; border-left: 3px solid #d29922; padding: 10px 14px; border-radius: 4px; margin: 12px 0; }
   </style>
 </head>
 <body>
   <h1>Privacy Policy <span class="badge">Last Updated: September 2026</span></h1>
-  <p>PrepInterview AI ("we", "our", or "us") is dedicated to protecting your privacy. This policy explains how our Chrome Extension (<strong>PrepInterview Copilot</strong>) and web platform (<a href="https://prepinterview.online">prepinterview.online</a>) handle your information.</p>
+  <p>PrepInterview AI ("we", "our", or "us") explains here how our Chrome extension (<strong>PrepInterview Copilot</strong>) and our web platform (<a href="https://prepinterview.online">prepinterview.online</a>) handle your information. We do not sell your personal data to recruiters or anyone else.</p>
 
   <div class="card">
-    <h2>1. 100% Local Processing & Storage</h2>
-    <p>PrepInterview Copilot operates with a privacy-first architecture:</p>
+    <h2>1. PrepInterview Copilot (Chrome extension): local processing and storage</h2>
     <ul>
-      <li><strong>Resume Data:</strong> Your resume text is stored strictly within your browser's local storage (<code>chrome.storage.local</code>). It is never uploaded to any remote tracking server or sold to third-party recruiters.</li>
-      <li><strong>Job Descriptions:</strong> The extension reads the job description on the active LinkedIn tab solely to calculate your local Skill Match and identify skill gaps on your device.</li>
+      <li><strong>Resume data:</strong> The resume text you save in the extension is stored only in your browser's local storage (<code>chrome.storage.local</code>). The extension does not upload it to any server.</li>
+      <li><strong>Job descriptions:</strong> The extension reads the job description on the LinkedIn page you are viewing only to calculate your skill match and gaps on your own device.</li>
+      <li><strong>The "Prepare for this interview" button:</strong> When you click it, your browser opens <code>prepinterview.online</code> in a new tab and passes the job title, company name and job description text in the link. Your resume is never included in that link.</li>
+      <li><strong>Your control:</strong> "Clear All Data" in the extension popup deletes everything the extension stores. Removing the extension also removes its data.</li>
     </ul>
   </div>
 
   <div class="card">
-    <h2>2. Permissions Justification</h2>
+    <h2>2. Extension permissions</h2>
     <ul>
-      <li><code>storage</code>: Used solely to remember your saved resume across browsing sessions in your local browser profile.</li>
-      <li><code>*://*.linkedin.com/*</code>: Required to read the active job posting description and render the interactive Skill Match overlay directly on LinkedIn jobs. No user cookies, credentials, or personal messages are ever accessed.</li>
+      <li><code>storage</code>: Used only to remember your saved resume and preferences in your local browser profile.</li>
+      <li><code>*://*.linkedin.com/*</code>: Required to read the job posting you are viewing and to show the match card on LinkedIn job pages. The extension does not access your cookies, credentials or messages.</li>
     </ul>
   </div>
 
   <div class="card">
-    <h2>3. Web Application Data (PrepInterview AI)</h2>
-    <p>When you click <em>"Practice Spoken Interview"</em>, you are directed to <code>https://prepinterview.online</code>. The job description and role title are passed via standard secure URL parameters to pre-fill your interview practice session. Audio mock interview answers are evaluated in-session and are not retained for advertising.</p>
+    <h2>3. Web application (prepinterview.online)</h2>
+    <p>When you use the web application, you may provide:</p>
+    <ul>
+      <li>a resume (PDF, from which we extract the text),</li>
+      <li>a job description, job title and company name (typed, pasted, or passed from the extension), and</li>
+      <li>your answers to practice interview questions, either typed or recorded with your microphone.</li>
+    </ul>
+    <p>We do not keep a database of resumes, audio recordings or transcripts. This information is held in memory for your session and is discarded when the session ends. There is no account to create. The application does not use your data for advertising.</p>
   </div>
 
   <div class="card">
-    <h2>4. Contact Us</h2>
-    <p>If you have any questions or feedback regarding this privacy policy, you can contact us at:</p>
-    <p>Contact: <a href="https://docs.google.com/forms/d/e/1FAIpQLSfP0mZBcah9TZ6qwmtVBkeFUSUX180q5E9OyDy7w2lwMSbYnw/viewform" target="_blank">Support & Feedback Form</a><br>Website: <a href="https://prepinterview.online">https://prepinterview.online</a></p>
+    <h2>4. Third-party services that process your data</h2>
+    <p>To provide the service we rely on the following providers:</p>
+    <ul>
+      <li><strong>Google (Gemini API):</strong> Your resume text, job description, audio recordings and answers are sent to Google's Gemini API to generate predicted questions, transcribe your speech, act as the interviewer and write your evaluation.
+        <div class="note"><strong>Beta notice:</strong> During this beta we use Google's free API tier. Under Google's terms for free ("unpaid") services, Google may use submitted content and responses to improve its products and machine-learning technologies, and human reviewers may read and annotate it after it has been disconnected from our account. Please do not upload information you consider highly sensitive, and consider removing your phone number, home address and other contact details from your resume before uploading. If we change plans, we will update this policy.</div></li>
+      <li><strong>Razorpay:</strong> Payments are processed by Razorpay. We never see or store your card, UPI or bank details. After you pay, we receive the payment ID, status and amount from Razorpay and use them to confirm your payment and unlock your access.</li>
+      <li><strong>Hosting providers:</strong> Our web application and website are hosted on third-party platforms, which may automatically log technical information such as IP address and browser type.</li>
+    </ul>
+    <p>Because the job description and title are passed in a web link when you come from the extension, they may appear in your browser history and in the hosting providers' technical logs.</p>
+  </div>
+
+  <div class="card">
+    <h2>5. Payments and access</h2>
+    <p>The Pro Pass is a one-time payment. To unlock it you paste your Razorpay payment ID, which we check with Razorpay. We do not create user accounts or store your payment details. Keep your payment receipt, because it contains the ID you need to unlock access again in a new session. Refunds are described in our <a href="/terms.html">Terms of Service & Refund Policy</a>.</p>
+  </div>
+
+  <div class="card">
+    <h2>6. Your choices and rights</h2>
+    <p>Because we do not keep resumes, recordings or transcripts, there is normally nothing stored on our side to delete. You can stop at any time by closing the session and clearing the extension's data. If you believe we hold personal information about you, or you have a question or complaint about how it is handled, contact us at the address below and we will respond within a reasonable time. Where applicable law (including India's Digital Personal Data Protection Act, 2023) gives you rights to access, correct or erase your personal data, you can exercise them the same way.</p>
+  </div>
+
+  <div class="card">
+    <h2>7. Children</h2>
+    <p>PrepInterview is intended for people aged 18 and over. We do not knowingly collect information from children.</p>
+  </div>
+
+  <div class="card">
+    <h2>8. Changes to this policy</h2>
+    <p>If we change how we handle your information, we will update this page and the "Last Updated" date above.</p>
+  </div>
+
+  <div class="card">
+    <h2>9. Contact us</h2>
+    <p>Questions, feedback or privacy requests:</p>
+    <p>
+      Name: <strong>[YOUR FULL / BUSINESS NAME]</strong><br>
+      Email: <strong>[YOUR SUPPORT EMAIL]</strong><br>
+      Phone: <strong>[YOUR PHONE NUMBER]</strong><br>
+      Address: <strong>[YOUR BUSINESS ADDRESS]</strong><br>
+      Website: <a href="https://prepinterview.online">https://prepinterview.online</a><br>
+      Feedback form: <a href="https://docs.google.com/forms/d/e/1FAIpQLSfP0mZBcah9TZ6qwmtVBkeFUSUX180q5E9OyDy7w2lwMSbYnw/viewform" target="_blank" rel="noopener noreferrer">Support &amp; Feedback Form</a>
+    </p>
   </div>
 </body>
 </html>
