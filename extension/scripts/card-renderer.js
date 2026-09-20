@@ -473,25 +473,30 @@
           <span class="prepinterview-description-note">${escapeHtml(band.description)}</span>
         </div>` : '')}
 
+        <!-- Zone 2: Why You Match -->
         <div class="prepinterview-factor-chips-row">
           ${factorChipsHtml}
+        </div>
+
+        <div class="prepinterview-section-label" style="margin-top:10px;">In your resume (${matched.length})</div>
+        <div class="prepinterview-pills-row">
+          ${matchPillsHtml}
+        </div>
+
+        <!-- Zone 3: Gaps to Review -->
+        <div class="prepinterview-section-label" style="margin-top:10px;">Not found in your resume (${missing.length})</div>
+        <div class="prepinterview-pills-row">
+          ${missingPillsHtml}
         </div>
 
         ${hardGapsHtml}
         ${amberLinesHtml}
         ${relocationToggleHtml}
+
+        <!-- Zone 4: Evaluation -->
         ${howBuiltHtml}
 
-        <div class="prepinterview-section-label" style="margin-top:12px;">In your resume (${matched.length})</div>
-        <div class="prepinterview-pills-row">
-          ${matchPillsHtml}
-        </div>
-
-        <div class="prepinterview-section-label">Not found in your resume (${missing.length})</div>
-        <div class="prepinterview-pills-row">
-          ${missingPillsHtml}
-        </div>
-
+        <!-- Zone 5: Prepare for This Role -->
         <a href="${escapeHtml(buildPracticeUrl({ title, company, jd: desc }))}" class="prepinterview-cta-btn prepinterview-action-trigger" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(ctaBaseLabel)} (opens prepinterview.online in a new tab)">
           <span>${escapeHtml(ctaBaseLabel)}</span>
           ${CTA_EXTERNAL_ICON_SVG}

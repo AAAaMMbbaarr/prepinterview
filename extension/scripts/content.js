@@ -1,7 +1,7 @@
-// PrepInterview Copilot - Content Script & LinkedIn Integration (Beta v1.0.6)
+// PrepInterview Copilot - Content Script & LinkedIn Integration (Beta v1.0.7)
 (function() {
   'use strict';
-  console.log('[PrepInterview Copilot Beta v1.0.6] Initialized');
+  console.log('[PrepInterview Copilot Beta v1.0.7] Initialized');
 
   const CardRenderer = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.CardRenderer) || null;
   const Matcher = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.Matcher) || null;
@@ -9,114 +9,127 @@
   // --- 1. ACCURATE LINKEDIN DATA EXTRACTION ---
   function isFilterOrListElement(el) {
     if (!el || !el.closest) return false;
-    return Boolean(
-      el.closest('li') ||
-      el.closest('[role="listitem"]') ||
-      el.closest('.jobs-search-results-list') ||
-      el.closest('.scaffold-layout__list') ||
-      el.closest('.jobs-search-results') ||
-      el.closest('[data-occludable-job-id]') ||
-      el.closest('.search-reuslts-filter') ||
-      el.closest('.search-results-filters') ||
-      el.closest('.artdeco-pill') ||
-      el.closest('[role="toolbar"]') ||
-      el.closest('ul.search-results__filter-list') ||
-      el.closest('.jobs-search-box') ||
-      el.closest('.global-nav') ||
-      el.closest('header') ||
-      el.closest('nav')
-    );
+    if (el.closest('#prepinterview-copilot-container') || el.closest('#prepinterview-floating-pill')) return false;
+
+    // Filter global headers, nav bars, and search filter toolbars
+    if (el.closest('header, nav, aside, [role="navigation"], .global-nav, .jobs-search-box, [role="toolbar"], .search-results-filters, .search-reuslts-filter, ul.search-results__filter-list, .artdeco-pill')) {
+      return true;
+    }
+
+    // Filter left search list items (individual job cards in the list)
+    const isListItem = el.closest('li, [role="listitem"], .job-card-container, [data-occludable-job-id], [data-view-name="job-card"], .jobs-search-results-list__list-item');
+    if (isListItem) {
+      // If element is inside the active details pane, it's not a left search list item
+      const inDetails = el.closest('.scaffold-layout__detail, [data-view-name="job-details"], #job-details, .jobs-description__content');
+      if (!inDetails) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   function findApplyButton(scope) {
     if (!scope) return null;
     const candidates = scope.querySelectorAll('button, a, [role="button"]');
     const applyRegex = /^(?:easy\s+apply|apply(?:\s+on\s+company\s+website|\s+now)?)\b/i;
+
+    // Prefer buttons that appear AFTER the job title heading (in the active details pane)
+    const h1 = scope.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1');
+    const descEl = scope.querySelector('#job-details, .jobs-description__content, .jobs-description');
+
+    let fallbackBtn = null;
     for (const el of candidates) {
       if (el.closest && (el.closest('#prepinterview-copilot-container') || el.closest('#prepinterview-floating-pill'))) continue;
       if (isFilterOrListElement(el)) continue;
+      if (descEl && descEl.contains(el)) continue;
 
       const label = (el.getAttribute && el.getAttribute('aria-label')) || '';
       const text = (el.innerText || el.textContent || '').trim();
-      if ((text.length > 0 && text.length <= 40 && applyRegex.test(text)) ||
-          (label.length > 0 && label.length <= 80 && applyRegex.test(label))) {
-        return el;
+      const isMatch = (text.length > 0 && text.length <= 40 && applyRegex.test(text)) ||
+                      (label.length > 0 && label.length <= 80 && applyRegex.test(label));
+
+      if (isMatch) {
+        if (h1 && typeof h1.compareDocumentPosition === 'function' && (h1.compareDocumentPosition(el) & 4)) {
+          return el;
+        }
+        if (!fallbackBtn) fallbackBtn = el;
       }
     }
-    return null;
+    return fallbackBtn;
   }
 
   function findSaveButton(scope) {
     if (!scope) return null;
     const candidates = scope.querySelectorAll('button, a, [role="button"]');
     const saveRegex = /^\s*save(?:d)?(?:\s+job)?\b/i;
+
+    const h1 = scope.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1');
+    const descEl = scope.querySelector('#job-details, .jobs-description__content, .jobs-description');
+
+    let fallbackBtn = null;
     for (const el of candidates) {
       if (el.closest && (el.closest('#prepinterview-copilot-container') || el.closest('#prepinterview-floating-pill'))) continue;
       if (isFilterOrListElement(el)) continue;
+      if (descEl && descEl.contains(el)) continue;
 
       const label = (el.getAttribute && el.getAttribute('aria-label')) || '';
       const text = (el.innerText || el.textContent || '').trim();
-      if ((text.length > 0 && text.length <= 30 && saveRegex.test(text)) ||
-          (label.length > 0 && label.length <= 60 && saveRegex.test(label))) {
-        return el;
+      const isMatch = (text.length > 0 && text.length <= 30 && saveRegex.test(text)) ||
+                      (label.length > 0 && label.length <= 60 && saveRegex.test(label));
+
+      if (isMatch) {
+        if (h1 && typeof h1.compareDocumentPosition === 'function' && (h1.compareDocumentPosition(el) & 4)) {
+          return el;
+        }
+        if (!fallbackBtn) fallbackBtn = el;
       }
     }
-    return null;
+    return fallbackBtn;
   }
 
   function getJobDetailsPane() {
     if (typeof document === 'undefined') return null;
 
-    // 1. Explicit search details pane if present (classic /jobs/search/ and /jobs/view/)
+    // 1. Explicit search details pane if present (classic /jobs/search/ and /jobs/view/ and /jobs/search-results/)
     const explicitPane = document.querySelector(
       '.scaffold-layout__detail, ' +
+      '.dee1436e, ' +
+      '[data-prepinterview-col="details"], ' +
       '.jobs-search-results-list__details, ' +
       '.jobs-search__job-details--container, ' +
       '.jobs-search__job-details, ' +
       '.jobs-details__main-content, ' +
-      'main .job-view-layout'
+      'main .job-view-layout, ' +
+      '[data-view-name="job-details"]'
     );
     if (explicitPane) {
       return explicitPane;
     }
 
-    // 2. Fallback for new /jobs/search-results/ (hashed classes):
-    // Find the right column by finding Save button or Apply button outside of any list item
+    // 2. From action row / Save button in details pane
     const saveBtn = findSaveButton(document);
-    const applyBtn = findApplyButton(document);
-    const actionBtn = saveBtn || applyBtn;
-    if (actionBtn) {
-      return actionBtn.closest('.scaffold-layout__detail, main, [role="main"], section, article') || actionBtn.parentElement;
+    if (saveBtn) {
+      const pane = saveBtn.closest('.scaffold-layout__detail, main, [role="main"]');
+      if (pane) return pane;
     }
 
-    // 3. Find common ancestor of job description (#job-details) and top card
-    const jdEl = document.querySelector('#job-details, .jobs-description__content, .jobs-description');
+    // 3. Right-side column in two-column layouts (/jobs/search-results/ and /jobs/search/)
+    const jdEl = document.querySelector('#job-details, .jobs-description__content, .jobs-description, article.jobs-description__container, #lazy-description-container');
+    if (jdEl) {
+      const pane = jdEl.closest('.scaffold-layout__detail, main, [role="main"]');
+      if (pane) return pane;
+      return jdEl.parentElement;
+    }
+
+    // 4. Fallback: Find top card
     const topCard = document.querySelector(
       '.job-details-jobs-unified-top-card, ' +
       '.jobs-unified-top-card, ' +
       '[class*="top-card"]'
     );
-    if (jdEl && topCard) {
-      let curr = jdEl.parentElement;
-      while (curr && curr !== document.body && curr !== document.documentElement) {
-        if (curr.contains(topCard)) {
-          return curr;
-        }
-        curr = curr.parentElement;
-      }
-      return jdEl.parentElement || topCard.parentElement;
-    }
-
     if (topCard) {
-      const parent = topCard.closest(
-        '.jobs-search-results-list__details, .scaffold-layout__detail, .jobs-search__job-details--container, .jobs-search__job-details, .jobs-details__main-content, .job-view-layout'
-      );
-      if (parent) return parent;
-      return topCard.parentElement || topCard;
-    }
-
-    if (jdEl) {
-      return jdEl.closest('.scaffold-layout__detail, main, [role="main"], section, article') || jdEl.parentElement;
+      return topCard.closest('.scaffold-layout__detail, .jobs-search__job-details--container, main, [role="main"]') || topCard.parentElement;
     }
 
     return null;
@@ -385,7 +398,6 @@
     return null;
   }
 
-  function isFlexOrGrid(el) {
   function isFlexRowOrGrid(el) {
     if (!el || el === document.body || el === document.documentElement) return false;
     try {
@@ -417,12 +429,27 @@
     if (!row) return null;
     let anchor = row;
     let levelsClimbed = 0;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const parent = anchor.parentElement;
-      if (!parent || parent === scope || parent === document.body || parent === document.documentElement) {
+      if (!parent || parent === scope || parent === document.body || parent === document.documentElement || parent.tagName === 'MAIN') {
         break;
       }
-      if (parent.id === 'job-details' || (parent.classList && (parent.classList.contains('jobs-description') || parent.classList.contains('jobs-description__content')))) {
+      // Stop climbing at any parent that contains an h1, h2, h3, or company/title metadata
+      if (parent.querySelector && parent.querySelector('h1, h2, h3, h4, [role="heading"], a[href*="/company/"], [class*="job-title"], [class*="primary-description"]')) {
+        break;
+      }
+      // Stop climbing at any parent that contains the description element or text "About the job"
+      if (parent.id === 'job-details' || (parent.querySelector && parent.querySelector('#job-details, .jobs-description__content, .jobs-description'))) {
+        break;
+      }
+      if ((parent.textContent || '').includes('About the job')) {
+        break;
+      }
+      // Stop climbing if parent offsetHeight > 120
+      if (typeof parent.offsetHeight === 'number' && parent.offsetHeight > 120) {
+        break;
+      }
+      if (parent.getAttribute && parent.getAttribute('data-component-type') === 'lazy-column') {
         break;
       }
       if (isFlexRowOrGrid(parent)) {
@@ -460,99 +487,155 @@
   }
 
   function logAnchorDebug(anchor) {
-    const isDebug = typeof window !== 'undefined' && (
-      window.PREPINTERVIEW_DEBUG === true ||
-      window.__PREPINTERVIEW_DEBUG__ === true ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('prepinterview_debug') === 'true')
-    );
-    if (!isDebug || !anchor) return;
-
-    function getDisplay(el) {
+    try {
+      let isDebug = false;
       try {
-        if (typeof window !== 'undefined' && window.getComputedStyle) {
-          const cs = window.getComputedStyle(el);
-          return (cs && cs.display) || (el.style && el.style.display) || 'unknown';
-        }
-        return el.style ? (el.style.display || 'inline') : 'unknown';
+        isDebug = typeof window !== 'undefined' && (
+          window.PREPINTERVIEW_DEBUG === true ||
+          window.__PREPINTERVIEW_DEBUG__ === true ||
+          (typeof localStorage !== 'undefined' && localStorage.getItem('prepinterview_debug') === 'true')
+        );
       } catch (e) {
-        return 'error';
+        isDebug = false;
       }
-    }
+      if (!isDebug || !anchor) return;
 
-    const anchorInfo = {
-      tag: anchor.tagName ? anchor.tagName.toLowerCase() : 'unknown',
-      classes: anchor.className || '',
-      display: getDisplay(anchor)
-    };
+      function getDisplay(el) {
+        try {
+          if (typeof window !== 'undefined' && window.getComputedStyle) {
+            const cs = window.getComputedStyle(el);
+            return (cs && cs.display) || (el.style && el.style.display) || 'unknown';
+          }
+          return el.style ? (el.style.display || 'inline') : 'unknown';
+        } catch (e) {
+          return 'error';
+        }
+      }
 
-    const parentChain = [];
-    let curr = anchor.parentElement;
-    for (let i = 1; i <= 5 && curr; i++) {
-      parentChain.push({
-        level: i,
-        tag: curr.tagName ? curr.tagName.toLowerCase() : 'unknown',
-        classes: curr.className || '',
-        display: getDisplay(curr)
+      const anchorInfo = {
+        tag: anchor.tagName ? anchor.tagName.toLowerCase() : 'unknown',
+        classes: anchor.className || '',
+        display: getDisplay(anchor)
+      };
+
+      const parentChain = [];
+      let curr = anchor.parentElement;
+      for (let i = 1; i <= 5 && curr; i++) {
+        parentChain.push({
+          level: i,
+          tag: curr.tagName ? curr.tagName.toLowerCase() : 'unknown',
+          classes: curr.className || '',
+          display: getDisplay(curr)
+        });
+        curr = curr.parentElement;
+      }
+
+      console.log('[PrepInterview Debug] Anchor resolution:', {
+        anchor: anchorInfo,
+        parentChain: parentChain
       });
-      curr = curr.parentElement;
-    }
-
-    console.log('[PrepInterview Debug] Anchor resolution:', {
-      anchor: anchorInfo,
-      parentChain: parentChain
-    });
+    } catch (err) {}
   }
 
   function logPlacementDebug(row, anchor, levelsClimbed, wrapper) {
-    const isDebug = typeof window !== 'undefined' && (
-      window.PREPINTERVIEW_DEBUG === true ||
-      window.__PREPINTERVIEW_DEBUG__ === true ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('prepinterview_debug') === 'true')
-    );
-    if (!isDebug) return;
-
-    const targetRow = row || anchor;
-    const rowTag = targetRow && targetRow.tagName ? targetRow.tagName.toLowerCase() : 'unknown';
-
-    let parentDisplay = 'unknown';
-    let parentFlexDir = 'unknown';
-    const parent = targetRow ? targetRow.parentElement : null;
-    if (parent) {
+    try {
+      let isDebug = false;
       try {
-        if (typeof window !== 'undefined' && window.getComputedStyle) {
-          const cs = window.getComputedStyle(parent);
-          parentDisplay = cs.display || '';
-          parentFlexDir = cs.flexDirection || '';
+        isDebug = typeof window !== 'undefined' && (
+          window.PREPINTERVIEW_DEBUG === true ||
+          window.__PREPINTERVIEW_DEBUG__ === true ||
+          (typeof localStorage !== 'undefined' && localStorage.getItem('prepinterview_debug') === 'true')
+        );
+      } catch (e) {
+        isDebug = false;
+      }
+      if (!isDebug) return;
+
+      const targetRow = row || anchor;
+      const rowTag = targetRow && targetRow.tagName ? targetRow.tagName.toLowerCase() : 'unknown';
+
+      let parentDisplay = 'unknown';
+      let parentFlexDir = 'unknown';
+      const parent = targetRow ? targetRow.parentElement : null;
+      if (parent) {
+        try {
+          if (typeof window !== 'undefined' && window.getComputedStyle) {
+            const cs = window.getComputedStyle(parent);
+            parentDisplay = cs.display || '';
+            parentFlexDir = cs.flexDirection || '';
+          }
+        } catch (e) {}
+        if (!parentDisplay && parent.style) parentDisplay = parent.style.display || '';
+        if (!parentFlexDir && parent.style) parentFlexDir = parent.style.flexDirection || '';
+      }
+
+      let rowBox = null;
+      let wrapperBox = null;
+      let gap = null;
+
+      try {
+        if (targetRow && typeof targetRow.getBoundingClientRect === 'function') {
+          rowBox = targetRow.getBoundingClientRect();
+        }
+        if (wrapper && typeof wrapper.getBoundingClientRect === 'function') {
+          wrapperBox = wrapper.getBoundingClientRect();
+        }
+        if (rowBox && wrapperBox) {
+          gap = Math.round(wrapperBox.top - rowBox.bottom);
         }
       } catch (e) {}
-      if (!parentDisplay && parent.style) parentDisplay = parent.style.display || '';
-      if (!parentFlexDir && parent.style) parentFlexDir = parent.style.flexDirection || '';
+
+      console.log('[PrepInterview Placement Debug]', {
+        rowTag,
+        parentDisplayFlexDir: `${parentDisplay} ${parentFlexDir}`.trim(),
+        levelsClimbed,
+        rowBox,
+        wrapperBox,
+        gapPx: gap
+      });
+    } catch (err) {
+      // logPlacementDebug must never throw
+    }
+  }
+
+  function findActionRow(scope) {
+    function searchRoot(root) {
+      if (!root) return null;
+      const classicRow = root.querySelector('.job-details-jobs-unified-top-card__actions-container, .jobs-unified-top-card__actions-container');
+      if (classicRow && !isFilterOrListElement(classicRow)) return classicRow;
+
+      const saveButtons = Array.from(root.querySelectorAll('button, a[role="button"]')).filter(el => {
+        if (el.closest && (el.closest('#prepinterview-copilot-container') || el.closest('#prepinterview-floating-pill'))) return false;
+        if (isFilterOrListElement(el)) return false;
+        const text = (el.innerText || el.textContent || '').trim();
+        const label = el.getAttribute('aria-label') || '';
+        return /^\s*save(?:d)?(?:\s+job)?\b/i.test(text) || /^\s*save\b/i.test(label);
+      });
+
+      for (const saveBtn of saveButtons) {
+        let parent = saveBtn.parentElement;
+        for (let i = 0; i < 3 && parent && parent !== root && parent !== document.body && parent.tagName !== 'MAIN'; i++) {
+          const applyBtn = Array.from(parent.querySelectorAll('button, a, [role="button"]')).find(b => {
+            if (b === saveBtn) return false;
+            const t = (b.innerText || b.textContent || '').trim();
+            const l = b.getAttribute('aria-label') || '';
+            return /^(?:easy\s+apply|apply(?:\s+on\s+company\s+website|\s+now)?)\b/i.test(t) || /^(?:easy\s+apply|apply)\b/i.test(l) || /\bapply\b/i.test(t);
+          });
+          if (applyBtn) return getClosestCommonAncestor(applyBtn, saveBtn, root);
+          parent = parent.parentElement;
+        }
+        if (saveBtn.parentElement && saveBtn.parentElement !== root && saveBtn.parentElement !== document.body && saveBtn.parentElement.tagName !== 'MAIN') {
+          return saveBtn.parentElement;
+        }
+      }
+      return null;
     }
 
-    let rowBox = null;
-    let wrapperBox = null;
-    let gap = null;
-
-    try {
-      if (targetRow && typeof targetRow.getBoundingClientRect === 'function') {
-        rowBox = targetRow.getBoundingClientRect();
-      }
-      if (wrapper && typeof wrapper.getBoundingClientRect === 'function') {
-        wrapperBox = wrapper.getBoundingClientRect();
-      }
-      if (rowBox && wrapperBox) {
-        gap = Math.round(wrapperBox.top - rowBox.bottom);
-      }
-    } catch (e) {}
-
-    console.log('[PrepInterview Placement Debug]', {
-      rowTag,
-      parentDisplayFlexDir: `${parentDisplay} ${parentFlexDir}`.trim(),
-      levelsClimbed,
-      rowBox,
-      wrapperBox,
-      gapPx: gap
-    });
+    let found = searchRoot(scope);
+    if (!found && scope !== document && typeof document !== 'undefined') {
+      found = searchRoot(document);
+    }
+    return found;
   }
 
   let lastAnchorStrategy = 'none';
@@ -562,46 +645,38 @@
     const scope = pane || (typeof document !== 'undefined' ? document : null);
     if (!scope) return null;
 
-    // 1. Classic action row on LinkedIn: The full container holding BOTH Apply and Save buttons
-    // NOTE: Never match .jobs-apply-button--top-card because that is only the Apply button wrapper,
-    // which caused the card to be inserted BETWEEN Apply and Save!
-    const classicActionsRow = scope.querySelector(
-      '.job-details-jobs-unified-top-card__actions-container, ' +
-      '.jobs-unified-top-card__actions-container'
-    );
-    if (classicActionsRow) {
-      lastAnchorStrategy = 'classic_actions_container';
-      lastActionRow = classicActionsRow;
-      logAnchorDebug(classicActionsRow);
-      return classicActionsRow;
+    // 1. Precise Action Row (searches for adjacent Apply + Save buttons in details pane)
+    const actionRow = findActionRow(scope);
+    if (actionRow && actionRow !== scope && actionRow !== document.body && actionRow !== document.documentElement && actionRow.tagName !== 'MAIN') {
+      lastAnchorStrategy = 'semantic_apply_save';
+      const anchor = climbToBlockOrColumn(actionRow, scope);
+      if (anchor && anchor !== scope && anchor !== document.body && anchor.tagName !== 'MAIN') {
+        lastActionRow = anchor;
+        logAnchorDebug(anchor);
+        return anchor;
+      }
+      lastActionRow = actionRow;
+      logAnchorDebug(actionRow);
+      return actionRow;
     }
 
-    // 2. Semantic Apply + Save buttons (for /jobs/search-results/ with hashed classes):
-    // 1. Semantic Apply + Save buttons (works across /jobs/search/ and /jobs/search-results/)
+    // 2. Semantic Apply + Save buttons (works across /jobs/search/ and /jobs/search-results/)
     const applyBtn = findApplyButton(scope);
     const saveBtn = findSaveButton(scope);
 
-    let actionRow = null;
     let row = null;
     if (applyBtn && saveBtn) {
-      actionRow = getClosestCommonAncestor(applyBtn, saveBtn, scope);
       row = getClosestCommonAncestor(applyBtn, saveBtn, scope);
       lastAnchorStrategy = 'semantic_apply_save';
     } else if (applyBtn) {
-      actionRow = applyBtn.closest('[class*="actions"], [class*="action"]') || applyBtn.parentElement;
       row = applyBtn.closest('.job-details-jobs-unified-top-card__actions-container, .jobs-unified-top-card__actions-container, [class*="actions"], [class*="action"]') || applyBtn.parentElement;
       lastAnchorStrategy = 'semantic_apply_only';
     } else if (saveBtn) {
-      actionRow = saveBtn.closest('[class*="actions"], [class*="action"]') || saveBtn.parentElement;
       row = saveBtn.closest('.job-details-jobs-unified-top-card__actions-container, .jobs-unified-top-card__actions-container, [class*="actions"], [class*="action"]') || saveBtn.parentElement;
       lastAnchorStrategy = 'semantic_save_only';
     }
 
-    if (actionRow) {
-      lastActionRow = actionRow;
-      logAnchorDebug(actionRow);
-      return actionRow;
-    // Classic action row if buttons weren't located:
+    // 2. Classic action row if buttons weren't located:
     if (!row) {
       const classicActionsRow = scope.querySelector(
         '.job-details-jobs-unified-top-card__actions-container, ' +
@@ -618,11 +693,16 @@
       row = row.parentElement;
     }
 
-    if (row) {
+    if (row && row !== scope && row !== document.body && row !== document.documentElement && row.tagName !== 'MAIN') {
       const anchor = climbToBlockOrColumn(row, scope);
-      lastActionRow = anchor;
-      logAnchorDebug(anchor);
-      return anchor;
+      if (anchor && anchor !== scope && anchor !== document.body && anchor.tagName !== 'MAIN') {
+        lastActionRow = anchor;
+        logAnchorDebug(anchor);
+        return anchor;
+      }
+      lastActionRow = row;
+      logAnchorDebug(row);
+      return row;
     }
 
     // 3. Fallback: Job description element (#job-details) -> card will be inserted before it
@@ -652,63 +732,293 @@
     return null;
   }
 
-  function insertCardAfterAnchor(anchor, container) {
-    if (!container) return;
-    container.style.cssText = 'display:block!important;width:100%!important;box-sizing:border-box!important;flex:1 1 100%!important;max-width:100%!important;margin:16px 0!important;position:relative!important;clear:both!important;';
-    container.setAttribute('data-prepinterview-wrapper', 'true');
-    container.style.cssText = 'display:block!important;width:100%!important;box-sizing:border-box!important;clear:both!important;flex:0 0 100%!important;align-self:stretch!important;padding:12px 0!important;margin:0!important;position:static!important;';
-
-    if (!anchor) {
-      const pane = getJobDetailsPane();
+  function fallbackInsertCard(container) {
+    try {
+      const pane = getJobDetailsPane() || (typeof document !== 'undefined' ? (document.querySelector('.job-details-jobs-unified-top-card, .jobs-search-results-list__details, .scaffold-layout__detail, main') || document.body) : null);
+      const h1 = (pane && pane.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1, [role="heading"][aria-level="1"], [role="heading"]')) || (typeof document !== 'undefined' ? document.querySelector('h1') : null);
+      if (h1 && typeof h1.after === 'function') {
+        h1.after(container);
+        return;
+      }
       const descEl = (pane && pane.querySelector('#job-details, .jobs-description__content, .jobs-description')) || (typeof document !== 'undefined' ? document.querySelector('#job-details') : null);
       if (descEl && typeof descEl.before === 'function') {
         descEl.before(container);
-        logPlacementDebug(null, descEl, 0, container);
         return;
       }
-      return;
-    }
-
-    // Safety guard: If anchor is the job description container itself (#job-details), insert BEFORE it
-    if (anchor.id === 'job-details' || (anchor.classList && (anchor.classList.contains('jobs-description') || anchor.classList.contains('jobs-description__content')))) {
-      if (typeof anchor.before === 'function') {
-        anchor.before(container);
-        logPlacementDebug(anchor, anchor, 0, container);
-        return;
-      } else if (anchor.parentNode) {
-        anchor.parentNode.insertBefore(container, anchor);
-        logPlacementDebug(anchor, anchor, 0, container);
-        return;
-      }
-    }
-
-    // Safety guard: Never insert as a child of any element that contains Apply or Save
-    const applyBtn = findApplyButton(anchor.parentElement || anchor);
-    const saveBtn = findSaveButton(anchor.parentElement || anchor);
-    if (anchor === applyBtn || anchor === saveBtn) {
-      anchor = anchor.parentElement;
-    }
-
-    if (anchor.parentElement) {
-      try {
-        const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(anchor.parentElement) : null;
-        if (cs && cs.display && cs.display.includes('flex') && cs.flexWrap === 'nowrap') {
-          anchor.parentElement.style.flexWrap = 'wrap';
+      if (pane) {
+        if (pane.firstElementChild && typeof pane.insertBefore === 'function') {
+          pane.insertBefore(container, pane.firstElementChild);
+        } else if (typeof pane.appendChild === 'function') {
+          pane.appendChild(container);
         }
-      } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  // On /jobs/search-results, LinkedIn's details pane contains a vertical job-content track containing the job description.
+  // The scroll container ([data-component-type="lazy-column"]) contains:
+  //   Child 0: job header/actions track (Company, Title, Apply/Save)
+  //   Child 1: vertical job-content track (#job-details / description)
+  // We locate this content track structurally and mount #prepinterview-copilot-container inside it BEFORE the description/content.
+  function getSearchResultsDetailsPane() {
+    if (typeof document === 'undefined') return null;
+    return document.querySelector('.dee1436e') || document.querySelector('[data-prepinterview-col="details"]') || document.querySelector('.scaffold-layout__detail');
+  }
+
+  function getSearchResultsLazyColumn(pane) {
+    const scope = pane || getSearchResultsDetailsPane() || (typeof document !== 'undefined' ? document : null);
+    if (!scope) return null;
+
+    if (scope.querySelector) {
+      const col = scope.querySelector('[data-component-type="lazy-column"]');
+      if (col) return col;
     }
 
-    if (typeof anchor.after === 'function') {
-      anchor.after(container);
-    } else if (anchor.insertAdjacentElement) {
-      anchor.insertAdjacentElement('afterend', container);
-    } else if (anchor.parentNode) {
-      anchor.parentNode.insertBefore(container, anchor.nextSibling);
+    const inner = scope.querySelector ? scope.querySelector('#job-details, .jobs-description__content, .jobs-description, h1, button') : null;
+    if (inner && typeof inner.closest === 'function') {
+      const col = inner.closest('[data-component-type="lazy-column"]');
+      if (col) return col;
     }
 
-    const rawRow = anchor.__prepinterview_raw_row || anchor;
-    const climbed = anchor.__prepinterview_levels_climbed || 0;
-    logPlacementDebug(rawRow, anchor, climbed, container);
+    if (typeof document !== 'undefined') {
+      const docLazy = document.querySelector('.dee1436e [data-component-type="lazy-column"]') || document.querySelector('[data-component-type="lazy-column"]');
+      if (docLazy) return docLazy;
+    }
+
+    return null;
+  }
+
+  function getSearchResultsContentTrack(pane) {
+    const scope = pane || getSearchResultsDetailsPane() || (typeof document !== 'undefined' ? document : null);
+    if (!scope) return null;
+
+    const container = typeof document !== 'undefined' ? document.getElementById('prepinterview-copilot-container') : null;
+    const scrollContainer = getSearchResultsLazyColumn(scope);
+
+    // Primary method:
+    // Find the direct child of scrollContainer which contains:
+    // #job-details OR .jobs-description__content OR .jobs-description OR article.jobs-description__container
+    const jdEl = scope.querySelector ? scope.querySelector('#job-details, .jobs-description__content, .jobs-description, article.jobs-description__container, #lazy-description-container, [data-job-description]') : null;
+    if (jdEl && scrollContainer) {
+      let curr = jdEl;
+      while (curr && curr.parentElement) {
+        if (curr.parentElement === scrollContainer) {
+          return curr;
+        }
+        curr = curr.parentElement;
+      }
+    }
+
+    // Deeply nested description walk-up
+    if (jdEl) {
+      let curr = jdEl;
+      while (curr && curr.parentElement && curr.parentElement !== scope && curr.parentElement !== document.body && curr.parentElement !== document.documentElement) {
+        const parent = curr.parentElement;
+        const directKids = [...parent.children].filter(el => el !== container && !el.hasAttribute('data-prepinterview-wrapper'));
+        if (directKids.length >= 2) {
+          const hasHeaderSibling = directKids.some(k => k !== curr && (k.querySelector('h1, button, .jobs-apply-button') || /apply|save/i.test(k.textContent || '')));
+          if (hasHeaderSibling) {
+            return curr;
+          }
+        }
+        curr = parent;
+      }
+    }
+
+    // Direct children inspection on scrollContainer
+    if (scrollContainer && scrollContainer.children) {
+      const directKids = [...scrollContainer.children].filter(el => el !== container && !el.hasAttribute('data-prepinterview-wrapper'));
+      if (directKids.length >= 2) {
+        return directKids[1];
+      }
+      if (directKids.length === 1) {
+        return directKids[0];
+      }
+    }
+
+    // Direct children of .dee1436e
+    const deePane = (scope.classList && scope.classList.contains('dee1436e')) ? scope : (scope.querySelector ? scope.querySelector('.dee1436e') : null);
+    if (deePane && deePane.children) {
+      const deeKids = [...deePane.children].filter(el => el !== container && !el.hasAttribute('data-prepinterview-wrapper'));
+      for (const kid of deeKids) {
+        if (kid.children && kid.children.length >= 2) {
+          const innerKids = [...kid.children].filter(el => el !== container && !el.hasAttribute('data-prepinterview-wrapper'));
+          if (innerKids.length >= 2) return innerKids[1];
+        }
+      }
+      if (deeKids.length >= 2) return deeKids[1];
+    }
+
+    return null;
+  }
+
+  // --- Search-results placement (v1.0.7) ---
+  // Anchored to the job HEADER (title + Apply/Save), never to "first child of something".
+  // Uses only insert-after / insert-before on a known sibling, so it can never throw NotFoundError.
+  const SR_DESC_SELECTOR = '#job-details, .jobs-description__content, .jobs-description, article.jobs-description__container, #lazy-description-container, [data-job-description]';
+
+  function isSearchResultsPath() {
+    if (typeof window === 'undefined' || !window.location || !window.location.pathname) return false;
+    return window.location.pathname.includes('/jobs/search-results');
+  }
+
+  function containsJobDescription(el, container) {
+    if (!el || !el.querySelector) return false;
+    if (el.matches && el.matches(SR_DESC_SELECTOR)) return true;
+    if (el.querySelector(SR_DESC_SELECTOR)) return true;
+    const heads = el.querySelectorAll('h1, h2, h3, h4, [role="heading"]');
+    for (const h of heads) {
+      if (container && container.contains(h)) continue;
+      if (/^\s*about the job\s*$/i.test(h.textContent || '')) return true;
+    }
+    return false;
+  }
+
+  // Returns { ref, position: 'after' | 'before' } or null.
+  function findSearchInsertionPoint(pane, container) {
+    const scope = pane || getSearchResultsDetailsPane() || getJobDetailsPane();
+    if (!scope) return null;
+
+    const isBoundary = (el) => !el || el === scope || el === document.body || el === document.documentElement ||
+      el.tagName === 'MAIN' || (el.getAttribute && el.getAttribute('data-component-type') === 'lazy-column');
+
+    // Strategy 1: right after the header block (the block holding title + Apply/Save row)
+    const applyBtn = findApplyButton(scope);
+    const saveBtn = findSaveButton(scope);
+    let row = null;
+    if (applyBtn && saveBtn) row = getClosestCommonAncestor(applyBtn, saveBtn, scope);
+    else row = applyBtn || saveBtn;
+
+    if (row && row !== scope && row.parentElement) {
+      let node = row;
+      for (let i = 0; i < 12; i++) {
+        const parent = node.parentElement;
+        if (isBoundary(parent)) break;
+        if (containsJobDescription(parent, container)) break; // parent holds more than the header
+        node = parent;
+      }
+      if (node.parentElement && !(container && node.contains(container) && node === container)) {
+        return { ref: node, position: 'after' };
+      }
+    }
+
+    // Strategy 2 (no Apply/Save, e.g. closed job): directly before "About the job"
+    const jd = scope.querySelector(SR_DESC_SELECTOR);
+    if (jd && jd.parentElement) {
+      let ref = jd;
+      const prev = ref.previousElementSibling;
+      if (prev && prev !== container && (prev.textContent || '').trim().length < 40 && /about the job/i.test(prev.textContent || '')) ref = prev;
+      return { ref, position: 'before' };
+    }
+    return null;
+  }
+
+  function mountSearchResultsCard(container) {
+    if (!container) return false;
+    try {
+      const pane = getSearchResultsDetailsPane() || getJobDetailsPane();
+      const point = findSearchInsertionPoint(pane, container);
+      if (!point) return false;
+
+      container.setAttribute('data-prepinterview-wrapper', 'true');
+      container.setAttribute('data-prepinterview-card', 'true');
+      container.style.cssText = 'display:block!important;width:100%!important;box-sizing:border-box!important;position:static!important;flex:0 0 auto!important;align-self:stretch!important;clear:both!important;';
+
+      const { ref, position } = point;
+      if (position === 'after') {
+        if (ref.nextElementSibling !== container) ref.after(container);
+      } else if (ref.previousElementSibling !== container) {
+        ref.before(container);
+      }
+      return Boolean(container.isConnected && document.contains(container));
+    } catch (err) {
+      console.warn('[PrepInterview] mountSearchResultsCard failed:', err);
+      return false;
+    }
+  }
+
+  // Idempotent: only touches the DOM if the card is missing or sitting in the wrong place.
+  // Called from the poll + MutationObserver so the card self-corrects once LinkedIn finishes rendering.
+  let lastPlacementCheck = 0;
+  function ensureSearchCardPlacement() {
+    try {
+      if (!isSearchResultsPath()) return;
+      const now = Date.now();
+      if (now - lastPlacementCheck < 300) return;
+      lastPlacementCheck = now;
+      const container = document.getElementById('prepinterview-copilot-container');
+      if (container) mountSearchResultsCard(container);
+    } catch (e) {}
+  }
+
+  function insertCardAfterAnchor(anchor, container) {
+    if (!container) return;
+    try {
+      container.setAttribute('data-prepinterview-wrapper', 'true');
+      container.setAttribute('data-prepinterview-card', 'true');
+      container.style.cssText = 'display:block!important;width:100%!important;box-sizing:border-box!important;clear:both!important;flex:0 0 100%!important;align-self:stretch!important;padding:12px 0!important;margin:0!important;position:static!important;';
+
+      const isSearchResults = typeof window !== 'undefined' && window.location && window.location.pathname && (
+        window.location.pathname.startsWith('/jobs/search-results') || window.location.pathname.includes('/jobs/search-results')
+      );
+
+      // On /jobs/search-results: Mount inside the contentTrack
+      if (isSearchResults) {
+        const handled = mountSearchResultsCard(container);
+        if (handled) return;
+      }
+
+      if (!anchor) {
+        // On search-results, "top of pane" is above the job header. Skip; the poll retries once the header renders.
+        if (isSearchResults) return;
+        fallbackInsertCard(container);
+        logPlacementDebug(null, null, 0, container);
+        return;
+      }
+
+      // Safety guard: If anchor is the job description container itself (#job-details), insert BEFORE it
+      if (anchor.id === 'job-details' || (anchor.classList && (anchor.classList.contains('jobs-description') || anchor.classList.contains('jobs-description__content')))) {
+        if (typeof anchor.before === 'function') {
+          anchor.before(container);
+          logPlacementDebug(anchor, anchor, 0, container);
+          return;
+        } else if (anchor.parentNode) {
+          anchor.parentNode.insertBefore(container, anchor);
+          logPlacementDebug(anchor, anchor, 0, container);
+          return;
+        }
+      }
+
+      // Safety guard: Never insert as a child of any element that contains Apply or Save
+      const applyBtn = findApplyButton(anchor.parentElement || anchor);
+      const saveBtn = findSaveButton(anchor.parentElement || anchor);
+      if (anchor === applyBtn || anchor === saveBtn) {
+        anchor = anchor.parentElement;
+      }
+
+      if (anchor.parentElement) {
+        try {
+          const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(anchor.parentElement) : null;
+          if (cs && cs.display && cs.display.includes('flex') && cs.flexWrap === 'nowrap') {
+            anchor.parentElement.style.flexWrap = 'wrap';
+          }
+        } catch (e) {}
+      }
+
+      if (typeof anchor.after === 'function') {
+        anchor.after(container);
+      } else if (anchor.insertAdjacentElement) {
+        anchor.insertAdjacentElement('afterend', container);
+      } else if (anchor.parentNode) {
+        anchor.parentNode.insertBefore(container, anchor.nextSibling);
+      }
+
+      const rawRow = anchor.__prepinterview_raw_row || anchor;
+      const climbed = anchor.__prepinterview_levels_climbed || 0;
+      logPlacementDebug(rawRow, anchor, climbed, container);
+    } catch (err) {
+      fallbackInsertCard(container);
+    }
   }
 
   let activeJobId = null;
@@ -739,6 +1049,20 @@
   let pendingDescTimer = null;
   let isDescStable = false;
 
+  // Preload cached storage values into memory on startup
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['resumeText', 'openToRelocation', 'overrides', 'activeProfile']).then(stored => {
+        if (stored) {
+          if (stored.resumeText !== undefined) activeResumeText = stored.resumeText;
+          if (stored.openToRelocation !== undefined) activeOpenToRelocation = Boolean(stored.openToRelocation);
+          if (stored.overrides !== undefined) activeOverrides = stored.overrides;
+          if (stored.activeProfile !== undefined) activeProfile = stored.activeProfile;
+        }
+      }).catch(() => {});
+    }
+  } catch (e) {}
+
   const isTestEnv = typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || (process.release && process.release.name === 'node'));
   const RETRY_DELAYS = isTestEnv ? [10, 20, 30] : [100, 200, 350, 500, 800, 1200, 1800];
   const NO_DESC_TIMEOUT = isTestEnv ? 200 : 8000;
@@ -766,6 +1090,89 @@
     waitingForDescTimedOut = false;
     pendingDescText = '';
     isDescStable = false;
+  }
+
+  let searchBootstrapTimers = [];
+  let activeBootstrapJobId = null;
+  const SEARCH_BOOTSTRAP_DELAYS = isTestEnv ? [0, 10, 25, 50, 80, 120] : [0, 100, 250, 500, 800, 1200, 1800, 2500, 4000, 6000];
+
+  function clearSearchBootstrap() {
+    searchBootstrapTimers.forEach(t => clearTimeout(t));
+    searchBootstrapTimers = [];
+    activeBootstrapJobId = null;
+  }
+
+  function isSearchRoute() {
+    if (typeof window === 'undefined' || !window.location || !window.location.pathname) return false;
+    const p = window.location.pathname;
+    return p.startsWith('/jobs/search') || p.includes('/jobs/search');
+  }
+
+  function checkSearchReadiness(pane) {
+    const p = pane || getJobDetailsPane();
+    if (!p) return null;
+    const jobId = getCurrentJobId(p);
+    if (!jobId) return null;
+    const title = getJobTitle(p);
+    if (!title || title === 'Target Role') {
+      const h1 = p.querySelector ? p.querySelector('h1, .job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title') : null;
+      if (!h1) return null;
+    }
+    const applyBtn = findApplyButton(p);
+    const saveBtn = findSaveButton(p);
+    const anchor = getAnchorElement(p);
+    if (!anchor && !applyBtn && !saveBtn) return null;
+
+    const desc = getFullJobDescription(p);
+    const hasDescOrContent = Boolean(
+      (desc && desc.length > 0) ||
+      (p.querySelector && p.querySelector('#job-details, .jobs-description__content, .jobs-description, article.jobs-description__container')) ||
+      (p.textContent && p.textContent.length > 200)
+    );
+    if (!hasDescOrContent) return null;
+
+    return { pane: p, jobId, title, anchor: anchor || applyBtn || saveBtn, desc };
+  }
+
+  function startSearchReadinessWatcher(targetJobId) {
+    clearSearchBootstrap();
+    if (!isSearchRoute()) return;
+
+    const initialPane = getJobDetailsPane();
+    const curId = targetJobId || getCurrentJobId(initialPane) || (window.location && window.location.href) || '';
+    activeBootstrapJobId = curId;
+
+    SEARCH_BOOTSTRAP_DELAYS.forEach((delay, idx) => {
+      const timer = setTimeout(async () => {
+        if (!isViewingJob()) return;
+        const currentPane = getJobDetailsPane();
+        const currentId = getCurrentJobId(currentPane);
+
+        // Reset/abort if job changed during bootstrap
+        if (activeBootstrapJobId && currentId && activeBootstrapJobId !== currentId && !activeBootstrapJobId.includes(currentId) && !currentId.includes(activeBootstrapJobId)) {
+          return;
+        }
+
+        const card = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
+        const cardExists = Boolean(card && document.contains(card) && currentPane && currentPane.contains(card));
+
+        // Stop as soon as a valid card is successfully mounted for the current job
+        if (cardExists && activeJobId === currentId && activeFingerprint) {
+          clearSearchBootstrap();
+          return;
+        }
+
+        const ready = checkSearchReadiness(currentPane);
+        if (ready) {
+          clearSearchBootstrap();
+          handleNavigation();
+        } else if (idx === SEARCH_BOOTSTRAP_DELAYS.length - 1) {
+          // Final attempt when delays complete
+          handleNavigation();
+        }
+      }, delay);
+      searchBootstrapTimers.push(timer);
+    });
   }
 
   function showFailedPill(reason) {
@@ -917,6 +1324,7 @@
   function disconnectAll() {
     clearDomCheckTimers();
     clearDescTimers();
+    clearSearchBootstrap();
     if (moObserver) {
       try { moObserver.disconnect(); } catch (e) {}
       moObserver = null;
@@ -976,6 +1384,7 @@
   function removeCard() {
     clearDomCheckTimers();
     clearDescTimers();
+    clearSearchBootstrap();
     if (typeof document !== 'undefined') {
       const allContainers = document.querySelectorAll('#prepinterview-copilot-container');
       allContainers.forEach(el => el.remove());
@@ -998,7 +1407,75 @@
   let activeFlightJobId = null;
   let activeFlightPromise = null;
 
+  function adjustSearchResultsGeometry() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const pathname = (window.location && window.location.pathname) ? window.location.pathname : '';
+    const isSearchResultsPage =
+      pathname === '/jobs/search-results/' ||
+      pathname === '/jobs/search-results';
+
+    if (!isSearchResultsPage) {
+      if (document.documentElement) document.documentElement.removeAttribute('data-prepinterview-page');
+      if (document.body) document.body.removeAttribute('data-prepinterview-page');
+      return;
+    }
+
+    if (document.documentElement) {
+      document.documentElement.setAttribute('data-prepinterview-page', 'search-results');
+      document.documentElement.style.setProperty('overflow-y', 'scroll', 'important');
+    }
+    if (document.body) {
+      document.body.setAttribute('data-prepinterview-page', 'search-results');
+      document.body.style.setProperty('overflow-y', 'scroll', 'important');
+    }
+
+    const scope = document.documentElement;
+
+    const mainParent = scope.querySelector('._8978643c') || (scope.querySelector('._934a1573') && scope.querySelector('._934a1573').parentElement);
+    if (mainParent) {
+      mainParent.setAttribute('data-prepinterview-layout', 'two-col-layout');
+      mainParent.style.setProperty('display', 'flex', 'important');
+      mainParent.style.setProperty('flex-direction', 'row', 'important');
+      mainParent.style.setProperty('border-left', '0px', 'important');
+      mainParent.style.setProperty('border-right', '0px', 'important');
+      mainParent.style.setProperty('gap', '0px', 'important');
+      mainParent.style.setProperty('column-gap', '0px', 'important');
+    }
+
+    const leftCol = scope.querySelector('._934a1573');
+    if (leftCol) {
+      leftCol.setAttribute('data-prepinterview-col', 'list');
+      leftCol.style.setProperty('display', 'flex', 'important');
+      leftCol.style.setProperty('flex-direction', 'column', 'important');
+      leftCol.style.setProperty('flex', '0 0 504px', 'important');
+      leftCol.style.setProperty('width', '504px', 'important');
+      leftCol.style.setProperty('max-width', '504px', 'important');
+      leftCol.style.setProperty('min-width', '504px', 'important');
+      leftCol.style.setProperty('border-left', '0px', 'important');
+      leftCol.style.setProperty('border-right', '1px solid rgba(140, 140, 140, 0.2)', 'important');
+    }
+
+    const rightCol = scope.querySelector('.dee1436e');
+    if (rightCol) {
+      rightCol.setAttribute('data-prepinterview-col', 'details');
+      rightCol.style.setProperty('flex', '1 1 624px', 'important');
+      rightCol.style.setProperty('width', '624px', 'important');
+      rightCol.style.setProperty('min-width', '0', 'important');
+    }
+
+    // Filter toolbar alignment: ensure margin-bottom: 0 on /jobs/search-results so main top matches toolbar bottom at 109px
+    const filterToolbar = scope.querySelector('._65b5aeb6') ||
+      scope.querySelector('[data-prepinterview-page="search-results"] [role="toolbar"]') ||
+      scope.querySelector('.search-results-filters, [data-prepinterview-filter="toolbar"]') ||
+      (scope.querySelector('.artdeco-pill') && scope.querySelector('.artdeco-pill').closest('[role="toolbar"], div'));
+    if (filterToolbar && filterToolbar !== document.body && mainParent && !filterToolbar.contains(mainParent)) {
+      filterToolbar.setAttribute('data-prepinterview-filter', 'toolbar');
+      filterToolbar.style.setProperty('margin-bottom', '0px', 'important');
+    }
+  }
+
   function handleNavigation() {
+    adjustSearchResultsGeometry();
     if (!isViewingJob()) {
       removeCard();
       return Promise.resolve();
@@ -1034,7 +1511,11 @@
       return;
     }
 
-    const pane = getJobDetailsPane();
+    const isSearchResults = typeof window !== 'undefined' && window.location && window.location.pathname && (
+      window.location.pathname.startsWith('/jobs/search-results') || window.location.pathname.includes('/jobs/search-results')
+    );
+    const searchResultsPane = isSearchResults ? getSearchResultsDetailsPane() : null;
+    const pane = searchResultsPane || getJobDetailsPane();
     const currentTargetId = getCurrentJobId(pane);
 
     // Only abort if user navigated away to a completely different job
@@ -1201,11 +1682,23 @@
       removeCard();
       return;
     }
-    let container = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-container') : null;
-    const pane = getJobDetailsPane();
+    const isSearchResults = typeof window !== 'undefined' && window.location && window.location.pathname && (
+      window.location.pathname.startsWith('/jobs/search-results') || window.location.pathname.includes('/jobs/search-results')
+    );
+    const pane = isSearchResults ? (getSearchResultsDetailsPane() || getJobDetailsPane()) : getJobDetailsPane();
     if (!pane) {
       removeCard();
       return;
+    }
+
+    let container = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-container') : null;
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'prepinterview-copilot-container';
+      container.setAttribute('data-prepinterview-wrapper', 'true');
+      container.setAttribute('data-prepinterview-card', 'true');
+    } else {
+      container.setAttribute('data-prepinterview-card', 'true');
     }
 
     const anchor = getAnchorElement(pane);
@@ -1213,179 +1706,168 @@
     const anchorClasses = anchor && anchor.className ? '.' + String(anchor.className).trim().split(/\s+/).filter(Boolean).join('.') : '';
     console.log('[PrepInterview] Anchor found: ' + (anchor ? (anchorTag + anchorClasses) : 'none'));
 
-    const existingCard = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
-    const cardAlreadyInDom = Boolean(existingCard && document.contains(existingCard));
-
-    if (!cardAlreadyInDom || !container || !pane.contains(container)) {
-      if (container) container.remove();
-      container = document.createElement('div');
-      container.id = 'prepinterview-copilot-container';
-      insertCardAfterAnchor(anchor, container);
-      if (!pane.contains(container)) {
-        const descEl = (pane && pane.querySelector('#job-details, .jobs-description__content, .jobs-description')) || (typeof document !== 'undefined' ? document.querySelector('#job-details') : null);
-        if (descEl && typeof descEl.before === 'function') {
-          descEl.before(container);
-        } else if (pane.firstElementChild) {
-          pane.insertBefore(container, pane.firstElementChild);
-        }
-      }
-    }
-    if (!container) return;
-
     if (typeof overrideRelocationVal === 'boolean') {
       activeOpenToRelocation = overrideRelocationVal;
     }
 
-    if (!activeDesc || activeDesc.length < 200 || !isDescStable) {
-      const copyDebugLink = '<a href="#" id="prepinterview-copy-debug-link" role="button" style="color:#58a6ff; text-decoration:underline; font-size:11px;">Copy debug info</a>';
-      if (waitingForDescTimedOut) {
-        container.innerHTML = `
-          <div id="prepinterview-copilot-card" class="prepinterview-widget-card prepinterview-card-neutral" data-job-id="${activeJobId || ''}">
-            <div class="prepinterview-header" style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
-              <span class="prepinterview-score-pill prepinterview-tier-neutral" style="background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:12px; padding:4px 10px; font-size:12px; font-weight:600;">Scroll to load job</span>
+    try {
+      if (!activeDesc || activeDesc.length < 200 || !isDescStable) {
+        const copyDebugLink = '<a href="#" id="prepinterview-copy-debug-link" role="button" style="color:#58a6ff; text-decoration:underline; font-size:11px;">Copy debug info</a>';
+        if (waitingForDescTimedOut) {
+          container.innerHTML = `
+            <div id="prepinterview-copilot-card" class="prepinterview-widget-card prepinterview-card-neutral" data-job-id="${activeJobId || ''}">
+              <div class="prepinterview-header" style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
+                <span class="prepinterview-score-pill prepinterview-tier-neutral" style="background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:12px; padding:4px 10px; font-size:12px; font-weight:600;">Scroll to load job</span>
+              </div>
+              <div class="prepinterview-body" style="padding:14px 16px; font-size:13px; color:#c9d1d9; line-height:1.5;">
+                Scroll down so the job description loads, then the score appears.
+                <div style="margin-top:12px;">${copyDebugLink}</div>
+              </div>
             </div>
-            <div class="prepinterview-body" style="padding:14px 16px; font-size:13px; color:#c9d1d9; line-height:1.5;">
-              Scroll down so the job description loads, then the score appears.
-              <div style="margin-top:12px;">${copyDebugLink}</div>
+          `;
+          const floatPill = (typeof document !== 'undefined') ? document.getElementById('prepinterview-floating-pill') : null;
+          if (floatPill) {
+            floatPill.textContent = 'Scroll to load job';
+            floatPill.setAttribute('aria-label', 'PrepInterview: Scroll to load job');
+            floatPill.classList.remove('hidden');
+          }
+        } else {
+          container.innerHTML = `
+            <div id="prepinterview-copilot-card" class="prepinterview-widget-card prepinterview-card-loading" data-job-id="${activeJobId || ''}">
+              <div class="prepinterview-header" style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
+                <span class="prepinterview-score-pill prepinterview-tier-neutral" style="background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:12px; padding:4px 10px; font-size:12px; font-weight:600;">Reading job description…</span>
+              </div>
+              <div class="prepinterview-body" style="padding:14px 16px; font-size:13px; color:#8b949e; line-height:1.5;">
+                Reading job description…
+                <div style="margin-top:12px;">${copyDebugLink}</div>
+              </div>
             </div>
-          </div>
-        `;
-        const floatPill = (typeof document !== 'undefined') ? document.getElementById('prepinterview-floating-pill') : null;
-        if (floatPill) {
-          floatPill.textContent = 'Scroll to load job';
-          floatPill.setAttribute('aria-label', 'PrepInterview: Scroll to load job');
-          floatPill.classList.remove('hidden');
+          `;
+          const floatPill = (typeof document !== 'undefined') ? document.getElementById('prepinterview-floating-pill') : null;
+          if (floatPill) {
+            floatPill.textContent = 'Reading job description…';
+            floatPill.setAttribute('aria-label', 'PrepInterview: Reading job description…');
+            floatPill.classList.remove('hidden');
+          }
         }
+
+        attachCopyDebugListener(container.querySelector('#prepinterview-copy-debug-link'));
       } else {
-        container.innerHTML = `
-          <div id="prepinterview-copilot-card" class="prepinterview-widget-card prepinterview-card-loading" data-job-id="${activeJobId || ''}">
-            <div class="prepinterview-header" style="padding:12px 16px; border-bottom:1px solid #30363d; display:flex; justify-content:space-between; align-items:center;">
-              <span class="prepinterview-score-pill prepinterview-tier-neutral" style="background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:12px; padding:4px 10px; font-size:12px; font-weight:600;">Reading job description…</span>
-            </div>
-            <div class="prepinterview-body" style="padding:14px 16px; font-size:13px; color:#8b949e; line-height:1.5;">
-              Reading job description…
-              <div style="margin-top:12px;">${copyDebugLink}</div>
-            </div>
-          </div>
-        `;
+        const renderer = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.CardRenderer) || CardRenderer;
+        const matcher = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.Matcher) || Matcher;
+
+        const descText = activeDesc || '';
+        const match = matcher && typeof matcher.evaluate === 'function'
+          ? matcher.evaluate(activeResumeText, descText, {
+              locationMeta: activeLocationMeta,
+              jobTitle: activeTitle,
+              openToRelocation: activeOpenToRelocation
+            })
+          : {
+              status: activeResumeText ? 'ready' : 'no_resume',
+              score: 50,
+              tier: 'Moderate Match',
+              matchedSkills: [],
+              missingSkills: [],
+              hardGaps: [],
+              softGaps: [],
+              notes: [],
+              breakdown: []
+            };
+
+        const fingerprint = renderer && typeof renderer.getRenderFingerprint === 'function'
+          ? renderer.getRenderFingerprint(activeResumeText, {
+              openToRelocation: activeOpenToRelocation,
+              overrides: activeOverrides,
+              activeProfile: activeProfile
+            })
+          : `${activeResumeText.length}_${activeOpenToRelocation}`;
+
+        activeFingerprint = fingerprint;
+
+        let isExpanded = false;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            isExpanded = localStorage.getItem('prepinterview_is_expanded') === 'true';
+          }
+        } catch (e) {}
+
+        let extractedMinExp = (match.jdReq && typeof match.jdReq.minExp === 'number' && match.jdReq.minExp > 0)
+          ? match.jdReq.minExp
+          : (typeof match.extractedMinExp === 'number' && match.extractedMinExp > 0 ? match.extractedMinExp : null);
+
+        if (extractedMinExp === null && typeof descText === 'string') {
+          extractedMinExp = extractMinExpFromDescription(descText);
+        }
+
+        const renderOptions = {
+          title: activeTitle,
+          company: activeCompany,
+          jobId: activeJobId,
+          openToRelocation: activeOpenToRelocation,
+          isExpanded: isExpanded,
+          extractedMinExp: extractedMinExp,
+          extractedSkills: (match.jdReq && match.jdReq.extractedSkills) || match.extractedSkills || (match.matchedSkills && match.missingSkills ? match.matchedSkills.concat(match.missingSkills) : []),
+          workMode: (match.jdReq && match.jdReq.workMode) || match.workMode || (descText.toLowerCase().includes('remote') ? 'Remote' : (descText.toLowerCase().includes('hybrid') ? 'Hybrid' : 'On-site')),
+          locationMatched: !match.hardGaps || !match.hardGaps.some(g => /location/i.test(g)),
+          educationMentioned: Boolean((match.jdReq && (match.jdReq.degreeMandatory || match.jdReq.tierMandatory || match.jdReq.tierPreferred)) || /bachelor|master|b\.?tech|degree|mba|phd/i.test(descText))
+        };
+
+        const cardHtml = renderer && typeof renderer.renderCopilotCard === 'function'
+          ? renderer.renderCopilotCard(match, renderOptions)
+          : `<div class="prepinterview-header"><span class="prepinterview-score-pill">${match.score}% ${match.tier}</span></div>`;
+
+        container.innerHTML = `<div id="prepinterview-copilot-card" class="prepinterview-widget-card" data-job-id="${activeJobId}" data-fingerprint="${fingerprint}">${cardHtml}</div>`;
+
+        attachCardEventListeners(container, match, renderOptions);
+        attachCopyDebugListener(container.querySelector('#prepinterview-copy-debug-link'));
+
+        // Update floating pill if present
         const floatPill = (typeof document !== 'undefined') ? document.getElementById('prepinterview-floating-pill') : null;
         if (floatPill) {
-          floatPill.textContent = 'Reading job description…';
-          floatPill.setAttribute('aria-label', 'PrepInterview: Reading job description…');
-          floatPill.classList.remove('hidden');
+          if (renderer && typeof renderer.renderFloatingPill === 'function') {
+            floatPill.innerHTML = renderer.renderFloatingPill(match, renderOptions);
+          } else {
+            floatPill.textContent = `PrepInterview: ${match.score}%`;
+          }
+          floatPill.setAttribute('aria-label', `PrepInterview match score: ${match.score}%`);
         }
+      }
+
+      // Wire events and fill HTML completed BEFORE placing container in DOM
+      if (isSearchResults) {
+        const mounted = mountSearchResultsCard(container);
+        if (!mounted && anchor) {
+          insertCardAfterAnchor(anchor, container);
+        }
+      } else if (!container.isConnected || !document.contains(container) || (anchor && anchor.nextElementSibling !== container)) {
+        insertCardAfterAnchor(anchor, container);
       }
 
       const cardEl = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
       const cardInserted = Boolean(cardEl && document.contains(cardEl));
       console.log('[PrepInterview] Card inserted: ' + (cardInserted ? 'yes' : 'no'));
-
-      attachCopyDebugListener(container.querySelector('#prepinterview-copy-debug-link'));
-
-      clearDomCheckTimers();
-      domCheckTimer500 = setTimeout(() => {
-        const c = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
-        const present = Boolean(c && document.contains(c));
-        console.log('[PrepInterview] Card still in DOM 500ms later: ' + (present ? 'yes' : 'no'));
-        if (!present && isViewingJob()) {
-          renderCardInPlace();
-        }
-      }, 500);
-
-      domCheckTimer2000 = setTimeout(() => {
-        const c = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
-        const present = Boolean(c && document.contains(c));
-        console.log('[PrepInterview] Card still in DOM 2s later: ' + (present ? 'yes' : 'no'));
-        if (!present && isViewingJob()) {
-          renderCardInPlace();
-        }
-      }, 2000);
-
-      return;
-    }
-
-    const renderer = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.CardRenderer) || CardRenderer;
-    const matcher = (typeof window !== 'undefined' && window.PrepInterview && window.PrepInterview.Matcher) || Matcher;
-
-    const descText = activeDesc || '';
-    const match = matcher && typeof matcher.evaluate === 'function'
-      ? matcher.evaluate(activeResumeText, descText, {
-          locationMeta: activeLocationMeta,
-          jobTitle: activeTitle,
-          openToRelocation: activeOpenToRelocation
-        })
-      : {
-          status: activeResumeText ? 'ready' : 'no_resume',
-          score: 50,
-          tier: 'Moderate Match',
-          matchedSkills: [],
-          missingSkills: [],
-          hardGaps: [],
-          softGaps: [],
-          notes: [],
-          breakdown: []
-        };
-
-    const fingerprint = renderer && typeof renderer.getRenderFingerprint === 'function'
-      ? renderer.getRenderFingerprint(activeResumeText, {
-          openToRelocation: activeOpenToRelocation,
-          overrides: activeOverrides,
-          activeProfile: activeProfile
-        })
-      : `${activeResumeText.length}_${activeOpenToRelocation}`;
-
-    activeFingerprint = fingerprint;
-
-    let isExpanded = false;
-    try {
-      if (typeof localStorage !== 'undefined') {
-        isExpanded = localStorage.getItem('prepinterview_is_expanded') === 'true';
+    } catch (err) {
+      if (isContextInvalidated(err)) {
+        disconnectAll();
+        return;
       }
-    } catch (e) {}
-
-    let extractedMinExp = (match.jdReq && typeof match.jdReq.minExp === 'number' && match.jdReq.minExp > 0)
-      ? match.jdReq.minExp
-      : (typeof match.extractedMinExp === 'number' && match.extractedMinExp > 0 ? match.extractedMinExp : null);
-
-    if (extractedMinExp === null && typeof descText === 'string') {
-      extractedMinExp = extractMinExpFromDescription(descText);
-    }
-
-    const renderOptions = {
-      title: activeTitle,
-      company: activeCompany,
-      jobId: activeJobId,
-      openToRelocation: activeOpenToRelocation,
-      isExpanded: isExpanded,
-      extractedMinExp: extractedMinExp,
-      extractedSkills: (match.jdReq && match.jdReq.extractedSkills) || match.extractedSkills || (match.matchedSkills && match.missingSkills ? match.matchedSkills.concat(match.missingSkills) : []),
-      workMode: (match.jdReq && match.jdReq.workMode) || match.workMode || (descText.toLowerCase().includes('remote') ? 'Remote' : (descText.toLowerCase().includes('hybrid') ? 'Hybrid' : 'On-site')),
-      locationMatched: !match.hardGaps || !match.hardGaps.some(g => /location/i.test(g)),
-      educationMentioned: Boolean((match.jdReq && (match.jdReq.degreeMandatory || match.jdReq.tierMandatory || match.jdReq.tierPreferred)) || /bachelor|master|b\.?tech|degree|mba|phd/i.test(descText))
-    };
-
-    const cardHtml = renderer && typeof renderer.renderCopilotCard === 'function'
-      ? renderer.renderCopilotCard(match, renderOptions)
-      : `<div class="prepinterview-header"><span class="prepinterview-score-pill">${match.score}% ${match.tier}</span></div>`;
-
-    container.innerHTML = `<div id="prepinterview-copilot-card" class="prepinterview-widget-card" data-job-id="${activeJobId}" data-fingerprint="${fingerprint}">${cardHtml}</div>`;
-
-    const cardEl = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-card') : null;
-    const cardInserted = Boolean(cardEl && document.contains(cardEl));
-    console.log('[PrepInterview] Card inserted: ' + (cardInserted ? 'yes' : 'no'));
-
-    attachCardEventListeners(container, match, renderOptions);
-    attachCopyDebugListener(container.querySelector('#prepinterview-copy-debug-link'));
-
-    // Update floating pill if present
-    const floatPill = (typeof document !== 'undefined') ? document.getElementById('prepinterview-floating-pill') : null;
-    if (floatPill) {
-      if (renderer && typeof renderer.renderFloatingPill === 'function') {
-        floatPill.innerHTML = renderer.renderFloatingPill(match, renderOptions);
-      } else {
-        floatPill.textContent = `PrepInterview: ${match.score}%`;
-      }
-      floatPill.setAttribute('aria-label', `PrepInterview match score: ${match.score}%`);
+      console.error('[PrepInterview] Error rendering card:', err);
+      try {
+        container.innerHTML = `
+          <div id="prepinterview-copilot-card" class="prepinterview-widget-card prepinterview-card-neutral" style="padding: 10px 14px; font-size: 12px; color: #8b949e;">
+            PrepInterview couldn't render the card. Refresh the page.
+          </div>
+        `;
+        if (isSearchResults) {
+          const mounted = mountSearchResultsCard(container);
+          if (!mounted && anchor) {
+            insertCardAfterAnchor(anchor, container);
+          }
+        } else if (!container.isConnected || !document.contains(container) || (anchor && anchor.nextElementSibling !== container)) {
+          insertCardAfterAnchor(anchor, container);
+        }
+      } catch (e) {}
     }
 
     clearDomCheckTimers();
@@ -1477,12 +1959,6 @@
       return;
     }
 
-    // Resolve fresh live anchor in case DOM reconciled during async read
-    let liveAnchor = anchor;
-    if (!liveAnchor || !liveAnchor.isConnected || (latestPane && !latestPane.contains(liveAnchor))) {
-      liveAnchor = latestPane ? getAnchorElement(latestPane) : null;
-    }
-
     // Single dedicated mount container: ensure only ONE container exists in DOM
     let container = existingContainer;
     const allContainers = (typeof document !== 'undefined') ? document.querySelectorAll('#prepinterview-copilot-container') : [];
@@ -1491,24 +1967,13 @@
       container = allContainers[0];
     }
 
-    if (!container || !latestPane || !latestPane.contains(container)) {
-      if (container) container.remove();
+    if (!container) {
       container = document.createElement('div');
       container.id = 'prepinterview-copilot-container';
-      insertCardAfterAnchor(liveAnchor, container);
-    } else if (!isSameJob) {
-      // When switching to a different job, ensure container is anchored to the new job's header
-      insertCardAfterAnchor(liveAnchor, container);
-    }
-
-    // Failsafe: if container is still not inside pane, insert before job description
-    if (latestPane && !latestPane.contains(container)) {
-      const descEl = (latestPane && latestPane.querySelector('#job-details, .jobs-description__content, .jobs-description')) || (typeof document !== 'undefined' ? document.querySelector('#job-details') : null);
-      if (descEl && typeof descEl.before === 'function') {
-        descEl.before(container);
-      } else if (latestPane.firstElementChild) {
-        latestPane.insertBefore(container, latestPane.firstElementChild);
-      }
+      container.setAttribute('data-prepinterview-wrapper', 'true');
+      container.setAttribute('data-prepinterview-card', 'true');
+    } else {
+      container.setAttribute('data-prepinterview-card', 'true');
     }
 
     const locationMeta = getJobLocation(pane);
@@ -1632,8 +2097,12 @@
 
       if (isDifferentJob) {
         handleNavigation();
+        startSearchReadinessWatcher(currentId);
         return;
       }
+
+      // Keep the card glued under the job header as LinkedIn finishes rendering
+      if (cardExists) ensureSearchCardPlacement();
 
       // Check for dynamic description arrival on current job
       if (currentDesc && currentDesc.length >= 200 && (!activeDesc || currentDesc !== activeDesc)) {
@@ -1643,7 +2112,8 @@
 
       // Re-run injection if LinkedIn removed the card from the DOM
       if (!cardExists || (pane && !pane.contains(card))) {
-        renderCardInPlace();
+        handleNavigation();
+        startSearchReadinessWatcher(currentId);
         return;
       }
 
@@ -1673,6 +2143,7 @@
           const ret = origPush.apply(this, arguments);
           setTimeout(handleNavigation, 50);
           setTimeout(handleNavigation, 250);
+          startSearchReadinessWatcher();
           return ret;
         };
       }
@@ -1682,6 +2153,7 @@
           const ret = origReplace.apply(this, arguments);
           setTimeout(handleNavigation, 50);
           setTimeout(handleNavigation, 250);
+          startSearchReadinessWatcher();
           return ret;
         };
       }
@@ -1711,6 +2183,7 @@
             setTimeout(handleNavigation, 50);
             setTimeout(handleNavigation, 250);
             setTimeout(handleNavigation, 750);
+            startSearchReadinessWatcher();
           }
         } catch (err) {}
       }, true);
@@ -1728,10 +2201,23 @@
       }
     }
 
+    // 3b. Navigation API. Content scripts live in an isolated world, so the history.pushState patch above
+    // never sees LinkedIn's own pushState calls; DOM events, however, are shared across worlds.
+    try {
+      if (win.navigation && typeof win.navigation.addEventListener === 'function') {
+        win.navigation.addEventListener('currententrychange', () => {
+          setTimeout(handleNavigation, 50);
+          setTimeout(handleNavigation, 400);
+          startSearchReadinessWatcher();
+        });
+      }
+    } catch (e) {}
+
     // 4. popstate
     if (win.addEventListener) {
       win.addEventListener('popstate', () => {
         handleNavigation();
+        startSearchReadinessWatcher();
       });
     }
 
@@ -1752,6 +2238,7 @@
         if (lastKnownHref && win.location.href !== lastKnownHref) {
           lastKnownHref = win.location.href;
           handleNavigation();
+          startSearchReadinessWatcher();
           return;
         }
       }
@@ -1771,8 +2258,12 @@
 
       if (isDifferentJob) {
         handleNavigation();
+        startSearchReadinessWatcher(currentId);
         return;
       }
+
+      // Keep the card glued under the job header as LinkedIn finishes rendering
+      if (cardExists) ensureSearchCardPlacement();
 
       // Check for dynamic description arrival on current job
       if (currentDesc && currentDesc.length >= 200 && (!activeDesc || currentDesc !== activeDesc)) {
@@ -1782,7 +2273,8 @@
 
       // Self-healing: If it is the SAME job but LinkedIn removed the card, re-insert immediately
       if (!cardExists) {
-        renderCardInPlace();
+        handleNavigation();
+        startSearchReadinessWatcher(currentId);
         return;
       }
 
@@ -1797,6 +2289,7 @@
 
     // Initial navigation check without early return
     handleNavigation();
+    startSearchReadinessWatcher();
   }
 
   // Attach automatically in browser on every page
@@ -1810,21 +2303,33 @@
       chrome.storage.onChanged.addListener((changes, areaName) => {
         try {
           if (areaName === 'local') {
-            const relevantKeys = ['resumeText', 'openToRelocation', 'overrides', 'activeProfile'];
-            const hasRelevantChange = Object.keys(changes).some(k => relevantKeys.includes(k));
-            if (hasRelevantChange) {
-              const currentId = getCurrentJobId();
-              const existingCont = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-container') : null;
-              if (existingCont && currentId && currentId === activeJobId) {
-                if (changes.openToRelocation) activeOpenToRelocation = Boolean(changes.openToRelocation.newValue);
-                if (changes.resumeText) activeResumeText = changes.resumeText.newValue || '';
-                if (changes.overrides) activeOverrides = changes.overrides.newValue || {};
-                if (changes.activeProfile) activeProfile = changes.activeProfile.newValue || 'default';
-                // In-place update: keep container exactly where it is!
+            let changed = false;
+            if (changes.openToRelocation !== undefined) {
+              activeOpenToRelocation = Boolean(changes.openToRelocation.newValue);
+              changed = true;
+            }
+            if (changes.resumeText !== undefined) {
+              activeResumeText = changes.resumeText.newValue || '';
+              changed = true;
+            }
+            if (changes.overrides !== undefined) {
+              activeOverrides = changes.overrides.newValue || {};
+              changed = true;
+            }
+            if (changes.activeProfile !== undefined) {
+              activeProfile = changes.activeProfile.newValue || 'default';
+              changed = true;
+            }
+            if (changed) {
+              activeFingerprint = null;
+              if (isViewingJob()) {
+                const pane = getJobDetailsPane();
+                const desc = pane ? getFullJobDescription(pane) : '';
+                if (desc && desc.length >= 200) {
+                  activeDesc = desc;
+                  isDescStable = true;
+                }
                 renderCardInPlace();
-              } else {
-                activeFingerprint = null;
-                handleNavigation();
               }
             }
           }
@@ -1847,20 +2352,22 @@
       chrome.runtime.onMessage.addListener((msg) => {
         try {
           if (msg && (msg.action === 'RESUME_UPDATED' || msg.action === 'SETTINGS_UPDATED')) {
-            const currentId = getCurrentJobId();
-            const existingCont = (typeof document !== 'undefined') ? document.getElementById('prepinterview-copilot-container') : null;
-            if (existingCont && currentId && currentId === activeJobId) {
-              chrome.storage.local.get(['resumeText', 'openToRelocation', 'overrides', 'activeProfile']).then(stored => {
-                activeResumeText = stored.resumeText || '';
-                activeOpenToRelocation = Boolean(stored.openToRelocation);
-                activeOverrides = stored.overrides || {};
-                activeProfile = stored.activeProfile || 'default';
-                renderCardInPlace();
-              }).catch(() => {});
-            } else {
+            chrome.storage.local.get(['resumeText', 'openToRelocation', 'overrides', 'activeProfile']).then(stored => {
+              activeResumeText = stored.resumeText || '';
+              activeOpenToRelocation = Boolean(stored.openToRelocation);
+              activeOverrides = stored.overrides || {};
+              activeProfile = stored.activeProfile || 'default';
               activeFingerprint = null;
-              handleNavigation();
-            }
+              if (isViewingJob()) {
+                const pane = getJobDetailsPane();
+                const desc = pane ? getFullJobDescription(pane) : '';
+                if (desc && desc.length >= 200) {
+                  activeDesc = desc;
+                  isDescStable = true;
+                }
+                renderCardInPlace();
+              }
+            }).catch(() => {});
           }
         } catch (err) {
           if (isContextInvalidated(err)) {
@@ -1875,9 +2382,14 @@
     }
   }
 
+  function mountPrepInterviewCard() {
+    return handleNavigation();
+  }
+
   // Expose helpers for testing and external access
   if (typeof window !== 'undefined') {
     window.PrepInterview = window.PrepInterview || {};
+    window.PrepInterview.mountPrepInterviewCard = mountPrepInterviewCard;
     window.PrepInterview.getAnchorElement = getAnchorElement;
     window.PrepInterview.getClosestCommonAncestor = getClosestCommonAncestor;
     window.PrepInterview.isFlexOrGrid = isFlexOrGrid;
@@ -1899,9 +2411,18 @@
     window.PrepInterview.climbToBlockOrColumn = climbToBlockOrColumn;
     window.PrepInterview.isFlexRowOrGrid = isFlexRowOrGrid;
     window.PrepInterview.logPlacementDebug = logPlacementDebug;
+    window.PrepInterview.adjustSearchResultsGeometry = adjustSearchResultsGeometry;
+    window.PrepInterview.getSearchResultsDetailsPane = getSearchResultsDetailsPane;
+    window.PrepInterview.getSearchResultsLazyColumn = getSearchResultsLazyColumn;
+    window.PrepInterview.getSearchResultsContentTrack = getSearchResultsContentTrack;
+    window.PrepInterview.mountSearchResultsCard = mountSearchResultsCard;
+    window.PrepInterview.ensureSearchCardPlacement = ensureSearchCardPlacement;
+    window.PrepInterview.startSearchReadinessWatcher = startSearchReadinessWatcher;
+    window.PrepInterview.checkSearchReadiness = checkSearchReadiness;
   }
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
+      mountPrepInterviewCard,
       getAnchorElement,
       getClosestCommonAncestor,
       isFlexOrGrid,
@@ -1922,7 +2443,14 @@
       isViewingJob,
       getJobDetailsPane,
       getCurrentJobId,
-      getFullJobDescription
+      getFullJobDescription,
+      adjustSearchResultsGeometry,
+      getSearchResultsDetailsPane,
+      getSearchResultsLazyColumn,
+      getSearchResultsContentTrack,
+      mountSearchResultsCard,
+      startSearchReadinessWatcher,
+      checkSearchReadiness
     };
   }
 })();

@@ -1,17 +1,14 @@
 /* PrepInterview Copilot - Clean Injected Styles for LinkedIn (v1.0.6) */
 
-/* 1. Main Card Container & Outer Mount */
-#prepinterview-copilot-container {
 /* 1. Main Card Container & Outer Mount (Single Wrapper Div) */
 #prepinterview-copilot-container,
 [data-prepinterview-wrapper="true"],
-[data-prepinterview-wrapper] {
+[data-prepinterview-wrapper],
+[data-prepinterview-card="true"],
+[data-prepinterview-card] {
   display: block !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  flex: 0 0 auto !important;
-  max-width: 100% !important;
-  margin: 12px 0 !important;
   clear: both !important;
   flex: 0 0 100% !important;
   align-self: stretch !important;
@@ -21,16 +18,16 @@
 }
 
 #prepinterview-copilot-card,
+[data-prepinterview-card="true"] .prepinterview-widget-card,
+[data-prepinterview-card] .prepinterview-widget-card,
 .prepinterview-widget-card {
   display: block !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  flex: 0 0 auto !important;
   clear: both !important;
   flex: 0 0 100% !important;
   align-self: stretch !important;
   max-width: 100% !important;
-  margin: 12px 0 !important;
   margin: 0 !important;
   position: static !important;
   visibility: visible !important;
@@ -502,12 +499,6 @@
   text-decoration: underline !important;
 }
 
-#prepinterview-copilot-container {
-  display: block !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
 
 /* 11. Floating Pill (Docked clear of LinkedIn's Messaging Bar) */
 .prepinterview-floating-pill {
@@ -539,3 +530,10 @@
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+
+
+
+
+
+

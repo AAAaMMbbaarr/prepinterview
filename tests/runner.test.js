@@ -3072,6 +3072,388 @@ describe('Suite 9: LinkedIn AI Search Results (/jobs/search-results/) Synthetic 
       delete global.document;
     }
   });
+
+  test('Suite 9 - Test 12: Apply+Save row nested in two grid wrappers that also contain the h1 → card goes right after the row\'s direct parent', async () => {
+    const html = `
+      <div class="job-pane">
+        <div class="outer-grid-wrapper" style="display: grid;">
+          <h1>Staff Infrastructure Engineer</h1>
+          <div class="inner-grid-wrapper" style="display: grid;">
+            <div class="actions-row" style="display: flex;">
+              <button class="jobs-apply-button" aria-label="Apply to job">Apply</button>
+              <button class="jobs-save-button" aria-label="Save job">Save</button>
+            </div>
+          </div>
+        </div>
+        <div id="job-details">
+          <p>Looking for a Staff Engineer with 8+ years experience in Kubernetes.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=705' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    try {
+      const pane = dom.window.document.querySelector('.job-pane');
+      const outerGrid = dom.window.document.querySelector('.outer-grid-wrapper');
+      const innerGrid = dom.window.document.querySelector('.inner-grid-wrapper');
+
+      const anchor = content.getAnchorElement(pane);
+      // It climbs to innerGrid (direct parent of actionRow), but STOPS before outerGrid because outerGrid contains h1!
+      assert.strictEqual(anchor, innerGrid, 'Anchor must stop at innerGrid and not climb into outerGrid containing h1');
+
+      await content.handleNavigation();
+
+      const wrapper = dom.window.document.querySelector('[data-prepinterview-wrapper="true"]');
+      assert.ok(wrapper, 'Wrapper must exist');
+      assert.strictEqual(innerGrid.nextElementSibling, wrapper, 'Card must be next sibling of row\'s direct parent');
+      assert.strictEqual(innerGrid.contains(wrapper), false, 'Card must not be inside innerGrid');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 13: logPlacementDebug throwing → the card still renders', async () => {
+    const html = `
+      <div class="job-pane">
+        <div class="action-row" style="display: flex;">
+          <button class="jobs-apply-button" aria-label="Apply to job">Apply</button>
+          <button class="jobs-save-button" aria-label="Save job">Save</button>
+        </div>
+        <div id="job-details">
+          <p>Software Engineer role with 4+ years experience in JavaScript.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=706' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcherModule };
+
+    // Force localStorage to throw
+    Object.defineProperty(dom.window, 'localStorage', {
+      get() {
+        throw new Error('Access denied to localStorage');
+      }
+    });
+
+    try {
+      await content.handleNavigation();
+
+      const card = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(card, 'Card must render even if logPlacementDebug / localStorage throws');
+      assert.strictEqual(dom.window.document.contains(card), true);
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 14: A failing render → the fallback line appears', async () => {
+    const html = `
+      <div class="job-pane">
+        <h1>Engineering Lead</h1>
+        <div class="action-row" style="display: flex;">
+          <button class="jobs-apply-button" aria-label="Apply to job">Apply</button>
+          <button class="jobs-save-button" aria-label="Save job">Save</button>
+        </div>
+        <div id="job-details">
+          <p>Leadership role requiring 7+ years of engineering experience leading distributed cloud backend systems and driving engineering architecture across multiple cross-functional infrastructure teams globally.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=707' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+
+    // Create a broken card renderer that throws an error
+    const brokenRenderer = {
+      renderCopilotCard() {
+        throw new Error('Unexpected rendering error');
+      },
+      getRenderFingerprint() {
+        return 'test_fingerprint';
+      }
+    };
+    dom.window.PrepInterview = { CardRenderer: brokenRenderer, Matcher: matcherModule };
+
+    try {
+      await content.handleNavigation();
+
+      const card = dom.window.document.getElementById('prepinterview-copilot-card');
+      assert.ok(card, 'Fallback card must be rendered into DOM');
+      assert.ok(card.textContent.includes("PrepInterview couldn't render the card. Refresh the page."), 'Fallback message must appear');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 15: Search results layout & search input geometry (554px width, 437px left, 991px right, 9px top, 34px height, 48.5px header offset)', async () => {
+    const html = `
+      <div class="global-nav" style="width: 1905px; height: 52px;">
+        <div class="global-nav__content" style="width: 1128px; margin: 0 auto; display: flex; align-items: center; position: relative;">
+          <div class="global-nav__branding" style="width: 34px; height: 34px;">Logo</div>
+          <div class="_882cf519 ae1a7863 b75a3dd8 a24ac538 _501f2732 cd1dd075 dfaf4f38 _2d0114d7" style="margin-left: 8px; width: 510px; min-width: 510px; max-width: 510px;">
+            <div class="b61a91a4" style="width: 510px; max-width: 510px;">
+              <input type="text" placeholder="Search" style="width: 100%; height: 34px;" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="_8978643c _29dc2919" style="width: 1128px; margin: 0 auto;">
+        <div class="_934a1573" style="width: 504px;">
+          <div class="job-card">Job 1</div>
+        </div>
+        <div class="dee1436e" style="width: 624px;">
+          <h1>Software Architect</h1>
+          <div class="action-row" style="display: flex;">
+            <button class="jobs-apply-button">Apply</button>
+            <button class="jobs-save-button">Save</button>
+          </div>
+          <div id="job-details">
+            <p>Architect cloud applications with 5+ years experience.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=999' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcher };
+
+    try {
+      await content.handleNavigation();
+
+      const htmlEl = dom.window.document.documentElement;
+      const bodyEl = dom.window.document.body;
+      assert.strictEqual(htmlEl.getAttribute('data-prepinterview-page'), 'search-results');
+      assert.strictEqual(bodyEl.getAttribute('data-prepinterview-page'), 'search-results');
+      assert.strictEqual(htmlEl.style.overflowY, 'scroll');
+
+      const main = dom.window.document.querySelector('._8978643c');
+      assert.strictEqual(main.getAttribute('data-prepinterview-layout'), 'two-col-layout');
+      assert.strictEqual(main.style.display, 'flex');
+      assert.strictEqual(main.style.flexDirection, 'row');
+      assert.strictEqual(main.style.borderLeft, '0px');
+      assert.strictEqual(main.style.borderRight, '0px');
+
+      const leftCol = dom.window.document.querySelector('._934a1573');
+      assert.strictEqual(leftCol.getAttribute('data-prepinterview-col'), 'list');
+      assert.strictEqual(leftCol.style.display, 'flex');
+      assert.strictEqual(leftCol.style.width, '504px');
+      assert.strictEqual(leftCol.style.borderRight, '1px solid rgba(140, 140, 140, 0.2)');
+
+      const rightCol = dom.window.document.querySelector('.dee1436e');
+      assert.strictEqual(rightCol.getAttribute('data-prepinterview-col'), 'details');
+      assert.strictEqual(rightCol.style.width, '624px');
+
+      // Filter toolbar structure
+      const filterToolbar = dom.window.document.querySelector('.search-results-filters') || dom.window.document.querySelector('[role="toolbar"]');
+      if (filterToolbar) {
+        assert.strictEqual(filterToolbar.getAttribute('data-prepinterview-filter'), 'toolbar');
+        assert.strictEqual(filterToolbar.style.marginBottom, '0px');
+      }
+
+      // Global header is untouched
+      const header = dom.window.document.querySelector('.global-nav');
+      assert.strictEqual(header.getAttribute('data-prepinterview-search'), null);
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 16: Strict Route Isolation — /feed/ and /jobs/search/ receive no search-results CSS/DOM mutations', async () => {
+    const feedHtml = `
+      <div class="global-nav">
+        <div class="global-nav__content">
+          <div class="b61a91a4"><input type="text" placeholder="Search" /></div>
+        </div>
+      </div>
+      <div class="feed-main-container _8978643c">
+        <div class="_934a1573">Feed Item 1</div>
+        <div class="dee1436e">Feed Item 2</div>
+      </div>
+    `;
+
+    const domFeed = new JSDOM(feedHtml, { url: 'https://www.linkedin.com/feed/' });
+    global.window = domFeed.window;
+    global.document = domFeed.window.document;
+    domFeed.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcher };
+
+    try {
+      await content.handleNavigation();
+
+      const htmlEl = domFeed.window.document.documentElement;
+      const bodyEl = domFeed.window.document.body;
+      assert.strictEqual(htmlEl.getAttribute('data-prepinterview-page'), null, 'HTML must not have search-results page marker on /feed/');
+      assert.strictEqual(bodyEl.getAttribute('data-prepinterview-page'), null, 'Body must not have search-results page marker on /feed/');
+      assert.strictEqual(htmlEl.style.overflowY, '', 'HTML must not have overflow-y forced on /feed/');
+
+      const mainEl = domFeed.window.document.querySelector('._8978643c');
+      assert.strictEqual(mainEl.getAttribute('data-prepinterview-layout'), null, 'Main must not have search-results layout marker on /feed/');
+      assert.strictEqual(mainEl.style.display, '', 'Main must not have display modified on /feed/');
+
+      const leftEl = domFeed.window.document.querySelector('._934a1573');
+      assert.strictEqual(leftEl.getAttribute('data-prepinterview-col'), null, 'Left col must not have search-results col marker on /feed/');
+      assert.strictEqual(leftEl.style.width, '', 'Left col must not have width modified on /feed/');
+
+      const searchContainer = domFeed.window.document.querySelector('.b61a91a4');
+      assert.strictEqual(searchContainer.getAttribute('data-prepinterview-search'), null, 'Search container must not have search-results search marker on /feed/');
+
+      const card = domFeed.window.document.getElementById('prepinterview-copilot-card');
+      assert.strictEqual(card, null, 'No copilot card should be mounted on /feed/');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 17: Dedicated Mount Strategy on /jobs/search-results/ — Container is Mounted Directly After Header Block', async () => {
+    const searchResultsHtml = `
+      <div class="_8978643c" style="display: flex;">
+        <div class="_934a1573" style="width: 504px;">
+          <div data-job-id="888">Search Result Item</div>
+        </div>
+        <div class="dee1436e" style="display: block; width: 624px;">
+          <div data-component-type="lazy-column" style="display: flex; flex-direction: row;">
+            <div class="job-header-track">
+              <h1>Principal Engineer</h1>
+              <div class="actions">
+                <button class="jobs-apply-button">Easy Apply</button>
+                <button class="jobs-save-button">Save</button>
+              </div>
+            </div>
+            <div class="job-content-track">
+              <div id="job-details">
+                <p>Principal Engineer position with 8+ years experience in distributed systems.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(searchResultsHtml, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=888' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcher };
+
+    try {
+      await content.handleNavigation();
+
+      const pane = dom.window.document.querySelector('.dee1436e');
+      const headerTrack = dom.window.document.querySelector('.job-header-track');
+      const container = dom.window.document.getElementById('prepinterview-copilot-container');
+
+      assert.ok(container, 'Container must exist');
+      assert.strictEqual(headerTrack.nextElementSibling, container, 'Container must be inserted right after the job header block');
+      assert.notStrictEqual(container.parentElement, pane, 'Container must NOT be a direct child of .dee1436e');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 18: Bounded Search Readiness Bootstrap on /jobs/search/ — Auto-detects and mounts without refresh', async () => {
+    const searchHtml = `
+      <div class="scaffold-layout__detail">
+        <h1 class="job-details-jobs-unified-top-card__job-title">Engineering Director</h1>
+        <div class="job-details-jobs-unified-top-card__actions-container">
+          <button class="jobs-apply-button">Easy Apply</button>
+          <button class="jobs-save-button">Save</button>
+        </div>
+        <div id="job-details">
+          <p>Seeking an Engineering Director with 10+ years of leadership and cloud architecture experience.</p>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(searchHtml, { url: 'https://www.linkedin.com/jobs/search/?currentJobId=777' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcher };
+
+    try {
+      content.attachNavigationListeners(dom.window);
+      await new Promise(r => setTimeout(r, 100));
+
+      const card = dom.window.document.getElementById('prepinterview-copilot-card');
+      const container = dom.window.document.getElementById('prepinterview-copilot-container');
+      const actions = dom.window.document.querySelector('.job-details-jobs-unified-top-card__actions-container');
+
+      assert.ok(card, 'Card must be rendered automatically by readiness watcher on /jobs/search');
+      assert.ok(container, 'Container must exist');
+      assert.strictEqual(actions.nextElementSibling, container, 'Card must be placed immediately after Apply/Save actions container');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
+
+  test('Suite 9 - Test 19: Search-Results Idempotent Relocation — Misplaced container is moved after Header Block', async () => {
+    const html = `
+      <div class="_8978643c" style="display: flex;">
+        <div class="dee1436e">
+          <div id="prepinterview-copilot-container">
+            <div id="prepinterview-copilot-card">Existing Card</div>
+          </div>
+          <div data-component-type="lazy-column">
+            <div class="header-track">
+              <h1>Staff Product Designer</h1>
+              <div class="actions">
+                <button class="jobs-apply-button">Apply</button>
+              </div>
+            </div>
+            <div class="content-track">
+              <div id="job-details">
+                <p>Staff Product Designer with 6+ years UI/UX experience.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const dom = new JSDOM(html, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=555' });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    dom.window.PrepInterview = { CardRenderer: cardRenderer, Matcher: matcher };
+
+    try {
+      const container = dom.window.document.getElementById('prepinterview-copilot-container');
+      const headerTrack = dom.window.document.querySelector('.header-track');
+      const pane = dom.window.document.querySelector('.dee1436e');
+
+      assert.strictEqual(container.parentElement, pane, 'Initially misplaced container is under dee1436e');
+
+      const mounted = content.mountSearchResultsCard(container);
+      assert.strictEqual(mounted, true, 'mountSearchResultsCard should succeed');
+      assert.strictEqual(headerTrack.nextElementSibling, container, 'Container must be relocated right after header-track');
+      assert.strictEqual(dom.window.document.querySelectorAll('#prepinterview-copilot-container').length, 1, 'Never duplicate containers');
+    } finally {
+      content.disconnectAll();
+      delete global.window;
+      delete global.document;
+    }
+  });
 });
+
+
 
 

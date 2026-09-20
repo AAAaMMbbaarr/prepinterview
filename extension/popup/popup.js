@@ -52,6 +52,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
         chrome.runtime.sendMessage({ action: 'SETTINGS_UPDATED' }).catch(() => {});
       }
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+        chrome.tabs.query({ url: '*://*.linkedin.com/*' }, (tabs) => {
+          if (tabs && tabs.length) {
+            tabs.forEach(tab => {
+              if (tab.id) {
+                chrome.tabs.sendMessage(tab.id, { action: 'SETTINGS_UPDATED' }).catch(() => {});
+              }
+            });
+          }
+        });
+      }
     } catch (e) {}
   }
 

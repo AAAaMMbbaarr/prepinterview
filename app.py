@@ -76,166 +76,252 @@ st.markdown("""
     div[class*="stEmbedFooter"] {display: none !important; visibility: hidden !important;}
     div[data-testid="stDecoration"] {display: none !important;}
 
+    /* Global Typography & Layout */
+    html, body, [class*="st-"] {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    }
+
+    .stApp {
+        background-color: #0d1117 !important;
+        color: #c9d1d9 !important;
+    }
+
     .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 720px;
+        padding-top: 1.5rem;
+        padding-bottom: 2.5rem;
+        max-width: 760px;
     }
 
     /* Hero */
     .hero-title {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
         font-weight: 800;
         text-align: center;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.35rem;
         line-height: 1.2;
+        color: #f0f6fc;
+        letter-spacing: -0.5px;
     }
     .hero-sub {
         text-align: center;
-        color: #888;
-        font-size: 1.05rem;
-        margin-bottom: 2rem;
+        color: #8b949e;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
     }
 
-    /* Steps */
-    .step-bar {
+    /* Stepper Bar */
+    .step-bar-container {
         display: flex;
         justify-content: center;
-        gap: 0.5rem;
-        margin-bottom: 2rem;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .step-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: #161b22;
+        color: #8b949e;
+        border: 1px solid #30363d;
+    }
+    .step-pill.active {
+        background: #1f6feb22;
+        color: #58a6ff;
+        border-color: #1f6feb66;
+        font-weight: 700;
+    }
+    .step-pill.completed {
+        background: #23863622;
+        color: #3fb950;
+        border-color: #23863666;
     }
     .step-dot {
-        width: 10px; height: 10px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: #333; opacity: 0.25;
+        background: #8b949e;
     }
-    .step-dot.active {
-        opacity: 1; background: #4CAF50;
-        box-shadow: 0 0 6px #4CAF50;
+    .step-pill.active .step-dot {
+        background: #58a6ff;
+        box-shadow: 0 0 6px #58a6ff;
+    }
+    .step-pill.completed .step-dot {
+        background: #3fb950;
     }
 
-    /* Metric box */
-    .metric-box {
-        flex: 1; padding: 1.2rem;
-        border-radius: 12px; text-align: center;
-        border: 1px solid #2a2a2a; background: #111;
+    /* Score Pills & Status Dots */
+    .prep-score-pill {
+        font-size: 14px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #161b22;
+        color: #f0f6fc;
+        border: 1px solid #30363d;
     }
-    .metric-box .value { font-size: 2rem; font-weight: 800; }
-    .metric-box .label {
-        font-size: 0.8rem; color: #888;
-        text-transform: uppercase; letter-spacing: 0.5px;
-        margin-top: 0.25rem;
+    .prep-status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .prep-beta-tag {
+        font-size: 10px;
+        font-weight: 700;
+        background: #1f6feb22;
+        color: #58a6ff;
+        border: 1px solid #1f6feb55;
+        padding: 1px 6px;
+        border-radius: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Factor Chips */
+    .prep-factor-chips-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+    .prep-factor-chip {
+        font-size: 12px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        color: #c9d1d9;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .prep-chip-pass {
+        border-color: rgba(46, 160, 67, 0.4);
+        color: #3fb950;
+    }
+    .prep-chip-gap {
+        border-color: rgba(248, 81, 73, 0.4);
+        color: #ff7b72;
+    }
+    .prep-chip-warn {
+        border-color: rgba(210, 153, 34, 0.4);
+        color: #d29922;
+    }
+    .prep-chip-neutral {
+        border-color: #30363d;
+        color: #8b949e;
+    }
+
+    /* Cards & Containers */
+    .copilot-card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
     }
 
     /* Question card */
     .q-card {
-        border: 1px solid #2a2a2a; border-radius: 10px;
-        padding: 1.2rem; margin-bottom: 0.75rem; background: #111;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 1.1rem;
+        margin-bottom: 0.75rem;
+        background: #161b22;
+        transition: border-color 0.2s ease;
+    }
+    .q-card:hover {
+        border-color: #58a6ff44;
     }
     .q-prob {
-        font-size: 0.75rem; font-weight: 700;
-        padding: 2px 8px; border-radius: 4px;
-        display: inline-block; margin-bottom: 0.5rem;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 0.5rem;
     }
-    .q-prob.high { background: #ff4444; color: white; }
-    .q-prob.med { background: #ffaa00; color: black; }
-    .q-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .q-meta { font-size: 0.85rem; color: #aaa; line-height: 1.5; }
+    .q-prob.high { background: rgba(248, 81, 73, 0.15); color: #ff7b72; border: 1px solid rgba(248, 81, 73, 0.4); }
+    .q-prob.med { background: rgba(210, 153, 34, 0.15); color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); }
+    .q-prob.pass { background: rgba(46, 160, 67, 0.15); color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); }
+    .q-text { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #f0f6fc; line-height: 1.4; }
+    .q-meta { font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
 
     /* Section header */
     .section-head {
-        font-size: 0.8rem; text-transform: uppercase;
-        letter-spacing: 1px; color: #666;
-        margin: 2rem 0 0.75rem 0; font-weight: 700;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #8b949e;
+        margin: 1.5rem 0 0.6rem 0;
+        font-weight: 700;
     }
 
     /* Input labels */
     .input-label {
-        font-size: 0.85rem; font-weight: 600;
-        color: #ccc; margin-bottom: 0.5rem;
-        text-transform: uppercase; letter-spacing: 0.5px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #f0f6fc;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Timer */
     .timer-text {
-        text-align: center; font-size: 2.5rem;
-        font-weight: 800; color: #4CAF50;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #58a6ff;
         margin: 0.5rem 0;
         font-variant-numeric: tabular-nums;
     }
     .timer-sub {
-        text-align: center; color: #888;
-        font-size: 0.9rem; margin-bottom: 1.5rem;
-    }
-
-    /* CTA banner */
-    .cta-banner {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        border: 1px solid #e94560;
-        border-radius: 16px;
-        padding: 2rem;
         text-align: center;
-        margin: 2rem 0;
+        color: #8b949e;
+        font-size: 0.88rem;
+        margin-bottom: 1.5rem;
     }
-    .cta-banner h2 {
-        color: #e94560;
-        margin: 0 0 0.5rem 0;
-        font-size: 1.5rem;
-    }
-    .cta-banner p {
-        color: #ccc;
-        margin: 0 0 1rem 0;
-        font-size: 0.95rem;
-    }
-    .cta-banner .features {
-        display: flex;
-        justify-content: center;
-        gap: 1.5rem;
-        margin: 1rem 0;
-        flex-wrap: wrap;
-    }
-    .cta-banner .feature {
-        font-size: 0.85rem;
-        color: #aaa;
-    }
-
-    /* Model badge */
-    .model-badge {
-        display: inline-block;
-        font-size: 0.7rem;
-        padding: 1px 6px;
-        border-radius: 3px;
-        margin-left: 4px;
-        font-weight: 700;
-        vertical-align: middle;
-    }
-    .badge-recommended { background: #4CAF50; color: white; }
-    .badge-fast { background: #2196F3; color: white; }
-    .badge-lite { background: #666; color: white; }
 
     /* Voice interview call screen */
     .call-screen {
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 16px;
-        padding: 2rem;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 1.8rem;
         text-align: center;
         margin: 1rem 0;
     }
     .call-avatar {
-        width: 80px; height: 80px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 2rem;
-        margin: 0 auto 1rem auto;
+        background: #1f6feb22;
+        border: 2px solid #1f6feb66;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin: 0 auto 0.8rem auto;
     }
     .call-status {
-        font-size: 0.85rem;
-        color: #4CAF50;
+        font-size: 0.8rem;
+        color: #3fb950;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
         animation: pulse 2s infinite;
     }
     @keyframes pulse {
@@ -243,33 +329,126 @@ st.markdown("""
         50% { opacity: 0.5; }
     }
     .voice-bubble {
-        background: #1a1a2e;
-        border: 1px solid #333;
-        border-radius: 12px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
         padding: 1rem 1.2rem;
         margin: 0.75rem 0;
         text-align: left;
+        color: #c9d1d9;
+        font-size: 0.95rem;
+        line-height: 1.5;
     }
     .voice-bubble.interviewer {
-        border-left: 3px solid #667eea;
+        border-left: 3px solid #1f6feb;
     }
     .voice-bubble.candidate {
-        border-left: 3px solid #4CAF50;
+        border-left: 3px solid #238636;
     }
     .voice-label {
         font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #888;
+        letter-spacing: 0.8px;
+        color: #8b949e;
         margin-bottom: 0.4rem;
+        font-weight: 700;
+    }
+
+    /* Streamlit UI Element Overrides */
+    div.stButton > button,
+    button[data-testid="baseButton-secondary"],
+    button[data-testid="stBaseButton-secondary"] {
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        background: #21262d !important;
+        color: #c9d1d9 !important;
+        border: 1px solid #30363d !important;
+        transition: all 0.15s ease !important;
+    }
+    div.stButton > button:hover,
+    button[data-testid="baseButton-secondary"]:hover,
+    button[data-testid="stBaseButton-secondary"]:hover {
+        background: #30363d !important;
+        border-color: #8b949e !important;
+        color: #f0f6fc !important;
+    }
+    div.stButton > button[kind="primary"],
+    button[data-testid="baseButton-primary"],
+    button[data-testid="stBaseButton-primary"],
+    .st-emotion-cache-19rxjzo,
+    .st-emotion-cache-1erxb11 {
+        background: #1f6feb !important;
+        background-color: #1f6feb !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+    }
+    div.stButton > button[kind="primary"]:hover,
+    button[data-testid="baseButton-primary"]:hover,
+    button[data-testid="stBaseButton-primary"]:hover {
+        background: #388bfd !important;
+        background-color: #388bfd !important;
+        color: #ffffff !important;
+    }
+
+    /* Expanders & Tabs */
+    .streamlit-expanderHeader {
+        background-color: #161b22 !important;
+        color: #f0f6fc !important;
+        border: 1px solid #30363d !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stExpander"] {
+        border: none !important;
+        margin-bottom: 8px !important;
+    }
+    div[data-testid="stExpanderDetails"] {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d !important;
+        border-top: none !important;
+        border-radius: 0 0 6px 6px !important;
+        padding: 12px !important;
+    }
+
+    div[data-baseweb="tab-list"] {
+        background-color: transparent !important;
+        border-bottom: 1px solid #21262d !important;
+        gap: 8px !important;
+    }
+    div[data-baseweb="tab"] {
+        background-color: transparent !important;
+        color: #8b949e !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        border-radius: 6px 6px 0 0 !important;
+        padding: 8px 14px !important;
+    }
+    div[aria-selected="true"][data-baseweb="tab"] {
+        color: #58a6ff !important;
+        border-bottom: 2px solid #1f6feb !important;
+    }
+
+    /* Text Inputs */
+    textarea, input[type="text"] {
+        background-color: #0d1117 !important;
+        border: 1px solid #30363d !important;
+        color: #f0f6fc !important;
+        border-radius: 6px !important;
+    }
+    textarea:focus, input[type="text"]:focus {
+        border-color: #58a6ff !important;
+        box-shadow: 0 0 0 1px #58a6ff !important;
     }
 
     /* Monetization & Locking */
     .lock-card {
-        background: linear-gradient(135deg, rgba(233, 69, 96, 0.08) 0%, rgba(15, 52, 96, 0.15) 100%);
-        border: 1px dashed rgba(233, 69, 96, 0.5);
+        background: #161b22;
+        border: 1px solid #30363d;
         border-radius: 10px;
-        padding: 1rem;
+        padding: 1.2rem;
         margin: 0.5rem 0 1rem 0;
         text-align: center;
     }
@@ -280,31 +459,24 @@ st.markdown("""
         opacity: 0.5;
         padding: 0.25rem 0;
     }
-    .sponsor-ad-card {
-        background: linear-gradient(135deg, #1e1e38 0%, #2a2250 100%);
-        border: 1px solid #ffd700;
-        border-radius: 12px;
-        padding: 1.2rem;
-        text-align: center;
-        margin: 1rem 0;
-    }
     .pro-badge-active {
-        background: linear-gradient(90deg, #FFD700, #FFA500);
-        color: #000;
-        font-weight: 800;
+        background: #1f6feb22;
+        border: 1px solid #1f6feb66;
+        color: #58a6ff;
+        font-weight: 700;
         font-size: 0.8rem;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 6px;
         display: inline-block;
         letter-spacing: 0.5px;
     }
     /* Candidate Debrief Styles */
     .debrief-card {
-        background: #0e1218;
+        background: #161b22;
         border: 1px solid #30363d;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1.2rem 0;
+        border-radius: 10px;
+        padding: 1.4rem;
+        margin: 1rem 0;
     }
     .debrief-header {
         display: flex;
@@ -317,35 +489,34 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .readiness-badge {
-        font-size: 2rem;
-        font-weight: 900;
-        padding: 6px 18px;
-        border-radius: 10px;
+        font-size: 1.8rem;
+        font-weight: 800;
+        padding: 4px 16px;
+        border-radius: 8px;
         display: inline-block;
         letter-spacing: -0.5px;
     }
-    .readiness-badge.high { background: #23863622; border: 1px solid #238636; color: #3fb950; }
-    .readiness-badge.med { background: #d2992222; border: 1px solid #d29922; color: #e3b341; }
-    .readiness-badge.low { background: #f8514922; border: 1px solid #f85149; color: #ff7b72; }
+    .readiness-badge.high { background: rgba(46, 160, 67, 0.15); border: 1px solid #3fb950; color: #3fb950; }
+    .readiness-badge.med { background: rgba(210, 153, 34, 0.15); border: 1px solid #d29922; color: #d29922; }
+    .readiness-badge.low { background: rgba(248, 81, 73, 0.15); border: 1px solid #ff7b72; color: #ff7b72; }
     .highlight-card {
-        border-radius: 10px;
-        padding: 1.1rem;
+        border-radius: 8px;
+        padding: 1rem;
         margin: 0.8rem 0;
     }
     .highlight-card.strong {
-        background: rgba(35, 134, 54, 0.08);
-        border: 1px solid rgba(35, 134, 54, 0.4);
+        background: rgba(46, 160, 67, 0.08);
+        border: 1px solid rgba(46, 160, 67, 0.3);
     }
     .highlight-card.weak {
         background: rgba(248, 81, 73, 0.08);
-        border: 1px solid rgba(248, 81, 73, 0.4);
+        border: 1px solid rgba(248, 81, 73, 0.3);
     }
     .defense-script-box {
-        background: #161b22;
+        background: #0d1117;
         border-left: 3px solid #58a6ff;
         padding: 0.8rem 1rem;
-        border-radius: 0 8px 8px 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        border-radius: 0 6px 6px 0;
         font-size: 0.9rem;
         color: #c9d1d9;
         margin-top: 0.6rem;
@@ -904,11 +1075,21 @@ def generate_candidate_debrief(resume_text: str, jd_text: str, messages: list, i
 # ──────────────────────────────────────────────────────────────
 
 def render_steps(current: int):
-    dots = ""
-    for i in range(3):
-        active = "active" if i <= current else ""
-        dots += f'<span class="step-dot {active}"></span>'
-    st.markdown(f'<div class="step-bar">{dots}</div>', unsafe_allow_html=True)
+    steps_meta = [
+        ("Target & Resume", "🎯"),
+        ("AI Fit & Gaps", "📊"),
+        ("Spoken Practice", "🎤")
+    ]
+    pills = ""
+    for i, (label, icon) in enumerate(steps_meta):
+        if i == current:
+            cls = "step-pill active"
+        elif i < current:
+            cls = "step-pill completed"
+        else:
+            cls = "step-pill"
+        pills += f'<span class="{cls}"><span class="step-dot"></span> {icon} {i+1}. {label}</span>'
+    st.markdown(f'<div class="step-bar-container">{pills}</div>', unsafe_allow_html=True)
 
 
 def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
@@ -1181,25 +1362,12 @@ if st.session_state.step == 0:
         unsafe_allow_html=True,
     )
 
-    # ── 5-Step Adversarial Journey Banner ──
-    st.markdown("""
-    <div style="display:flex;justify-content:space-between;align-items:center;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:10px 14px;margin-bottom:1.4rem;font-size:0.78rem;color:#8b949e;overflow-x:auto;gap:8px;">
-        <span style="color:#58a6ff;font-weight:700;white-space:nowrap;">1. Resume Upload</span>
-        <span style="color:#484f58;">→</span>
-        <span style="color:#f0883e;font-weight:700;white-space:nowrap;">2. Vulnerability Audit</span>
-        <span style="color:#484f58;">→</span>
-        <span style="color:#ff7b72;font-weight:700;white-space:nowrap;">3. Interviewer Challenge</span>
-        <span style="color:#484f58;">→</span>
-        <span style="color:#ffd700;font-weight:700;white-space:nowrap;">4. Pressure Grilling</span>
-        <span style="color:#484f58;">→</span>
-        <span style="color:#3fb950;font-weight:700;white-space:nowrap;">5. Candidate Debrief</span>
-    </div>
-    """, unsafe_allow_html=True)
-
     # Check for deep-link from LinkedIn Copilot extension
     param_jd = st.query_params.get("jd", "")
-    param_title = st.query_params.get("title", "")
-    param_company = st.query_params.get("company", "")
+    param_title = (st.query_params.get("title", "") or "").strip()
+    if param_title.lower() == "target role":
+        param_title = ""
+    param_company = (st.query_params.get("company", "") or "").strip()
 
     if param_jd and not st.session_state.get("prefill_jd"):
         st.session_state["prefill_jd"] = param_jd
@@ -1211,14 +1379,22 @@ if st.session_state.step == 0:
     prefilled_company = st.session_state.get("prefill_company", "")
 
     if prefilled_jd:
-        company_label = f" at {prefilled_company}" if prefilled_company else ""
+        display_title = prefilled_title if prefilled_title and prefilled_title.lower() != "target role" else "Target Role"
+        company_label = f" at <strong style='color:#f0f6fc;'>{prefilled_company}</strong>" if prefilled_company else ""
         st.markdown(
             f"""
-            <div style="background:#161b22;border:1px solid #1f6feb;border-radius:8px;padding:10px 14px;margin-bottom:1rem;">
-                <span style="font-weight:700;color:#58a6ff;">🎯 Imported from LinkedIn:</span>
-                <span style="color:#f0f6fc;font-weight:600;"> {prefilled_title}</span>
-                <span style="color:#8b949e;">{company_label}</span>
-                <div style="font-size:0.75rem;color:#7ee787;margin-top:3px;">✓ Job description pre-filled below. Drop in your resume to start!</div>
+            <div style="background:#161b22;border:1px solid #1f6feb66;border-radius:8px;padding:12px 16px;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                        <span class="prep-score-pill" style="font-size:12px;padding:2px 8px;">
+                            <span class="prep-status-dot" style="background:#58a6ff;"></span>
+                            Copilot Target
+                        </span>
+                        <span style="color:#f0f6fc;font-weight:700;font-size:13px;">{display_title}</span>
+                        <span style="color:#8b949e;font-size:12px;">{company_label}</span>
+                    </div>
+                    <div style="font-size:11px;color:#3fb950;font-weight:500;">✓ Job description pre-filled from your LinkedIn session. Drop in your resume below!</div>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1477,33 +1653,41 @@ elif st.session_state.step == 2:
         fit = summary.get("fit_score", "?")
         risk_raw = str(summary.get("risk_level", "?")).upper()
         risk_map = {
-            "LOW": ("Low", "🟢", "#4CAF50"),
-            "MEDIUM": ("Medium", "🟡", "#FFC107"),
-            "HIGH": ("High", "🔴", "#FF5252")
+            "LOW": ("Low", "#3fb950"),
+            "MEDIUM": ("Medium", "#d29922"),
+            "HIGH": ("High", "#ff7b72")
         }
-        risk_label, risk_emoji, risk_color = risk_map.get(risk_raw, (risk_raw.capitalize(), "⚪", "#888888"))
+        risk_label, risk_color = risk_map.get(risk_raw, (risk_raw.capitalize(), "#8b949e"))
         one_line = summary.get("one_line", "").strip()
 
-        # Clean any legacy third-person preamble (e.g. "Ambar is a...", "The candidate has...")
+        # Clean any legacy third-person preamble
         if one_line:
             clean_one_line = re.sub(r'^(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?|The candidate)\s+is\s+(?:an?|the)\s+.*?\b(?:with|who|having)\s+', '', one_line, flags=re.IGNORECASE)
             if clean_one_line and clean_one_line != one_line:
                 one_line = clean_one_line[0].upper() + clean_one_line[1:]
 
-        st.markdown(f'<p class="hero-title">{fit}% Interview Readiness</p>', unsafe_allow_html=True)
-        st.markdown(
-            f'<p style="text-align:center;font-size:1.25rem;font-weight:700;color:{risk_color};margin-top:0.35rem;margin-bottom:0.75rem;">'
-            f'{risk_emoji} {risk_label} Interview Risk'
-            f'</p>',
-            unsafe_allow_html=True
-        )
-        if one_line:
-            st.markdown(
-                f'<p style="text-align:center;color:#c9d1d9;font-size:1.05rem;max-width:680px;margin:0 auto 1.5rem auto;line-height:1.5;">'
-                f'{one_line}'
-                f'</p>',
-                unsafe_allow_html=True
-            )
+        target_title = st.session_state.get("prefill_title", "")
+        target_company = st.session_state.get("prefill_company", "")
+        context_html = ""
+        if target_title:
+            comp_str = f" at <strong>{target_company}</strong>" if target_company else ""
+            context_html = f'<div style="font-size:12px;color:#8b949e;margin-top:6px;">Target: <strong style="color:#f0f6fc;">{target_title}</strong>{comp_str}</div>'
+
+        st.markdown(f"""
+        <div class="copilot-card" style="text-align:center;padding:1.4rem 1.2rem;margin-bottom:1.2rem;">
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span class="prep-score-pill">
+                    <span class="prep-status-dot" style="background-color:{risk_color};"></span>
+                    <strong>{fit}%</strong> Interview Readiness
+                </span>
+                <span class="prep-beta-tag">{risk_label} Risk</span>
+            </div>
+            {context_html}
+            <div style="color:#c9d1d9;font-size:1rem;line-height:1.5;margin-top:10px;max-width:640px;margin-left:auto;margin-right:auto;">
+                {one_line}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         def format_scannable_bullet(item: str) -> str:
             item = item.strip()
@@ -1519,15 +1703,27 @@ elif st.session_state.step == 2:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<p class="section-head" style="color:#4CAF50;font-size:0.95rem;margin-bottom:0.6rem;">✅ Your Strengths</p>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="copilot-card" style="height:100%;padding:1rem;">
+                <div style="font-size:12px;font-weight:700;color:#3fb950;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+                    ✅ Why You Match (Strengths)
+                </div>
+            """, unsafe_allow_html=True)
             for s in summary.get("strengths", []):
                 st.markdown(format_scannable_bullet(s))
+            st.markdown("</div>", unsafe_allow_html=True)
         with col2:
-            st.markdown('<p class="section-head" style="color:#FFB74D;font-size:0.95rem;margin-bottom:0.6rem;">⚠️ Your Gaps</p>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="copilot-card" style="height:100%;padding:1rem;">
+                <div style="font-size:12px;font-weight:700;color:#ff7b72;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+                    ⚠️ Gaps to Defend (Review Areas)
+                </div>
+            """, unsafe_allow_html=True)
             for g in summary.get("gaps", []):
                 st.markdown(format_scannable_bullet(g))
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     render_pro_bar()
 
     # ── Tabbed results ──
