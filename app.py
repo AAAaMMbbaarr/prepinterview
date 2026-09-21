@@ -771,11 +771,11 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
         prompt = (
             prompt
             + "\n\nIMPORTANT OUTPUT FORMAT:\n"
-            "Return ONLY a valid JSON object.\n"
+            "Return ONLY one valid JSON object.\n"
             "Do not use Markdown.\n"
             "Do not use code fences.\n"
             "Do not include explanations before or after the JSON.\n"
-            "The entire response must be parseable by Python json.loads()."
+            "The entire response must be directly parseable by Python json.loads()."
         )
 
     kwargs: dict = {
@@ -791,13 +791,12 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
             },
         ],
         "temperature": 0.2 if use_json else 0.7,
-        "max_completion_tokens": 4096,
-    }
-
-    if use_json:
-        kwargs["extra_body"] = {
+        "max_completion_tokens": 2048,
+        "extra_body": {
             "include_reasoning": False,
-        }
+            "reasoning_effort": "low",
+        },
+    }
 
     last_error = None
 
@@ -805,11 +804,13 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
         try:
             resp = groq_client.chat.completions.create(**kwargs)
 
-            content = resp.choices[0].message.content or ""
+            message = resp.choices[0].message
+            content = message.content or ""
 
             if not content.strip():
                 raise RuntimeError(
-                    "Groq returned an empty response."
+                    "Groq returned an empty response. "
+                    f"Reasoning: {getattr(message, 'reasoning', None)}"
                 )
 
             return content
