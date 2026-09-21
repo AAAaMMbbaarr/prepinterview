@@ -1002,7 +1002,7 @@ PASS_AMOUNT_PAISE = 4900  # ₹49 in paise. Change this if you change the price.
 
 def get_secret(name: str) -> str:
     """Read a secret from Streamlit secrets, falling back to environment variables / .env."""
-    try:
+try:
         value = st.secrets[name]
     except Exception:
         value = os.getenv(name, "")
