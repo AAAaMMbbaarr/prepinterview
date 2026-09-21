@@ -1508,6 +1508,16 @@ if _pid and not st.session_state.is_pro:
 MODEL = st.session_state.selected_model
 
 
+def clean_jd_text(text: str) -> str:
+    """Strip LinkedIn UI leftovers from a job description passed in the URL (older extension versions
+    leave a trailing "… more" / "see more" / "show less" toggle)."""
+    t = re.sub(r"^\s*about the job\s*", "", str(text or ""), flags=re.I)
+    for _ in range(3):
+        t = re.sub(r"[\s\u00a0]*(?:\.{2,}|\u2026)[\s\u00a0]*(?:see[\s\u00a0]+)?more[\s\u00a0]*$", "", t, flags=re.I)
+        t = re.sub(r"[\s\u00a0]*(?:see|show)[\s\u00a0]+(?:more|less)[\s\u00a0]*$", "", t, flags=re.I)
+    return t.strip()
+
+
 # Copilot-style arrival card + small-screen tuning (v2)
 st.markdown("""
 <style>
@@ -1541,7 +1551,7 @@ if st.session_state.step == 0:
     render_steps(0)
 
     # Deep-link from the LinkedIn Copilot extension (?jd=&title=&company=)
-    param_jd = st.query_params.get("jd", "")
+    param_jd = clean_jd_text(st.query_params.get("jd", ""))
     param_title = (st.query_params.get("title", "") or "").strip()
     if param_title.lower() == "target role":
         param_title = ""
@@ -1576,21 +1586,20 @@ if st.session_state.step == 0:
             if prefilled_company else ""
         )
         jd_words = len(prefilled_jd.split())
-        st.markdown(
-            f"""
-            <div class="prep-arrival-card">
-                <div class="prep-arrival-top">
-                    <span class="prep-arrival-brand">PrepInterview</span>
-                    <span class="prep-beta-tag">From LinkedIn Copilot</span>
-                </div>
-                <div class="prep-arrival-label">Preparing for</div>
-                <div class="prep-arrival-role">{role_html}</div>
-                {company_html}
-                <div class="prep-arrival-ok"><span aria-hidden="true">✓</span> Job description pre-filled · {jd_words:,} words</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        # NOTE: keep this HTML free of blank lines and indentation, or Markdown renders it as a code block.
+        card_html = "".join([
+            '<div class="prep-arrival-card">',
+            '<div class="prep-arrival-top">',
+            '<span class="prep-arrival-brand">PrepInterview</span>',
+            '<span class="prep-beta-tag">From LinkedIn Copilot</span>',
+            '</div>',
+            '<div class="prep-arrival-label">Preparing for</div>',
+            f'<div class="prep-arrival-role">{role_html}</div>',
+            company_html,
+            f'<div class="prep-arrival-ok"><span aria-hidden="true">\u2713</span> Job description pre-filled \u00b7 {jd_words:,} words</div>',
+            '</div>',
+        ])
+        st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.markdown('<p class="hero-title">Find What Interviewers Will Challenge on Your Resume</p>', unsafe_allow_html=True)
         st.markdown(
@@ -1880,8 +1889,8 @@ elif st.session_state.step == 2:
             if clean_one_line and clean_one_line != one_line:
                 one_line = clean_one_line[0].upper() + clean_one_line[1:]
 
-        target_title = st.session_state.get("prefill_title", "")
-        target_company = st.session_state.get("prefill_company", "")
+        target_title = html_lib.escape(st.session_state.get("prefill_title", ""))  # URL params are untrusted
+        target_company = html_lib.escape(st.session_state.get("prefill_company", ""))
         context_html = ""
         if target_title:
             comp_str = f" at <strong>{target_company}</strong>" if target_company else ""
