@@ -40,6 +40,13 @@ if not _provider_env:
         _provider_env = "gemini"
 AI_PROVIDER: str = (_provider_env or "gemini").lower().strip()
 
+# Pin the text provider here. "gemini" = always use Gemini, whatever AI_PROVIDER says in
+# .env / Streamlit secrets. Set to "" to let AI_PROVIDER (env/secrets) decide again.
+# The Groq code below is kept as-is, so switching back is a one-line change.
+PIN_PROVIDER = "gemini"
+if PIN_PROVIDER:
+    AI_PROVIDER = PIN_PROVIDER
+
 if AI_PROVIDER not in ("gemini", "groq"):
     st.error(
         f"⚠️ Invalid AI_PROVIDER value: '{AI_PROVIDER}'. "
