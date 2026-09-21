@@ -1,118 +1,64 @@
-# 🚀 Interview Intelligence Pro (Commercial SaaS Edition)
+# PrepInterview AI
 
-> **The Monetized AI Career Intelligence & Mock Interview Platform with Hybrid Paywall, Stripe & Razorpay Checkout, and Rewarded Sponsor Ad Unlocks.**
+**Find what interviewers will challenge on your resume, then practice defending it out loud.**
 
----
+- **Web app:** [prepinterview.online](https://prepinterview.online)
+- **Chrome extension:** PrepInterview Copilot (Beta), a job-fit and gap analysis card for LinkedIn job pages
 
-## 🧩 PrepInterview Copilot (Chrome Extension Beta)
+## What's in this repo
 
-PrepInterview Copilot is a lightweight Chrome Extension (Manifest V3) that evaluates job postings directly on LinkedIn against your resume locally and provides instant interview preparation.
+| Part | What it does |
+|---|---|
+| `app.py` | The web app (Streamlit): resume vs. job analysis, predicted interview questions, spoken mock interview and post-interview debrief |
+| `index.html` | Landing page that embeds the web app |
+| `extension/` | PrepInterview Copilot, a Manifest V3 Chrome extension |
+| `privacy.html`, `terms.html` | Privacy Policy and Terms of Service & Refund Policy |
+
+## PrepInterview Copilot (Chrome extension, Beta)
+
+Shows a card on LinkedIn job pages that compares the job with your resume: skills, experience, education and location fit, your biggest gaps, and a one-click way to prepare for that interview.
 
 ### Known limitations
-* Works on LinkedIn jobs pages (search results, collections, and direct job postings); not active on non-jobs pages like feed or messaging.
-* Evaluates one resume at a time (stores a single active resume profile).
-* College tier detection covers Indian institutions only; non-Indian colleges default to neutral fit without penalty.
-* LinkedIn layout changes: DOM updates by LinkedIn can temporarily misalign or break card insertion until updated.
-* Only evaluates English job descriptions.
-* Skills not explicitly named in the job text won't be counted, even if common in the role.
-* Tier estimates are heuristics based on stated requirements, not actual hiring decisions.
-* Relocation preference is manual; the extension does not infer your willingness to move
 
-### Privacy & Data Protection
-The extension makes no network requests. If you click Practice, your browser opens prepinterview.online with the job's text, title and company in the link. Your resume is never included.
+- Works on LinkedIn jobs pages (search results, collections and direct job postings); not active on other pages such as the feed or messaging.
+- Evaluates one resume at a time (stores a single active resume).
+- College tier detection covers Indian institutions only; other colleges default to a neutral fit without penalty.
+- LinkedIn layout changes can temporarily misalign or break the card until the extension is updated.
+- Only evaluates English job descriptions.
+- Skills not explicitly named in the job text are not counted, even if they are common in the role.
+- Fit estimates are heuristics based on the stated requirements, not hiring decisions or predictions.
+- Relocation preference is set manually; the extension does not infer your willingness to move.
 
----
+### Privacy
 
-## 💼 Business & Monetization Architecture
+- The extension makes no network requests. Your resume is stored only in your browser (`chrome.storage.local`) and is never uploaded.
+- If you click **Prepare for this interview**, your browser opens prepinterview.online with the job's title, company and text in the link. Your resume is never included.
 
-This edition of Interview Intelligence is engineered as a **commercial B2C SaaS product** with high-converting hybrid monetization:
+## Web app (prepinterview.online)
 
-```
-                          Candidate visits app
-                                   │
-                                   ▼
-          ┌──────────────────────────────────────────────────┐
-          │  Free Tier: Fit Score + Questions 1 & 2 Unlocked │
-          └────────────────────────┬─────────────────────────┘
-                                   │
-                                   ▼
-        ┌──────────────────────────────────────────────────────┐
-        │  Gated Intelligence (Q3–10, Attack Mode, Full Voice) │
-        └──────────────────────────┬───────────────────────────┘
-                                   │
-                 ┌─────────────────┴─────────────────┐
-                 ▼                                   ▼
-    ┌─────────────────────────┐         ┌─────────────────────────┐
-    │  ⚡ 10s Sponsor Ad /    │         │  👑 Pro Pass Instant    │
-    │  Affiliate Partner      │         │  $4.99 USD / ₹199 INR   │
-    │  (Unlocks per feature)  │         │  (Unlocks Everything)   │
-    └─────────────────────────┘         └─────────────────────────┘
+- **Free:** resume vulnerability audit with predicted questions and claim risks, a one-click demo, and Round 1 of the spoken mock interview.
+- **Pro Pass (one-time, ₹49, no subscription):** the full 4-round mock interview, all written defense playbooks and a downloadable prep dossier. Razorpay processes payments, and we verify them on the server.
+- **Privacy:** we do not store your resume or audio on our servers. To generate results, content is sent to a third-party AI service. See the [Privacy Policy](https://prepinterview.online/privacy.html) for details.
+
+## Run the web app locally
+
+```bash
+pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
----
+Add your keys to `.streamlit/secrets.toml` (or a `.env` file). **Never commit either file; both are listed in `.gitignore`.**
 
-## 💳 Payment Gateway Integration
-
-### 1. Stripe (Global Cards, Apple Pay, Google Pay)
-1. In your [Stripe Dashboard](https://dashboard.stripe.com/payment-links), create a Payment Link for **$4.99** (one-time) or **$9.00/month**.
-2. Under **After payment**, set the redirect URL to:
-   ```
-   https://your-domain.com/?session=paid
-   ```
-3. Set your environment variable:
-   ```env
-   STRIPE_PAYMENT_URL="https://buy.stripe.com/your_live_link"
-   ```
-
-### 2. Razorpay (India: UPI, GPay, PhonePe, Paytm, Cards)
-1. In your [Razorpay Dashboard](https://dashboard.razorpay.com/#/access/paymentpages), create a Payment Page for **₹199**.
-2. Set the redirect URL to:
-   ```
-   https://your-domain.com/?session=paid
-   ```
-3. Set your environment variable:
-   ```env
-   RAZORPAY_PAYMENT_URL="https://rzp.io/l/your_live_link"
-   ```
-
-### 3. URL Parameter Auto-Unlock
-When customers return from checkout with `?session=paid` or `?pass=PRO2026`, the application instantly sets `is_pro = True` and removes all locks automatically.
-
----
-
-## 📢 Rewarded Sponsor Ads / Affiliate Partners
-
-When candidates choose to unlock free content, a high-converting 10-second sponsor card appears with a live progress bar.
-
-You can plug in real affiliate partnerships (e.g. Resume.io, Coursera, LeetCode, AlgoExpert) where each signup earns **$15–$50 per referral**.
-
----
-
-## 🌐 Custom Domain Setup
-
-To run this commercial app under your own branded domain (e.g. `interviewintelligence.ai` or `prepcareer.com`):
-
-1. Purchase a domain on [Cloudflare](https://cloudflare.com) or [Namecheap](https://namecheap.com) (~$9/year).
-2. Deploy this repository to Streamlit Community Cloud (or Railway / Render / DigitalOcean).
-3. In Streamlit Cloud, go to **Settings ➔ Custom Domain** and point your domain's CNAME record.
-
----
-
-## ⚙️ Environment Configuration
-
-Create a `.env` file in the project root:
-
-```env
-# Required AI API Key
-GOOGLE_API_KEY="your_gemini_api_key"
-
-# Optional Custom Payment Links (defaults to test placeholders if omitted)
-STRIPE_PAYMENT_URL="https://buy.stripe.com/your_stripe_link"
-RAZORPAY_PAYMENT_URL="https://rzp.io/l/your_razorpay_link"
+```toml
+GOOGLE_API_KEY = "your-gemini-api-key"
+RAZORPAY_KEY_ID = "rzp_test_..."       # use test keys locally
+RAZORPAY_KEY_SECRET = "..."
 ```
 
----
+## Security
 
-## 📄 License & Distribution
+Found a security issue? Please fill this form **https://forms.gle/B27beQTckduMqAmG9** instead of opening a public issue.
 
-Commercial SaaS Template. Engineered by [AAAaMMbbaarr](https://github.com/AAAaMMbbaarr).
+## License
+
+Copyright © 2026 PrepInterview AI. All rights reserved. This repository is public for transparency; no license to copy, modify or redistribute the code is granted.
