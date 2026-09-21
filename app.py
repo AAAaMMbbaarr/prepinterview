@@ -1002,7 +1002,7 @@ PASS_AMOUNT_PAISE = 4900  # ₹49 in paise. Change this if you change the price.
 
 def get_secret(name: str) -> str:
     """Read a secret from Streamlit secrets, falling back to environment variables / .env."""
-try:
+    try:
         value = st.secrets[name]
     except Exception:
         value = os.getenv(name, "")
@@ -2200,7 +2200,7 @@ elif st.session_state.step == 1:
          lambda: call_gemini(build_followup_prompt(resume_text, jd_text), use_json=True), "followups"),
     ]
 
-        try:
+    try:
         for pct, msg, fn, key in phases:
             update_timer()
             status.markdown(f"**{msg}**")
