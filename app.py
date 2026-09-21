@@ -766,18 +766,35 @@ _GROQ_SYSTEM_INSTRUCTION = (
 
 def _call_groq(prompt: str, use_json: bool = False) -> str:
     """Route a text request to Groq via the OpenAI-compatible API."""
+
+    if use_json:
+        prompt = (
+            prompt
+            + "\n\nIMPORTANT OUTPUT FORMAT:\n"
+            "Return ONLY a valid JSON object.\n"
+            "Do not use Markdown.\n"
+            "Do not use code fences.\n"
+            "Do not include explanations before or after the JSON.\n"
+            "The entire response must be parseable by Python json.loads()."
+        )
+
     kwargs: dict = {
         "model": GROQ_MODEL,
         "messages": [
-            {"role": "system", "content": _GROQ_SYSTEM_INSTRUCTION},
-            {"role": "user", "content": prompt},
+            {
+                "role": "system",
+                "content": _GROQ_SYSTEM_INSTRUCTION,
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
         ],
-        "temperature": 0.7,
-        "max_completion_tokens": 2048,
+        "temperature": 0.2 if use_json else 0.7,
+        "max_completion_tokens": 4096,
     }
 
     if use_json:
-        kwargs["response_format"] = {"type": "json_object"}
         kwargs["extra_body"] = {
             "include_reasoning": False,
         }
@@ -787,7 +804,15 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
     for attempt in range(3):
         try:
             resp = groq_client.chat.completions.create(**kwargs)
-            return resp.choices[0].message.content or ""
+
+            content = resp.choices[0].message.content or ""
+
+            if not content.strip():
+                raise RuntimeError(
+                    "Groq returned an empty response."
+                )
+
+            return content
 
         except Exception as e:
             last_error = e
@@ -807,7 +832,7 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
                 time.sleep(wait)
                 continue
 
-            elif any(
+            if any(
                 code in error_msg
                 for code in [
                     "401",
@@ -820,14 +845,13 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
                     "Groq authentication failed. Check your GROQ_API_KEY."
                 ) from e
 
-            elif "404" in error_msg or "model_not_found" in error_msg:
+            if "404" in error_msg or "model_not_found" in error_msg:
                 raise RuntimeError(
                     f"Groq model '{GROQ_MODEL}' not found. "
                     "Check that the model ID is correct and available on your Groq plan."
                 ) from e
 
-            else:
-                raise
+            raise
 
     raise last_error # type: ignore[misc]
 
