@@ -824,13 +824,11 @@ def test_groq_connection() -> dict:
 
     _start = time.time()
     try:
-        resp = groq_client.chat.completions.create(
+       resp = groq_client.chat.completions.create(
     model=GROQ_MODEL,
     messages=[{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
     temperature=0,
     max_completion_tokens=64,
-    reasoning_effort="low",
-    include_reasoning=False,
 )
         latency_ms = int((time.time() - _start) * 1000)
         content = (resp.choices[0].message.content or "").strip()
