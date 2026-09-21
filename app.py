@@ -1,6 +1,5 @@
 """
 🎯 Interview Intelligence Agent — v3
-=====================================
 Predicts interview questions by analyzing your resume against a job description.
 
 Clean step-by-step UX:
@@ -32,7 +31,23 @@ import hmac
 
 load_dotenv()
 
-# Support both local .env and Streamlit Cloud secrets
+# ── Provider selection ──────────────────────────────────────────────────────
+_provider_env = os.getenv("AI_PROVIDER", "")
+if not _provider_env:
+    try:
+        _provider_env = st.secrets.get("AI_PROVIDER", "gemini")
+    except Exception:
+        _provider_env = "gemini"
+AI_PROVIDER: str = (_provider_env or "gemini").lower().strip()
+
+if AI_PROVIDER not in ("gemini", "groq"):
+    st.error(
+        f"⚠️ Invalid AI_PROVIDER value: '{AI_PROVIDER}'. "
+        "Accepted values are 'gemini' or 'groq'. Check your .env or Streamlit secrets."
+    )
+    st.stop()
+
+# ── Gemini client (always initialized when key is present) ─────────────────
 api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     try:
@@ -40,12 +55,45 @@ if not api_key:
     except Exception:
         pass
 
-if not api_key:
-    st.error("⚠️ No API key found. Add GOOGLE_API_KEY to your .env file or Streamlit secrets.")
+gemini_client = None
+if api_key:
+    gemini_client = genai.Client(api_key=api_key)
+
+# Legacy alias — existing code references 'client' for Gemini
+client = gemini_client
+MODEL = "gemini-3.5-flash"
+
+# ── Groq client (always initialized when key is present) ───────────────────
+from openai import OpenAI as _GroqOpenAIClient  # OpenAI-compatible SDK for Groq
+
+GROQ_MODEL = "openai/gpt-oss-20b"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
+groq_api_key = os.getenv("GROQ_API_KEY")
+if not groq_api_key:
+    try:
+        groq_api_key = st.secrets["GROQ_API_KEY"]
+    except Exception:
+        pass
+
+groq_client = None
+if groq_api_key:
+    groq_client = _GroqOpenAIClient(api_key=groq_api_key, base_url=GROQ_BASE_URL)
+
+# ── Configuration validation (fail fast, safe messages) ────────────────────
+if AI_PROVIDER == "gemini" and not gemini_client:
+    st.error(
+        "⚠️ AI_PROVIDER=gemini but GOOGLE_API_KEY is missing or empty. "
+        "Add it to your .env file or Streamlit secrets."
+    )
     st.stop()
 
-client = genai.Client(api_key=api_key)
-MODEL = "gemini-3.5-flash"
+if AI_PROVIDER == "groq" and not groq_client:
+    st.error(
+        "⚠️ AI_PROVIDER=groq but GROQ_API_KEY is missing or empty. "
+        "Add it to your .env file or Streamlit secrets."
+    )
+    st.stop()
 
 # ──────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -585,7 +633,17 @@ def inject_tts(text: str):
 
 
 def call_gemini_audio(audio_bytes: bytes, prompt: str, temperature: float = 0.7) -> str:
-    """Send audio + text prompt to Gemini for transcription and evaluation."""
+    """Send audio + text prompt to Gemini for transcription and evaluation.
+
+    Voice always uses Gemini regardless of AI_PROVIDER.
+    When AI_PROVIDER=groq, text goes to Groq but audio stays on Gemini.
+    """
+    # Voice requires Gemini - check before attempting API call
+    if not gemini_client:
+        raise RuntimeError(
+            "Voice interview requires a Gemini API key. "
+            "Add GOOGLE_API_KEY to your .env file or Streamlit secrets to enable voice mode."
+        )
     models_to_try = [MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite"]
     seen = set()
     models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
@@ -628,6 +686,11 @@ NO_SPEECH_MSG = (
     "right input is selected in your browser, then record again (or switch to Type mode)."
 )
 
+NO_SPEECH_MSG = (
+    "We didn't hear any speech, so nothing was submitted. Check that your microphone isn't muted and the "
+    "right input is selected in your browser, then record again (or switch to Type mode)."
+)
+
 
 def analyze_wav(audio_bytes: bytes):
     """Cheap local silence check on 16-bit PCM WAV. Returns stats, or None if the format isn't parseable."""
@@ -655,7 +718,7 @@ def analyze_wav(audio_bytes: bytes):
 
 def audio_looks_silent(stats) -> bool:
     if not stats:
-        return False  # unknown format: let the model-side guard decide
+        return False
     return stats["seconds"] < 0.8 or stats["peak"] < 0.02 or stats["voiced_seconds"] < 0.4
 
 
@@ -689,6 +752,98 @@ def candidate_word_count(messages: list) -> int:
                 continue
             n += len(t.replace("🎙️", "").split())
     return n
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GROQ TEXT PROVIDER  (used only when AI_PROVIDER=groq)
+# ──────────────────────────────────────────────────────────────────────────────
+
+_GROQ_SYSTEM_INSTRUCTION = (
+    "You are an expert interviewer, recruiter, and career strategist "
+    "with 20 years of experience conducting interviews at top companies."
+)
+
+
+def _call_groq(prompt: str, use_json: bool = False) -> str:
+    """Route a text request to Groq via the OpenAI-compatible API."""
+    kwargs: dict = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": _GROQ_SYSTEM_INSTRUCTION},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.7,
+    }
+
+    if use_json:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    last_error = None
+    for attempt in range(3):
+        try:
+            resp = groq_client.chat.completions.create(**kwargs)
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            last_error = e
+            error_msg = str(e).lower()
+
+            if any(code in error_msg for code in ["429", "rate_limit", "503", "overloaded", "unavailable"]):
+                wait = (attempt + 1) * 5
+                time.sleep(wait)
+                continue
+
+            elif any(code in error_msg for code in ["401", "403", "authentication", "invalid_api_key"]):
+                raise RuntimeError(
+                    "Groq authentication failed. Check your GROQ_API_KEY."
+                ) from e
+
+            elif "404" in error_msg or "model_not_found" in error_msg:
+                raise RuntimeError(
+                    f"Groq model '{GROQ_MODEL}' not found. "
+                    "Check that the model ID is correct and available on your Groq plan."
+                ) from e
+
+            else:
+                raise
+
+    raise last_error  # type: ignore[misc]
+
+
+def test_groq_connection() -> dict:
+    """Minimal health-check: sends a tiny request to verify Groq connectivity.
+
+    Returns:
+        {"ok": bool, "latency_ms": int | None, "error": str | None}
+    """
+    if not groq_client:
+        return {
+            "ok": False,
+            "latency_ms": None,
+            "error": "Groq client not initialized — GROQ_API_KEY is missing.",
+        }
+
+    _start = time.time()
+    try:
+        resp = groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
+            temperature=0,
+            max_tokens=10,
+        )
+        latency_ms = int((time.time() - _start) * 1000)
+        content = (resp.choices[0].message.content or "").strip()
+
+        if "GROQ_OK" in content:
+            return {"ok": True, "latency_ms": latency_ms, "error": None}
+
+        return {
+            "ok": False,
+            "latency_ms": latency_ms,
+            "error": f"Unexpected response (expected GROQ_OK): {content[:120]}",
+        }
+    except Exception as exc:
+        latency_ms = int((time.time() - _start) * 1000)
+        return {"ok": False, "latency_ms": latency_ms, "error": str(exc)}
 
 
 ENABLE_SPONSOR_ADS = os.getenv("ENABLE_SPONSOR_ADS", "false").lower() == "true"
@@ -879,7 +1034,12 @@ def render_pro_bar():
 
 @st.cache_data(ttl=300, show_spinner=False)
 def get_available_models():
-    """Fetch all available Gemini models from the API. Cached for 5 minutes."""
+    """Fetch available models for the active provider. Cached for 5 minutes."""
+    # Groq: return a controlled, validated list — no live discovery to avoid stale IDs
+    if AI_PROVIDER == "groq":
+        return [GROQ_MODEL]
+
+    # Gemini: existing live-discovery behavior (unchanged)
     try:
         all_models = []
         for m in client.models.list():
@@ -920,7 +1080,16 @@ def format_model_name(model_name: str) -> str:
 
 
 def call_gemini(prompt: str, use_json: bool = False) -> str:
-    """Call Gemini API with retry logic and automatic model fallback."""
+    """Call the active text AI provider (Gemini or Groq) with retry logic.
+
+    The function name is preserved for backward compatibility with all existing
+    call sites. When AI_PROVIDER=groq, requests are routed to Groq instead.
+    """
+    # ── Groq routing ────────────────────────────────────────────
+    if AI_PROVIDER == "groq":
+        return _call_groq(prompt, use_json=use_json)
+
+    # ── Gemini (existing implementation — unchanged) ─────────────
     models_to_try = [MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
     seen = set()
     models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
@@ -1461,6 +1630,46 @@ def render_candidate_debrief(debrief: dict, is_single_round: bool = False):
     )
 
 
+
+# ──────────────────────────────────────────────────────────────
+# DEVELOPER SIDEBAR  (only visible when PREPINTERVIEW_DEV_MODE=1)
+# ──────────────────────────────────────────────────────────────
+
+if os.getenv("PREPINTERVIEW_DEV_MODE") == "1":
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("#### 🛠️ Developer Panel")
+
+        # Provider status — never expose keys
+        provider_label = f"**Text AI:** `{AI_PROVIDER.upper()}`"
+        if AI_PROVIDER == "groq":
+            provider_label += f"  \n**Groq Model:** `{GROQ_MODEL}`"
+        st.markdown(provider_label)
+
+        _gemini_status = "✅ Configured" if gemini_client else "❌ No key"
+        _groq_status = "✅ Configured" if groq_client else "❌ No key"
+        st.markdown(
+            f"**Gemini client:** {_gemini_status}  \n"
+            f"**Groq client:** {_groq_status}  \n"
+            f"**Voice AI:** Gemini always"
+        )
+
+        if groq_client:
+            if st.button("🔌 Test Groq Connection", key="_dev_groq_test"):
+                with st.spinner("Testing Groq…"):
+                    _result = test_groq_connection()
+                if _result["ok"]:
+                    st.success(
+                        f"✅ Groq connected  \n"
+                        f"Model: `{GROQ_MODEL}`  \n"
+                        f"Latency: {_result['latency_ms']} ms"
+                    )
+                else:
+                    st.error(f"❌ Groq error: {_result['error']}")
+        else:
+            st.info("Add GROQ_API_KEY to enable Groq connection test.")
+
+        st.markdown("---")
 
 # ──────────────────────────────────────────────────────────────
 # SESSION STATE
