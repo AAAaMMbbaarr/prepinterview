@@ -823,27 +823,38 @@ def test_groq_connection() -> dict:
         }
 
     _start = time.time()
+
     try:
-       resp = groq_client.chat.completions.create(
-    model=GROQ_MODEL,
-    messages=[{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
-    temperature=0,
-    max_completion_tokens=64,
-)
+        resp = groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": "Reply with exactly: GROQ_OK"}],
+            temperature=0,
+            max_completion_tokens=64,
+        )
+
         latency_ms = int((time.time() - _start) * 1000)
         content = (resp.choices[0].message.content or "").strip()
 
         if "GROQ_OK" in content:
-            return {"ok": True, "latency_ms": latency_ms, "error": None}
+            return {
+                "ok": True,
+                "latency_ms": latency_ms,
+                "error": None,
+            }
 
         return {
             "ok": False,
             "latency_ms": latency_ms,
             "error": f"Unexpected response (expected GROQ_OK): {content[:120]}",
         }
+
     except Exception as exc:
         latency_ms = int((time.time() - _start) * 1000)
-        return {"ok": False, "latency_ms": latency_ms, "error": str(exc)}
+        return {
+            "ok": False,
+            "latency_ms": latency_ms,
+            "error": str(exc),
+        }
 
 
 ENABLE_SPONSOR_ADS = os.getenv("ENABLE_SPONSOR_ADS", "false").lower() == "true"
