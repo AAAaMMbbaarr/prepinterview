@@ -4,3 +4,6 @@ showErrorDetails = false
 
 [ui]
 hideTopBar = true
+
+[server]
+maxUploadSize = 5
