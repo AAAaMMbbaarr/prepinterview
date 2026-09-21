@@ -2200,61 +2200,55 @@ elif st.session_state.step == 1:
          lambda: call_gemini(build_followup_prompt(resume_text, jd_text), use_json=True), "followups"),
     ]
 
-    try:
+        try:
         for pct, msg, fn, key in phases:
             update_timer()
             status.markdown(f"**{msg}**")
             progress.progress(pct)
+
             raw = fn()
-parsed = parse_json_safe(raw)
+            parsed = parse_json_safe(raw)
 
-if not parsed:
-    raise RuntimeError(
-        f"Groq returned invalid JSON for analysis step: {key}"
-    )
+            if not parsed:
+                raise RuntimeError(
+                    f"AI returned invalid JSON for analysis step: {key}"
+                )
 
-if key == "summary":
-    if not isinstance(parsed.get("strengths"), list):
-        raise RuntimeError("Summary response is missing strengths.")
+            if key == "summary":
+                strengths = parsed.get("strengths")
+                gaps = parsed.get("gaps")
 
-    if not isinstance(parsed.get("gaps"), list) or len(parsed.get("gaps", [])) == 0:
-        raise RuntimeError(
-            "Groq returned no role-specific gaps. The summary response must contain 3 gaps."
-        )
+                if not isinstance(strengths, list) or len(strengths) < 3:
+                    raise RuntimeError(
+                        "AI returned fewer than 3 strengths for the summary."
+                    )
 
-    if len(parsed.get("strengths", [])) < 3:
-        raise RuntimeError(
-            "Groq returned fewer than 3 strengths."
-        )
+                if not isinstance(gaps, list) or len(gaps) < 3:
+                    raise RuntimeError(
+                        "AI returned fewer than 3 role-specific gaps for the summary."
+                    )
 
-    if len(parsed.get("gaps", [])) < 3:
-        raise RuntimeError(
-            "Groq returned fewer than 3 gaps."
-        )
+            if key == "questions":
+                questions = parsed.get("questions")
 
-if key == "questions":
-    questions = parsed.get("questions")
+                if not isinstance(questions, list) or len(questions) < 10:
+                    raise RuntimeError(
+                        "AI returned fewer than 10 interview questions."
+                    )
 
-    if not isinstance(questions, list) or len(questions) < 10:
-        raise RuntimeError(
-            "Groq returned fewer than 10 interview questions."
-        )
+                for i, question in enumerate(questions):
+                    answer_points = question.get("answer_points")
 
-    for i, question in enumerate(questions):
-        if not isinstance(question.get("answer_points"), list):
-            raise RuntimeError(
-                f"Question {i + 1} is missing answer points."
-            )
+                    if not isinstance(answer_points, list) or len(answer_points) < 3:
+                        raise RuntimeError(
+                            f"Question {i + 1} has fewer than 3 answer points."
+                        )
 
-        if len(question.get("answer_points", [])) < 3:
-            raise RuntimeError(
-                f"Question {i + 1} has fewer than 3 answer points."
-            )
-
-results[key] = parsed
+            results[key] = parsed
 
         progress.progress(100)
         update_timer()
+
         elapsed = int(time.time() - start_time)
         status.markdown("✅ **Analysis complete!**")
         estimate_note.empty()
@@ -2279,9 +2273,10 @@ results[key] = parsed
             "- Wait a minute (Google's servers may be temporarily overloaded)\n"
             "- Try `gemini-3.5-flash-lite` or `gemini-3.1-flash-lite` — they're lighter and more available"
         )
-        if st.button("← Go back"):
-            st.session_state.step = 0
-            st.rerun()
+
+    if st.button("← Go back"):
+        st.session_state.step = 0
+        st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════
