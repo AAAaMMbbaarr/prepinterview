@@ -794,7 +794,7 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
         "max_completion_tokens": 2048,
         "extra_body": {
             "include_reasoning": False,
-            "reasoning_effort": "low",
+            "reasoning_effort": "medium",
         },
     }
 
@@ -1201,7 +1201,14 @@ def parse_json_safe(text: str) -> dict:
 # ──────────────────────────────────────────────────────────────
 
 def build_summary_prompt(resume_text: str, jd_text: str) -> str:
-    return f"""Analyze this resume against the job description.
+    return f"""You are analyzing ONE specific candidate for ONE specific job.
+
+Your task is to compare the candidate's actual resume against the actual job description.
+
+Do NOT use generic career advice.
+Do NOT assume requirements that are not present in the job description.
+Do NOT copy examples from this instruction.
+Every strength and gap MUST be derived from the supplied RESUME and JOB DESCRIPTION.
 
 RESUME:
 {resume_text}
@@ -1209,34 +1216,94 @@ RESUME:
 JOB DESCRIPTION:
 {jd_text}
 
-Return ONLY valid JSON (no markdown, no explanation) in this exact format:
+ANALYSIS METHOD:
+
+1. Extract the most important requirements from the JOB DESCRIPTION:
+   - required skills
+   - preferred skills
+   - years/type of experience
+   - domain experience
+   - responsibilities
+   - tools/technologies
+   - education requirements
+   - leadership/stakeholder requirements
+   - measurable business expectations
+
+2. For each important requirement, check the RESUME:
+   - clearly demonstrated
+   - partially demonstrated
+   - not demonstrated
+   - unclear/not stated
+
+3. Strengths must be requirements that the resume actually demonstrates.
+4. Gaps must be requirements from THIS JOB DESCRIPTION that are missing,
+   weakly demonstrated, or materially different from the candidate's experience.
+
+CRITICAL GAP RULE:
+A gap is NOT "the candidate does not have X" unless X is actually relevant
+to this specific job description.
+
+For every gap, identify:
+- the exact JD requirement or responsibility creating the gap
+- what is missing or weak in the resume
+- why that difference matters for THIS role
+
+CRITICAL SPECIFICITY RULE:
+Never write generic gaps such as:
+"Needs stronger communication skills."
+"Limited leadership experience."
+"Needs more product experience."
+
+Instead write something grounded in the actual JD, for example:
+"Enterprise analytics: JD requires ownership of enterprise BI dashboards, while the resume mainly shows user-level product analytics."
+
+Only use that example as a formatting illustration. Do NOT copy it unless it is actually supported by the supplied JD and resume.
+
+Return ONLY valid JSON:
+
 {{
   "fit_score": 75,
   "risk_level": "MEDIUM",
   "strengths": [
-    "Recruitment Tech: Hands-on experience with AccioJob's two-sided hiring marketplace.",
-    "AI & Automation: Shipped AI-powered voice agents and automated workflows.",
-    "Startup Execution: Growth, GTM and Founder’s Office experience in fast-moving environments."
+    "Requirement from this JD: Specific evidence from the resume showing the match.",
+    "Requirement from this JD: Specific evidence from the resume showing the match.",
+    "Requirement from this JD: Specific evidence from the resume showing the match."
   ],
   "gaps": [
-    "B2B SaaS: Limited dedicated enterprise B2B SaaS PM experience.",
-    "Enterprise HR Tech: No direct experience with enterprise HRIS/payroll systems.",
-    "Core PM: Less evidence of PRDs, feature architecture and traditional product ownership."
+    "JD requirement: Specific evidence showing what is missing or weak in the resume.",
+    "JD requirement: Specific evidence showing what is missing or weak in the resume.",
+    "JD requirement: Specific evidence showing what is missing or weak in the resume."
   ],
-  "one_line": "Strong recruitment-tech, growth and AI experience, with a gap in traditional enterprise B2B SaaS PM experience."
+  "one_line": "One concise sentence describing the strongest relevant match and the most important role-specific gap."
 }}
 
-Rules:
-- fit_score: integer 0-100 (Interview Readiness score)
-- risk_level: "LOW", "MEDIUM", or "HIGH"
-- strengths: exactly 3 items. MUST follow "Category: Description" format with a boldable 1-3 word category label before a colon (e.g. "Recruitment Tech: Hands-on experience...", "AI & Automation: Shipped voice agents..."). Keep descriptions concise and punchy.
-- gaps: exactly 3 items. MUST follow "Category: Description" format with a boldable 1-3 word category label before a colon (e.g. "B2B SaaS: Limited dedicated enterprise...", "Core PM: Less evidence of PRDs..."). Keep descriptions concise and punchy.
-- one_line: exactly one direct sentence summarizing overall fit, key strength domain, and the core gap. Do NOT start with candidate name (e.g. "Ambar is a...") or third-person preamble. Start directly with the substance (e.g. "Strong recruitment-tech, growth and AI experience, with a gap in traditional enterprise B2B SaaS PM experience.")
+STRICT OUTPUT RULES:
+
+- fit_score must be an integer from 0 to 100.
+- risk_level must be LOW, MEDIUM, or HIGH.
+- strengths MUST contain exactly 3 items.
+- gaps MUST contain exactly 3 items.
+- gaps MUST NOT be empty.
+- Every strength MUST reference an actual requirement/responsibility from the JD.
+- Every gap MUST reference an actual requirement/responsibility from the JD.
+- Do not invent experience.
+- Do not invent requirements.
+- Do not use the candidate's name.
+- Do not use generic interview advice.
+- Keep each strength and gap to 1-2 sentences.
 """
 
 
+
 def build_questions_prompt(resume_text: str, jd_text: str) -> str:
-    return f"""Analyze this resume against the job description.
+    return f"""You are a senior hiring manager preparing an interview for ONE specific candidate and ONE specific job.
+
+You have the candidate's actual resume and the exact target job description below.
+
+Your questions MUST be generated from the intersection of:
+1. What the job actually requires.
+2. What the candidate actually claims or demonstrates.
+3. What is missing, ambiguous, unusually strong, or potentially challengeable.
 
 RESUME:
 {resume_text}
@@ -1244,23 +1311,94 @@ RESUME:
 JOB DESCRIPTION:
 {jd_text}
 
-Return ONLY valid JSON (no markdown, no explanation) in this exact format:
+QUESTION GENERATION RULES:
+
+Generate exactly 10 interview questions.
+
+Each question must belong to one of these categories:
+
+- "Resume→JD": A resume experience that directly maps to an important JD requirement.
+- "Resume→Suspicion": A resume claim, metric, title, technology, or achievement that a skeptical interviewer would challenge.
+- "JD→Gap": An important JD requirement that is missing or only partially demonstrated in the resume.
+- "Career Transition": A meaningful transition between the candidate's background and this specific role.
+
+SPECIFICITY REQUIREMENT:
+
+Every question MUST contain at least one concrete anchor from the supplied material.
+
+Concrete anchors include:
+- a company
+- a project
+- a job title
+- a technology
+- a metric
+- a responsibility
+- a JD requirement
+- a domain
+- a specific achievement
+- a specific missing requirement
+
+NEVER produce generic questions such as:
+"Tell me about yourself."
+"How do you handle challenges?"
+"Why should we hire you?"
+"Tell me about a time you worked in a team."
+
+Unless the question is explicitly tied to a concrete resume/JD fact.
+
+For example, instead of:
+"Tell me about your SQL experience."
+
+Ask:
+"Your resume says you used SQL to analyze a 50K+ user funnel, while this role requires ownership of product analytics. Walk me through one analysis where your SQL changed a product or business decision."
+
+The example above is ONLY an illustration. Use the actual facts from the supplied resume and JD.
+
+ANSWER POINT RULE:
+
+For every question, provide exactly 3 answer_points.
+
+Each answer point must contain a concrete fact, metric, project, technology, responsibility, or JD requirement relevant to answering THAT question.
+
+Do not give generic advice such as:
+"Be specific."
+"Use STAR."
+"Show your communication skills."
+
+Instead tell the candidate exactly what evidence from their resume they should use and what part of the JD they should connect it to.
+
+Return ONLY valid JSON:
+
 {{
   "questions": [
     {{
       "probability": 95,
       "category": "Resume→JD",
-      "question": "The exact interview question",
-      "why": "Why the interviewer will ask this",
-      "testing": "What skill/trait they're evaluating",
-      "answer_points": ["point 1", "point 2", "point 3"]
+      "question": "Specific question grounded in the actual resume and JD",
+      "why": "Specific reason this interviewer would ask this based on the actual resume/JD",
+      "testing": "Specific capability being evaluated",
+      "answer_points": [
+        "Concrete evidence from the resume to use",
+        "Specific JD requirement to connect it to",
+        "Specific metric, ownership detail, trade-off, or result to explain"
+      ]
     }}
   ]
 }}
 
-Generate exactly 10 questions. Be SPECIFIC to this candidate, not generic.
-Categories: "Resume→JD", "Resume→Suspicion", "JD→Gap", "Career Transition"
-probability: integer 50-99
+STRICT RULES:
+
+- Exactly 10 questions.
+- probability must be an integer from 50 to 99.
+- Exactly 3 answer_points per question.
+- Every question must be grounded in the supplied resume and JD.
+- Every answer_points array must contain concrete evidence.
+- At least 3 questions must be JD→Gap.
+- At least 2 questions must be Resume→Suspicion.
+- At least 1 question must be Career Transition.
+- Do not invent facts.
+- Do not copy facts from the instructions.
+- Do not use generic interview questions.
 """
 
 
@@ -2068,7 +2206,52 @@ elif st.session_state.step == 1:
             status.markdown(f"**{msg}**")
             progress.progress(pct)
             raw = fn()
-            results[key] = parse_json_safe(raw)
+parsed = parse_json_safe(raw)
+
+if not parsed:
+    raise RuntimeError(
+        f"Groq returned invalid JSON for analysis step: {key}"
+    )
+
+if key == "summary":
+    if not isinstance(parsed.get("strengths"), list):
+        raise RuntimeError("Summary response is missing strengths.")
+
+    if not isinstance(parsed.get("gaps"), list) or len(parsed.get("gaps", [])) == 0:
+        raise RuntimeError(
+            "Groq returned no role-specific gaps. The summary response must contain 3 gaps."
+        )
+
+    if len(parsed.get("strengths", [])) < 3:
+        raise RuntimeError(
+            "Groq returned fewer than 3 strengths."
+        )
+
+    if len(parsed.get("gaps", [])) < 3:
+        raise RuntimeError(
+            "Groq returned fewer than 3 gaps."
+        )
+
+if key == "questions":
+    questions = parsed.get("questions")
+
+    if not isinstance(questions, list) or len(questions) < 10:
+        raise RuntimeError(
+            "Groq returned fewer than 10 interview questions."
+        )
+
+    for i, question in enumerate(questions):
+        if not isinstance(question.get("answer_points"), list):
+            raise RuntimeError(
+                f"Question {i + 1} is missing answer points."
+            )
+
+        if len(question.get("answer_points", [])) < 3:
+            raise RuntimeError(
+                f"Question {i + 1} has fewer than 3 answer points."
+            )
+
+results[key] = parsed
 
         progress.progress(100)
         update_timer()
