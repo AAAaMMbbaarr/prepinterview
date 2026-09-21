@@ -773,26 +773,49 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.7,
+        "max_completion_tokens": 2048,
     }
 
     if use_json:
         kwargs["response_format"] = {"type": "json_object"}
+        kwargs["extra_body"] = {
+            "include_reasoning": False,
+        }
 
     last_error = None
+
     for attempt in range(3):
         try:
             resp = groq_client.chat.completions.create(**kwargs)
             return resp.choices[0].message.content or ""
+
         except Exception as e:
             last_error = e
             error_msg = str(e).lower()
 
-            if any(code in error_msg for code in ["429", "rate_limit", "503", "overloaded", "unavailable"]):
+            if any(
+                code in error_msg
+                for code in [
+                    "429",
+                    "rate_limit",
+                    "503",
+                    "overloaded",
+                    "unavailable",
+                ]
+            ):
                 wait = (attempt + 1) * 5
                 time.sleep(wait)
                 continue
 
-            elif any(code in error_msg for code in ["401", "403", "authentication", "invalid_api_key"]):
+            elif any(
+                code in error_msg
+                for code in [
+                    "401",
+                    "403",
+                    "authentication",
+                    "invalid_api_key",
+                ]
+            ):
                 raise RuntimeError(
                     "Groq authentication failed. Check your GROQ_API_KEY."
                 ) from e
@@ -806,7 +829,7 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
             else:
                 raise
 
-    raise last_error  # type: ignore[misc]
+    raise last_error # type: ignore[misc]
 
 
 def test_groq_connection() -> dict:
