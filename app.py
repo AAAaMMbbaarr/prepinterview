@@ -1207,6 +1207,49 @@ def parse_json_safe(text: str) -> dict:
         return None
 
 
+def _as_str_list(value) -> list:
+    """Coerce whatever the model returned (list / list of dicts / bullet string) into a list of strings."""
+    if isinstance(value, str):
+        value = [ln for ln in value.splitlines()]
+    if not isinstance(value, list):
+        return []
+    out = []
+    for item in value:
+        if isinstance(item, dict):
+            item = " ".join(str(v) for v in item.values() if v)
+        item = str(item or "").strip().lstrip("-•*0123456789.) ").strip()
+        if item:
+            out.append(item)
+    return out
+
+
+def _validate_phase(key: str, parsed: dict, relaxed: bool = False) -> None:
+    """Raise RuntimeError if an analysis step's JSON is unusable.
+
+    relaxed=True is the last-resort minimum, used only after the strict check
+    has failed on every retry.
+    """
+    if key == "summary":
+        need = 1 if relaxed else 3
+        parsed["strengths"] = _as_str_list(parsed.get("strengths"))
+        parsed["gaps"] = _as_str_list(parsed.get("gaps"))
+        if len(parsed["strengths"]) < need:
+            raise RuntimeError(f"AI returned fewer than {need} strengths for the summary.")
+        if len(parsed["gaps"]) < need:
+            raise RuntimeError(f"AI returned fewer than {need} role-specific gaps for the summary.")
+
+    elif key == "questions":
+        questions = parsed.get("questions")
+        if not isinstance(questions, list) or len(questions) < 10:
+            raise RuntimeError("AI returned fewer than 10 interview questions.")
+        for i, question in enumerate(questions):
+            if not isinstance(question, dict):
+                raise RuntimeError(f"Question {i + 1} is not in the expected format.")
+            question["answer_points"] = _as_str_list(question.get("answer_points"))
+            if len(question["answer_points"]) < 3:
+                raise RuntimeError(f"Question {i + 1} has fewer than 3 answer points.")
+
+
 # ──────────────────────────────────────────────────────────────
 # PROMPTS
 # ──────────────────────────────────────────────────────────────
@@ -1295,6 +1338,8 @@ STRICT OUTPUT RULES:
 - strengths MUST contain exactly 3 items.
 - gaps MUST contain exactly 3 items.
 - gaps MUST NOT be empty.
+- If the candidate is a strong match, still list the 3 least-evidenced or weakest JD requirements as gaps.
+- strengths and gaps MUST each be a JSON array of plain strings (not objects, not one combined string).
 - Every strength MUST reference an actual requirement/responsibility from the JD.
 - Every gap MUST reference an actual requirement/responsibility from the JD.
 - Do not invent experience.
@@ -2217,43 +2262,33 @@ elif st.session_state.step == 1:
             status.markdown(f"**{msg}**")
             progress.progress(pct)
 
-            raw = fn()
-            parsed = parse_json_safe(raw)
+            # Small/fast models sometimes return a valid-JSON but incomplete answer.
+            # Re-ask up to 3 times before giving up.
+            parsed, last_err, last_candidate = None, None, None
+            for attempt in range(3):
+                raw = fn()
+                candidate = parse_json_safe(raw)
+                if not candidate:
+                    last_err = RuntimeError(f"AI returned invalid JSON for analysis step: {key}")
+                    continue
+                try:
+                    _validate_phase(key, candidate)
+                    parsed = candidate
+                    break
+                except RuntimeError as ve:
+                    last_err = ve
+                    last_candidate = candidate
 
-            if not parsed:
-                raise RuntimeError(
-                    f"AI returned invalid JSON for analysis step: {key}"
-                )
+            if parsed is None and key == "summary" and last_candidate:
+                # Last resort: accept a shorter (but non-empty) summary instead of failing the whole run
+                try:
+                    _validate_phase(key, last_candidate, relaxed=True)
+                    parsed = last_candidate
+                except RuntimeError:
+                    pass
 
-            if key == "summary":
-                strengths = parsed.get("strengths")
-                gaps = parsed.get("gaps")
-
-                if not isinstance(strengths, list) or len(strengths) < 3:
-                    raise RuntimeError(
-                        "AI returned fewer than 3 strengths for the summary."
-                    )
-
-                if not isinstance(gaps, list) or len(gaps) < 3:
-                    raise RuntimeError(
-                        "AI returned fewer than 3 role-specific gaps for the summary."
-                    )
-
-            if key == "questions":
-                questions = parsed.get("questions")
-
-                if not isinstance(questions, list) or len(questions) < 10:
-                    raise RuntimeError(
-                        "AI returned fewer than 10 interview questions."
-                    )
-
-                for i, question in enumerate(questions):
-                    answer_points = question.get("answer_points")
-
-                    if not isinstance(answer_points, list) or len(answer_points) < 3:
-                        raise RuntimeError(
-                            f"Question {i + 1} has fewer than 3 answer points."
-                        )
+            if parsed is None:
+                raise last_err
 
             results[key] = parsed
 
