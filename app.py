@@ -791,12 +791,16 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
             },
         ],
         "temperature": 0.2 if use_json else 0.7,
-        "max_completion_tokens": 2048,
+        # gpt-oss is a reasoning model: hidden reasoning tokens are spent from this
+        # same budget BEFORE any visible output, so it must leave room for both.
+        "max_completion_tokens": 8192,
         "extra_body": {
             "include_reasoning": False,
-            "reasoning_effort": "medium",
+            "reasoning_effort": "low",
         },
     }
+    if use_json:
+        kwargs["response_format"] = {"type": "json_object"}
 
     last_error = None
 
@@ -808,9 +812,16 @@ def _call_groq(prompt: str, use_json: bool = False) -> str:
             content = message.content or ""
 
             if not content.strip():
+                finish = getattr(resp.choices[0], "finish_reason", None)
+                if finish == "length" and kwargs["max_completion_tokens"] < 16384:
+                    # Token budget was eaten by reasoning -- retry with a bigger budget
+                    kwargs["max_completion_tokens"] *= 2
+                    last_error = RuntimeError(
+                        "Groq ran out of tokens while reasoning (finish_reason=length)."
+                    )
+                    continue
                 raise RuntimeError(
-                    "Groq returned an empty response. "
-                    f"Reasoning: {getattr(message, 'reasoning', None)}"
+                    f"Groq returned an empty response (finish_reason={finish})."
                 )
 
             return content
