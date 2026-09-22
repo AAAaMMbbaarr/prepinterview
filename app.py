@@ -39,13 +39,9 @@ if not _provider_env:
     except Exception:
         _provider_env = "gemini"
 AI_PROVIDER: str = (_provider_env or "gemini").lower().strip()
-
-# Pin the text provider here. "gemini" = always use Gemini, whatever AI_PROVIDER says in
-# .env / Streamlit secrets. Set to "" to let AI_PROVIDER (env/secrets) decide again.
-# The Groq code below is kept as-is, so switching back is a one-line change.
-PIN_PROVIDER = "gemini"
-if PIN_PROVIDER:
-    AI_PROVIDER = PIN_PROVIDER
+# NOTE: call_gemini() below always tries Gemini first and only falls back to Groq
+# if every Gemini attempt fails (rate limit / outage / etc). AI_PROVIDER is no longer
+# a hard either/or switch — it's kept only for the "Text AI:" label in the UI.
 
 if AI_PROVIDER not in ("gemini", "groq"):
     st.error(
@@ -88,19 +84,13 @@ if groq_api_key:
     groq_client = _GroqOpenAIClient(api_key=groq_api_key, base_url=GROQ_BASE_URL)
 
 # ── Configuration validation (fail fast, safe messages) ────────────────────
-if AI_PROVIDER == "gemini" and not gemini_client:
+if not gemini_client:
     st.error(
-        "⚠️ AI_PROVIDER=gemini but GOOGLE_API_KEY is missing or empty. "
-        "Add it to your .env file or Streamlit secrets."
+        "⚠️ GOOGLE_API_KEY is missing or empty. Gemini is the primary text/voice "
+        "provider, so add it to your .env file or Streamlit secrets."
     )
     st.stop()
-
-if AI_PROVIDER == "groq" and not groq_client:
-    st.error(
-        "⚠️ AI_PROVIDER=groq but GROQ_API_KEY is missing or empty. "
-        "Add it to your .env file or Streamlit secrets."
-    )
-    st.stop()
+# groq_client is optional: if it's None, call_gemini() simply has no fallback to use.
 
 # ──────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -642,8 +632,8 @@ def inject_tts(text: str):
 def call_gemini_audio(audio_bytes: bytes, prompt: str, temperature: float = 0.7) -> str:
     """Send audio + text prompt to Gemini for transcription and evaluation.
 
-    Voice always uses Gemini regardless of AI_PROVIDER.
-    When AI_PROVIDER=groq, text goes to Groq but audio stays on Gemini.
+    Voice always uses Gemini — never routed to Groq, even when Groq is used
+    as the text fallback below.
     """
     # Voice requires Gemini - check before attempting API call
     if not gemini_client:
@@ -685,6 +675,15 @@ def call_gemini_audio(audio_bytes: bytes, prompt: str, temperature: float = 0.7)
                     break
                 else:
                     raise e
+
+    # Every Gemini model/attempt failed (rate-limited, all overloaded, etc).
+    # Fall back to Groq as the alternative, if a Groq key is configured.
+    if groq_client:
+        try:
+            return _call_groq(prompt, use_json=use_json)
+        except Exception:
+            pass  # fall through to raise the original Gemini error below
+
     raise last_error
 
 
@@ -762,7 +761,7 @@ def candidate_word_count(messages: list) -> int:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# GROQ TEXT PROVIDER  (used only when AI_PROVIDER=groq)
+# GROQ TEXT PROVIDER  (automatic fallback when every Gemini attempt fails)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _GROQ_SYSTEM_INSTRUCTION = (
@@ -1112,11 +1111,8 @@ def render_pro_bar():
 @st.cache_data(ttl=300, show_spinner=False)
 def get_available_models():
     """Fetch available models for the active provider. Cached for 5 minutes."""
-    # Groq: return a controlled, validated list — no live discovery to avoid stale IDs
-    if AI_PROVIDER == "groq":
-        return [GROQ_MODEL]
-
-    # Gemini: existing live-discovery behavior (unchanged)
+    # Gemini: existing live-discovery behavior (unchanged). Groq is an automatic
+    # fallback inside call_gemini(), not a user-selectable model, so it's not listed here.
     try:
         all_models = []
         for m in client.models.list():
@@ -1160,13 +1156,10 @@ def call_gemini(prompt: str, use_json: bool = False) -> str:
     """Call the active text AI provider (Gemini or Groq) with retry logic.
 
     The function name is preserved for backward compatibility with all existing
-    call sites. When AI_PROVIDER=groq, requests are routed to Groq instead.
+    call sites. Gemini is tried first; Groq is used only as an automatic
+    fallback if every Gemini model/attempt fails (see the end of this function).
     """
-    # ── Groq routing ────────────────────────────────────────────
-    if AI_PROVIDER == "groq":
-        return _call_groq(prompt, use_json=use_json)
-
-    # ── Gemini (existing implementation — unchanged) ─────────────
+    # ── Gemini (tried first, always) ──────────────────────────────
     models_to_try = [MODEL, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
     seen = set()
     models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
@@ -1199,6 +1192,15 @@ def call_gemini(prompt: str, use_json: bool = False) -> str:
                     break
                 else:
                     raise e
+
+    # Every Gemini model/attempt failed (rate-limited, all overloaded, etc).
+    # Fall back to Groq as the alternative, if a Groq key is configured.
+    if groq_client:
+        try:
+            return _call_groq(prompt, use_json=use_json)
+        except Exception:
+            pass  # fall through to raise the original Gemini error below
+
     raise last_error
 
 
@@ -1901,9 +1903,11 @@ if os.getenv("PREPINTERVIEW_DEV_MODE") == "1":
         st.markdown("#### 🛠️ Developer Panel")
 
         # Provider status — never expose keys
-        provider_label = f"**Text AI:** `{AI_PROVIDER.upper()}`"
-        if AI_PROVIDER == "groq":
-            provider_label += f"  \n**Groq Model:** `{GROQ_MODEL}`"
+        provider_label = "**Text AI:** `GEMINI` (primary)"
+        if groq_client:
+            provider_label += f"  \n**Groq fallback:** `{GROQ_MODEL}` (used only if Gemini fails)"
+        else:
+            provider_label += "  \n**Groq fallback:** not configured"
         st.markdown(provider_label)
 
         _gemini_status = "✅ Configured" if gemini_client else "❌ No key"
